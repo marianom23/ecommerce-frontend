@@ -1,15 +1,19 @@
 // src/constants/routes.ts
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE;
-
-if (!API_BASE) {
-  throw new Error("🚨 NEXT_PUBLIC_API_BASE no está definida en .env");
+const rawBase = process.env.NEXT_PUBLIC_API_BASE;
+if (!rawBase) {
+  throw new Error("🚨 NEXT_PUBLIC_API_BASE no está definida en .env(.local)");
 }
 
+// quita barras finales
+const API_BASE = rawBase.replace(/\/+$/, "");
+
+// helper para unir sin duplicar barras
+const join = (base: string, path: string) =>
+  `${base}${path.startsWith("/") ? path : `/${path}`}`;
+
 export const ROUTES = {
-  LOGIN: `${API_BASE}/login`,
-  REGISTER: `${API_BASE}/register`,
-  OAUTH_CALLBACK: `${API_BASE}/oauth2/callback`,
-  PRODUCTS: `${API_BASE}/products`,
-  // Agregá más según necesites
+  REGISTER:       join(API_BASE, "/register"),
+  PRODUCTS:       join(API_BASE, "/products"),
+  // agrega más según necesites
 };

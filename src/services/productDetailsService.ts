@@ -1,0 +1,165 @@
+// lib/services/productDetailsService.ts
+import { api } from "@/lib/api";
+
+const base = "/b/products"; // 👈 pasa por app/api/b/[...path]/route.ts
+
+/** ===== Tipos mínimos del endpoint /products/:id/details ===== */
+type ImageSet = { thumbnails: string[]; previews: string[] };
+
+type APIVariant = {
+  id: number;
+  sku: string;
+  price: number;
+  discountedPrice?: number | null;
+  stock: number;
+  attributes: Record<string, string>;
+  imgs?: Partial<ImageSet>;
+};
+
+type APIProductBase = {
+  id: number;
+  title: string;
+  reviews: number;
+  imgs: ImageSet;
+  description: string;
+  sku: string;
+  brand: string;
+  category: string;
+};
+
+type APIProductWithVariants = APIProductBase & {
+  hasVariants: true;
+  variantAttributes: string[];
+  variantOptions: Record<string, string[]>;
+  variants: APIVariant[];
+};
+
+type APIProductSimple = APIProductBase & {
+  hasVariants: false;
+  price: number;
+  discountedPrice?: number | null;
+  stock: number;
+  variantAttributes: [];
+  variantOptions: Record<string, never>;
+  variants: [];
+};
+
+export type ProductDetailsRaw = APIProductWithVariants | APIProductSimple;
+
+/** ===== Tipo normalizado para la UI ===== */
+export type NormalizedVariant = {
+  id: number;
+  sku: string;
+  attrs: Record<string, string>;
+  price: number;
+  discountedPrice: number;
+  stock: number;
+  images: string[];
+};
+
+export type NormalizedProduct = {
+  id: number;
+  title: string;
+  description: string;
+  brand: string;
+  category: string;
+  sku: string;
+  images: string[];
+  hasVariants: boolean;
+  options: Record<string, string[]>;
+  variants: NormalizedVariant[];
+  price?: number;
+  discountedPrice?: number;
+  priceRange: { min: number; max: number; minDiscounted: number; maxDiscounted: number };
+  stockTotal: number;
+  inStock: boolean;
+};
+
+/** ===== Llamadas ===== */
+function getRaw(id: number) {
+  return api.get<ProductDetailsRaw>(`${base}/${id}/details`);
+}
+
+/** ===== Normalizador ===== */
+function normalize(p: ProductDetailsRaw): NormalizedProduct {
+  const money = (n: number | null | undefined) =>
+    typeof n === "number" && !Number.isNaN(n) ? n : 0;
+
+  if (p.hasVariants) {
+    const pv = p as APIProductWithVariants;
+
+    const variants: NormalizedVariant[] = (pv.variants ?? []).map(v => {
+      const price = money(v.price);
+      const discounted = money(v.discountedPrice ?? v.price);
+      const images =
+        (v.imgs?.previews?.length ? v.imgs.previews : pv.imgs?.previews) ?? [];
+      return {
+        id: v.id,
+        sku: v.sku,
+        attrs: v.attributes ?? {},
+        price,
+        discountedPrice: discounted,
+        stock: v.stock ?? 0,
+        images,
+      };
+    });
+
+    const prices = variants.map(v => v.price);
+    const discounts = variants.map(v => v.discountedPrice);
+    const stocks = variants.map(v => v.stock);
+
+    const min = prices.length ? Math.min(...prices) : 0;
+    const max = prices.length ? Math.max(...prices) : 0;
+    const minDisc = discounts.length ? Math.min(...discounts) : min;
+    const maxDisc = discounts.length ? Math.max(...discounts) : max;
+    const stockTotal = stocks.reduce((a, b) => a + (b || 0), 0);
+
+    return {
+      id: pv.id,
+      title: pv.title,
+      description: pv.description,
+      brand: pv.brand,
+      category: pv.category,
+      sku: pv.sku,
+      images: pv.imgs?.previews ?? [],
+      hasVariants: true,
+      options: pv.variantOptions ?? {},
+      variants,
+      priceRange: { min, max, minDiscounted: minDisc, maxDiscounted: maxDisc },
+      stockTotal,
+      inStock: stockTotal > 0,
+    };
+  } else {
+    const ps = p as APIProductSimple;
+
+    const price = money(ps.price);
+    const discounted = money(ps.discountedPrice ?? price);
+    const stock = ps.stock ?? 0;
+
+    return {
+      id: ps.id,
+      title: ps.title,
+      description: ps.description,
+      brand: ps.brand,
+      category: ps.category,
+      sku: ps.sku,
+      images: ps.imgs?.previews ?? [],
+      hasVariants: false,
+      options: {},
+      variants: [],
+      price,
+      discountedPrice: discounted,
+      priceRange: { min: price, max: price, minDiscounted: discounted, maxDiscounted: discounted },
+      stockTotal: stock,
+      inStock: stock > 0,
+    };
+  }
+}
+
+export const productDetailsService = {
+  getRaw,
+  async getNormalized(id: number): Promise<NormalizedProduct> {
+    const raw = await getRaw(id);
+    return normalize(raw);
+  },
+};

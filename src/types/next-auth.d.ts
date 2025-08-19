@@ -1,26 +1,37 @@
-// src/types/next-auth.d.ts
-import NextAuth, { DefaultSession } from "next-auth";
-import { JWT } from "next-auth/jwt";
+import NextAuth, { DefaultSession, DefaultUser } from "next-auth";
 
 declare module "next-auth" {
-  interface Session extends DefaultSession {
+  interface Session {
     backendJwt?: string;
-    firstName?: string;
-    lastName?: string;
+    user: {
+      id: string;
+      email: string;
+      firstName: string;
+      lastName: string;
+      roles: string[];
+      verified: boolean;
+    } & DefaultSession["user"];
   }
 
-  interface User {
+  interface User extends DefaultUser {
     id: string;
     email: string;
-    name?: string;
-    verified?: boolean;
+    firstName: string;
+    lastName: string;
+    roles: string[];
+    verified: boolean;
+    token: string;
   }
 }
 
 declare module "next-auth/jwt" {
   interface JWT {
     backendJwt?: string;
-    firstName?: string;
-    lastName?: string;
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    roles: string[];
+    verified: boolean;
   }
 }

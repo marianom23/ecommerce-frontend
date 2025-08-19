@@ -5,6 +5,7 @@ import "../css/style.css";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 
+import { SessionProvider } from "next-auth/react";
 import { ModalProvider } from "../context/QuickViewModalContext";
 import { CartModalProvider } from "../context/CartSidebarModalContext";
 import { ReduxProvider } from "@/redux/provider";
@@ -34,21 +35,22 @@ export default function RootLayout({
           <PreLoader />
         ) : (
           <>
-            <ReduxProvider>
-              <CartModalProvider>
-                <ModalProvider>
-                  <PreviewSliderProvider>
-                    <Header />
-                    {children}
-
-                    <QuickViewModal />
-                    <CartSidebarModal />
-                    <PreviewSliderModal />
-                  </PreviewSliderProvider>
-                </ModalProvider>
-              </CartModalProvider>
-            </ReduxProvider>
-            <ScrollToTop />
+            <SessionProvider>
+              <ReduxProvider>
+                <CartModalProvider>
+                  <ModalProvider>
+                    <PreviewSliderProvider>
+                      <Header />
+                        {children}
+                          <QuickViewModal />
+                            <CartSidebarModal />
+                          <PreviewSliderModal />
+                        </PreviewSliderProvider>
+                      </ModalProvider>
+                    </CartModalProvider>
+                  </ReduxProvider>
+                </SessionProvider>
+              <ScrollToTop />
             <Footer />
           </>
         )}

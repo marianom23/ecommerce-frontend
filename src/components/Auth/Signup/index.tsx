@@ -4,7 +4,15 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Breadcrumb from "@/components/Common/Breadcrumb";
-import { ROUTES } from "@/constants/routes"; 
+import { ROUTES } from "@/constants/routes";
+import { api } from "@/lib/api";
+
+// Tip opcional si querés tipar la respuesta
+type ServiceResult<T> = {
+  message: string | null;
+  data: T | null;
+  status: string; // "OK" | "CREATED" | "BAD_REQUEST" | ...
+};
 
 const Signup = () => {
   const router = useRouter();
@@ -16,7 +24,6 @@ const Signup = () => {
     password: "",
     confirmPassword: "",
   });
-
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -38,29 +45,17 @@ const Signup = () => {
 
     setLoading(true);
     try {
-      const res = await fetch(ROUTES.REGISTER, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password,
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-        }),
+      const payload = await api.post<ServiceResult<unknown>>(ROUTES.REGISTER, {
+        email: formData.email,
+        password: formData.password,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
       });
 
-      const resultText = await res.text();
-
-      if (!res.ok) {
-        setError(resultText || "Registration failed.");
-      } else {
-        setSuccess("Account created successfully. Redirecting to login...");
-        setTimeout(() => {
-          router.push("/signin");
-        }, 2000);
-      }
-    } catch (err) {
-      setError("Something went wrong. Please try again.");
+      setSuccess(payload?.message ?? "Account created successfully. Redirecting to login...");
+      setTimeout(() => router.push("/signin"), 2000);
+    } catch (err: any) {
+      setError(err?.message || "Registration failed.");
     } finally {
       setLoading(false);
     }

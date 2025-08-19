@@ -11,6 +11,7 @@ import Link from "next/link";
 import Image from "next/image";
 
 const SingleGridItem = ({ item }: { item: Product }) => {
+
   const { openModal } = useModalContext();
 
   const dispatch = useDispatch<AppDispatch>();
@@ -39,6 +40,7 @@ const SingleGridItem = ({ item }: { item: Product }) => {
       })
     );
   };
+  
 
   return (
     <div className="group">
