@@ -1,7 +1,9 @@
 // lib/services/productDetailsService.ts
 import { api } from "@/lib/api";
 
-const base = "/b/products"; // 👈 pasa por app/api/b/[...path]/route.ts
+/** ===== Bases ===== */
+const basePublic = "/p/products"; // pasa por app/api/p/[...path]/route.ts (público)
+const baseAdmin  = "/b/products"; // pasa por app/api/b/[...path]/route.ts (con Bearer)
 
 /** ===== Tipos mínimos del endpoint /products/:id/details ===== */
 type ImageSet = { thumbnails: string[]; previews: string[] };
@@ -75,8 +77,8 @@ export type NormalizedProduct = {
   inStock: boolean;
 };
 
-/** ===== Llamadas ===== */
-function getRaw(id: number) {
+/** ===== Fetchers ===== */
+function getRawFrom(base: string, id: number) {
   return api.get<ProductDetailsRaw>(`${base}/${id}/details`);
 }
 
@@ -88,7 +90,7 @@ function normalize(p: ProductDetailsRaw): NormalizedProduct {
   if (p.hasVariants) {
     const pv = p as APIProductWithVariants;
 
-    const variants: NormalizedVariant[] = (pv.variants ?? []).map(v => {
+    const variants: NormalizedVariant[] = (pv.variants ?? []).map((v) => {
       const price = money(v.price);
       const discounted = money(v.discountedPrice ?? v.price);
       const images =
@@ -104,9 +106,9 @@ function normalize(p: ProductDetailsRaw): NormalizedProduct {
       };
     });
 
-    const prices = variants.map(v => v.price);
-    const discounts = variants.map(v => v.discountedPrice);
-    const stocks = variants.map(v => v.stock);
+    const prices = variants.map((v) => v.price);
+    const discounts = variants.map((v) => v.discountedPrice);
+    const stocks = variants.map((v) => v.stock);
 
     const min = prices.length ? Math.min(...prices) : 0;
     const max = prices.length ? Math.max(...prices) : 0;
@@ -149,17 +151,38 @@ function normalize(p: ProductDetailsRaw): NormalizedProduct {
       variants: [],
       price,
       discountedPrice: discounted,
-      priceRange: { min: price, max: price, minDiscounted: discounted, maxDiscounted: discounted },
+      priceRange: {
+        min: price,
+        max: price,
+        minDiscounted: discounted,
+        maxDiscounted: discounted,
+      },
       stockTotal: stock,
       inStock: stock > 0,
     };
   }
 }
 
-export const productDetailsService = {
-  getRaw,
+/** ===== Servicios ===== */
+export const productDetailsPublicService = {
+  getRaw(id: number) {
+    return getRawFrom(basePublic, id);
+  },
   async getNormalized(id: number): Promise<NormalizedProduct> {
-    const raw = await getRaw(id);
+    const raw = await getRawFrom(basePublic, id);
     return normalize(raw);
   },
 };
+
+export const productDetailsAdminService = {
+  getRaw(id: number) {
+    return getRawFrom(baseAdmin, id);
+  },
+  async getNormalized(id: number): Promise<NormalizedProduct> {
+    const raw = await getRawFrom(baseAdmin, id);
+    return normalize(raw);
+  },
+};
+
+/** Alias para compatibilidad: mantiene el comportamiento previo (admin) */
+export const productDetailsService = productDetailsAdminService;

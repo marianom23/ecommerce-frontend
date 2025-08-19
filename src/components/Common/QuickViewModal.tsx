@@ -9,7 +9,7 @@ import Image from "next/image";
 import { usePreviewSlider } from "@/app/context/PreviewSliderContext";
 import { updateproductDetails } from "@/redux/features/product-details";
 import {
-  productDetailsService,
+  productDetailsPublicService,
   type NormalizedProduct,
   type NormalizedVariant,
 } from "@/services/productDetailsService";
@@ -120,7 +120,7 @@ const QuickViewModal = () => {
 
     (async () => {
       try {
-        const d = await productDetailsService.getNormalized(product.id);
+        const d = await productDetailsPublicService.getNormalized(product.id);
         if (cancelled) return;
         setDetails(d);
         // Preseleccionar variante por defecto si aplica

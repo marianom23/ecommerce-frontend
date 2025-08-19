@@ -4,15 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Breadcrumb from "@/components/Common/Breadcrumb";
-import { ROUTES } from "@/constants/routes";
-import { api } from "@/lib/api";
-
-// Tip opcional si querés tipar la respuesta
-type ServiceResult<T> = {
-  message: string | null;
-  data: T | null;
-  status: string; // "OK" | "CREATED" | "BAD_REQUEST" | ...
-};
+import { registerService } from "@/services/RegisterService";
 
 const Signup = () => {
   const router = useRouter();
@@ -45,7 +37,7 @@ const Signup = () => {
 
     setLoading(true);
     try {
-      const payload = await api.post<ServiceResult<unknown>>(ROUTES.REGISTER, {
+      const payload = await registerService.register({
         email: formData.email,
         password: formData.password,
         firstName: formData.firstName,
