@@ -3,10 +3,11 @@ import React from "react";
 import { Product } from "@/types/product";
 import { useModalContext } from "@/app/context/QuickViewModalContext";
 import { updateQuickView } from "@/redux/features/quickView-slice";
-import { addItemToCart } from "@/redux/features/cart-slice";
+import { addCartItem } from "@/redux/features/cart-slice";
 import { addItemToWishlist } from "@/redux/features/wishlist-slice";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/redux/store";
+import toast from "react-hot-toast";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -21,15 +22,21 @@ const SingleGridItem = ({ item }: { item: Product }) => {
     dispatch(updateQuickView({ ...item }));
   };
 
-  // add to cart
-  const handleAddToCart = () => {
-    dispatch(
-      addItemToCart({
-        ...item,
-        quantity: 1,
-      })
-    );
+  const shouldOpenVariantPicker = (p: Product) =>
+    p.variantCount === 0 || p.variantCount > 1 || p.defaultVariantId == null;
+
+  const handleAddToCart = async () => {
+    if (shouldOpenVariantPicker(item)) {
+      dispatch(updateQuickView({ ...item }));
+      openModal();
+      toast("Debes elegir una variante del producto", {
+        icon: "👈",
+      });
+      return;
+    }
+    await dispatch(addCartItem({ productId: item.id, variantId: item.defaultVariantId!, quantity: 1 }));
   };
+
 
   const handleItemToWishList = () => {
     dispatch(

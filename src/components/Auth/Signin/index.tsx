@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Breadcrumb from "@/components/Common/Breadcrumb";
 import { signIn } from "next-auth/react";
+import { cartService } from "@/services/cartService"; 
 
 const Signin = () => {
   const router = useRouter();
@@ -42,6 +43,16 @@ const Signin = () => {
         setError(result.error);
       } else {
         setSuccess("Signed in successfully. Redirecting…");
+
+        // 👇 Llamamos a attachCart después de loguearse
+        try {
+          await cartService.attachCart();
+          console.log("Cart attached successfully");
+        } catch (err) {
+          console.error("Error attaching cart:", err);
+          // No bloqueamos el flujo aunque falle
+        }
+
         router.replace("/");
       }
 

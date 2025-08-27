@@ -4,7 +4,7 @@ import React from "react";
 import { Product } from "@/types/product";
 import { useModalContext } from "@/app/context/QuickViewModalContext";
 import { updateQuickView } from "@/redux/features/quickView-slice";
-import { addItemToCart } from "@/redux/features/cart-slice";
+import { addCartItem } from "@/redux/features/cart-slice";
 import { addItemToWishlist } from "@/redux/features/wishlist-slice";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/redux/store";
@@ -23,8 +23,9 @@ const SingleListItem = ({ item }: { item: Product }) => {
   // add to cart
   const handleAddToCart = () => {
     dispatch(
-      addItemToCart({
-        ...item,
+      addCartItem({
+        productId: item.id,          // <-- aquí asegúrate que `Product` tiene `id`
+        // variantId: item?.variantId,  // opcional, si tu modelo lo usa
         quantity: 1,
       })
     );

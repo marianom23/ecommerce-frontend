@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useState } from "react";
 
 import { useModalContext } from "@/app/context/QuickViewModalContext";
 import { AppDispatch, useAppSelector } from "@/redux/store";
-import { addItemToCart } from "@/redux/features/cart-slice";
+import { addCartItem } from "@/redux/features/cart-slice";
 import { useDispatch } from "react-redux";
 import Image from "next/image";
 import { usePreviewSlider } from "@/app/context/PreviewSliderContext";
@@ -166,12 +166,33 @@ const QuickViewModal = () => {
   };
 
   // add to cart
-  const handleAddToCart = () => {
-    if (!product) return;
-    const item = buildCartItem(details, product, quantity, selectedVariant);
-    dispatch(addItemToCart(item));
-    closeModal();
+  const handleAddToCart = async () => {
+    const productId = details?.id ?? product?.id;
+    if (!productId) return;
+
+    // si el producto tiene variantes, necesitamos una seleccionada
+    const variantId =
+      details?.hasVariants ? (selectedVariantId ?? undefined) : undefined;
+
+    // (opcional) guard extra: si requiere variante y no está elegida, no intentes postear
+    if (details?.hasVariants && !variantId) {
+      // toast.warn?.("Elegí una variante antes de agregar");
+      return;
+    }
+
+    const action = await dispatch(
+      addCartItem({
+        productId,
+        variantId,         // solo viaja si existe
+        quantity,          // usa el estado actual
+      })
+    );
+
+    // feedback opcional
+    // if (addCartItem.fulfilled.match(action)) toast.success("Producto agregado");
+    // else if (!((action.payload as any)?.data?.code === "NEEDS_VARIANT")) toast.error((action.payload as any)?.message ?? "Error");
   };
+
 
   // cerrar por click afuera
   useEffect(() => {

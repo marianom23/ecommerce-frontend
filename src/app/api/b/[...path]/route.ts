@@ -20,14 +20,25 @@ async function forward(req: NextRequest, path: string[]) {
     headers: {
       Authorization: `Bearer ${jwt}`,
       "Content-Type": req.headers.get("content-type") ?? "",
+      Cookie: req.headers.get("cookie") ?? "",           // 👈 reenviá cookies del usuario al backend
     },
     body: ["GET","HEAD"].includes(req.method) ? undefined : await req.arrayBuffer(),
     cache: "no-store",
   });
 
-  const text = await r.text();
-  return new NextResponse(text, {
-    status: r.status,
-    headers: { "Content-Type": r.headers.get("content-type") ?? "application/json" },
+  // devolvé el body en streaming y TODOS los headers, incluyendo Set-Cookie
+  const resp = new NextResponse(r.body, { status: r.status });
+
+  // ⚠️ Set-Cookie puede venir múltiple. Usá append, no set.
+  r.headers.forEach((value, key) => {
+    if (key.toLowerCase() === "set-cookie") {
+      // Algunos runtimes agrupan varios Set-Cookie en una sola línea separada por coma.
+      // Esto los separa de forma segura: cada cookie tiene un "name=value" sin coma después del '='
+      value.split(/,(?=[^;]+=[^;]+)/g).forEach(v => resp.headers.append("set-cookie", v));
+    } else {
+      resp.headers.set(key, value);
+    }
   });
+
+  return resp;
 }

@@ -49,7 +49,13 @@ async function forward(req: NextRequest, path: string[]) {
   try {
     const r = await fetch(target, init);
     const resp = new NextResponse(r.body, { status: r.status });
-    r.headers.forEach((v, k) => resp.headers.set(k, v));
+    r.headers.forEach((v, k) => {
+      if (k.toLowerCase() === "set-cookie") {
+        v.split(/,(?=[^;]+=[^;]+)/g).forEach(c => resp.headers.append("set-cookie", c));
+      } else {
+        resp.headers.set(k, v);
+      }
+    });
     resp.headers.set("x-proxy-target", target); // para debug en Network
     return resp;
   } catch (e: any) {

@@ -5,10 +5,11 @@ import CustomSelect from "./CustomSelect";
 import { menuData } from "./menuData";
 import { useSession, signOut } from "next-auth/react";
 import Dropdown from "./Dropdown";
-import { useAppSelector } from "@/redux/store";
+// import { useAppSelector } from "@/redux/store";
 import { useSelector } from "react-redux";
-import { selectTotalPrice } from "@/redux/features/cart-slice";
+import { selectTotalPrice, selectItemsCount } from "@/redux/features/cart-slice";
 import { useCartModalContext } from "@/app/context/CartSidebarModalContext";
+
 import Image from "next/image";
 
 const Header = () => {
@@ -18,8 +19,9 @@ const Header = () => {
   const [stickyMenu, setStickyMenu] = useState(false);
   const { openCartModal } = useCartModalContext();
 
-  const product = useAppSelector((state) => state.cartReducer.items);
+  // const product = useAppSelector((state) => state.cartReducer.items);
   const totalPrice = useSelector(selectTotalPrice);
+  const totalItems = useSelector(selectItemsCount);
 
   const handleOpenCartModal = () => {
     openCartModal();
@@ -284,7 +286,7 @@ const Header = () => {
                     </svg>
 
                     <span className="flex items-center justify-center font-medium text-2xs absolute -right-2 -top-2.5 bg-blue w-4.5 h-4.5 rounded-full text-white">
-                      {product.length}
+                      {totalItems}
                     </span>
                   </span>
 

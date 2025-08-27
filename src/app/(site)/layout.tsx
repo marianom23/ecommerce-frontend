@@ -17,6 +17,9 @@ import PreviewSliderModal from "@/components/Common/PreviewSlider";
 import ScrollToTop from "@/components/Common/ScrollToTop";
 import PreLoader from "@/components/Common/PreLoader";
 
+// 👇 importa el Toaster
+import { Toaster } from "react-hot-toast";
+
 export default function RootLayout({
   children,
 }: {
@@ -41,16 +44,28 @@ export default function RootLayout({
                   <ModalProvider>
                     <PreviewSliderProvider>
                       <Header />
-                        {children}
-                          <QuickViewModal />
-                            <CartSidebarModal />
-                          <PreviewSliderModal />
-                        </PreviewSliderProvider>
-                      </ModalProvider>
-                    </CartModalProvider>
-                  </ReduxProvider>
-                </SessionProvider>
-              <ScrollToTop />
+                      {children}
+                      <QuickViewModal />
+                      <CartSidebarModal />
+                      <PreviewSliderModal />
+                    </PreviewSliderProvider>
+                  </ModalProvider>
+                </CartModalProvider>
+              </ReduxProvider>
+            </SessionProvider>
+
+            {/* react hot toast */}
+            <Toaster
+              position="top-right"
+              containerStyle={{ zIndex: 2147483647 }}
+              toastOptions={{
+                duration: 3000,
+                style: { background: "#111827", color: "#fff" }, // tailwind gray-900
+                success: { iconTheme: { primary: '#10B981', secondary: '#fff' } },
+                error:   { iconTheme: { primary: '#EF4444', secondary: '#fff' } },
+              }}
+            />
+            <ScrollToTop />
             <Footer />
           </>
         )}

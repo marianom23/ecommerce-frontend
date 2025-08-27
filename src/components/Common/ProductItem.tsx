@@ -4,28 +4,30 @@ import Image from "next/image";
 import { Product } from "@/types/product";
 import { useModalContext } from "@/app/context/QuickViewModalContext";
 import { updateQuickView } from "@/redux/features/quickView-slice";
-import { addItemToCart } from "@/redux/features/cart-slice";
 import { addItemToWishlist } from "@/redux/features/wishlist-slice";
 import { updateproductDetails } from "@/redux/features/product-details";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/redux/store";
 import Link from "next/link";
 
+// nuevo import desde tu slice actualizado
+import { addCartItem } from "@/redux/features/cart-slice";
+
 const ProductItem = ({ item }: { item: Product }) => {
   const { openModal } = useModalContext();
-
   const dispatch = useDispatch<AppDispatch>();
 
-  // update the QuickView state
+  // Quick View
   const handleQuickViewUpdate = () => {
     dispatch(updateQuickView({ ...item }));
   };
 
-  // add to cart
+  // Nuevo: addCartItem usa productId, variantId opcional y quantity
   const handleAddToCart = () => {
     dispatch(
-      addItemToCart({
-        ...item,
+      addCartItem({
+        productId: item.id,          // <-- aquí asegúrate que `Product` tiene `id`
+        // variantId: item?.variantId,  // opcional, si tu modelo lo usa
         quantity: 1,
       })
     );

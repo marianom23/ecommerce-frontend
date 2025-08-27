@@ -6,7 +6,8 @@ import SingleGridItem from "../Shop/SingleGridItem";
 import SingleListItem from "../Shop/SingleListItem";
 import CustomSelect from "../ShopWithSidebar/CustomSelect";
 
-import { productService, type Product } from "@/services/productService";
+import { productService } from "@/services/productService";
+import { type Product } from "@/types/product";
 import type { PaginatedResponse } from "@/lib/api";
 
 const ShopWithoutSidebar = () => {
@@ -53,6 +54,8 @@ const ShopWithoutSidebar = () => {
           limit: pageSize, // tu back lo recibe como "limit" pero responde "pageSize"
           sort: sortParam,
         });
+
+        console.log("productos: ", res);
 
         // api.get ya devuelve el .data adentro del ServiceResult
         const payload = res as PaginatedResponse<Product>;

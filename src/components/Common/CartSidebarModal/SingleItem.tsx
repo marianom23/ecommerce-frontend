@@ -1,27 +1,103 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/redux/store";
 import Image from "next/image";
+import { decrementCartItem, incrementCartItem, removeCartItem } from "@/redux/features/cart-slice";
 
-const SingleItem = ({ item, removeItemFromCart }) => {
+type SingleItemProps = {
+  item: {
+    id: number;                 // cart_item id
+    productId: number;
+    variantId?: number | null;
+    name: string;
+    imageUrl?: string | null;
+    attributesJson?: string | null;
+    unitPrice: number;
+    unitDiscountedPrice: number;
+    quantity: number;
+    subtotal: number;           // unitDiscountedPrice * quantity (del backend)
+  };
+};
+
+const currency = new Intl.NumberFormat("es-AR", {
+  style: "currency",
+  currency: "ARS",
+  maximumFractionDigits: 2,
+});
+
+const SingleItem: React.FC<SingleItemProps> = ({ item }) => {
   const dispatch = useDispatch<AppDispatch>();
 
-  const handleRemoveFromCart = () => {
-    dispatch(removeItemFromCart(item.id));
-  };
+  const handleRemoveFromCart = () => dispatch(removeCartItem(item.id));
+  const handleIncrease = () => dispatch(incrementCartItem(item.id));
+  const handleDecrease = () => { if (item.quantity > 1) dispatch(decrementCartItem(item.id)); };
+
+  // Parsear atributos si vienen (size, color, etc.)
+  const attributes = useMemo(() => {
+    try {
+      return item.attributesJson ? JSON.parse(item.attributesJson) as Record<string, string> : null;
+    } catch {
+      return null;
+    }
+  }, [item.attributesJson]);
 
   return (
     <div className="flex items-center justify-between gap-5">
       <div className="w-full flex items-center gap-6">
-        <div className="flex items-center justify-center rounded-[10px] bg-gray-3 max-w-[90px] w-full h-22.5">
-          <Image src={item.imgs?.thumbnails[0]} alt="product" width={100} height={100} />
+        <div className="flex items-center justify-center rounded-[10px] bg-gray-3 max-w-[90px] w-full h-22.5 overflow-hidden">
+          <Image
+            src={item.imageUrl || "/placeholder.png"}
+            alt={item.name}
+            width={100}
+            height={100}
+          />
         </div>
 
-        <div>
-          <h3 className="font-medium text-dark mb-1 ease-out duration-200 hover:text-blue">
-            <a href="#"> {item.title} </a>
+        <div className="min-w-0">
+          <h3 className="font-medium text-dark mb-1 truncate">
+            <a href="#">{item.name}</a>
           </h3>
-          <p className="text-custom-sm">Price: ${item.discountedPrice}</p>
+
+          {/* Atributos (opcional) */}
+          {attributes && (
+            <p className="text-xs text-gray-600 mb-1">
+              {Object.entries(attributes)
+                .map(([k, v]) => `${k}: ${v}`)
+                .join(" • ")}
+            </p>
+          )}
+
+          <div className="flex items-center gap-3 flex-wrap">
+            <p className="text-custom-sm">
+              Precio: {currency.format(item.unitDiscountedPrice)}
+            </p>
+            <span className="text-custom-sm text-gray-600">•</span>
+
+            {/* Controles de cantidad */}
+            <div className="flex items-center gap-2" aria-label="Controles de cantidad">
+              <button
+                onClick={handleDecrease}
+                aria-label="Disminuir cantidad"
+                disabled={item.quantity <= 1}
+                className="w-8 h-8 border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-40"
+              >
+                –
+              </button>
+              <span aria-live="polite" className="min-w-6 text-center">{item.quantity}</span>
+              <button
+                onClick={handleIncrease}
+                aria-label="Aumentar cantidad"
+                className="w-8 h-8 border border-gray-300 rounded hover:bg-gray-100"
+              >
+                +
+              </button>
+            </div>
+
+            {/* Subtotal por ítem */}
+            <span className="text-custom-sm text-gray-700">
+              Subtotal: {currency.format(item.subtotal)}
+            </span>
+          </div>
         </div>
       </div>
 

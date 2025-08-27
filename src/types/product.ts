@@ -8,4 +8,6 @@ export type Product = {
     thumbnails: string[];
     previews: string[];
   };
+  variantCount: number;
+  defaultVariantId: number | null;
 };
