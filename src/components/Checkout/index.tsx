@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import Breadcrumb from "../Common/Breadcrumb";
+import { useSession } from "next-auth/react";
 import Login from "./Login";
 import Shipping from "./Shipping";
 import ShippingMethod from "./ShippingMethod";
@@ -9,6 +10,11 @@ import Coupon from "./Coupon";
 import Billing from "./Billing";
 
 const Checkout = () => {
+
+  const { status } = useSession();
+  const canSubmit = status === "authenticated"; // más adelante sumás validaciones
+
+
   return (
     <>
       <Breadcrumb title={"Checkout"} pages={["checkout"]} />
@@ -134,7 +140,11 @@ const Checkout = () => {
                 {/* <!-- checkout button --> */}
                 <button
                   type="submit"
-                  className="w-full flex justify-center font-medium text-white bg-blue py-3 px-6 rounded-md ease-out duration-200 hover:bg-blue-dark mt-7.5"
+                  disabled={!canSubmit}
+                  className={`w-full flex justify-center font-medium text-white bg-blue py-3 px-6 rounded-md ease-out duration-200 hover:bg-blue-dark mt-7.5 ${
+                    !canSubmit ? "opacity-60 cursor-not-allowed hover:bg-blue" : ""
+                  }`}
+                  title={!canSubmit ? "Iniciá sesión para continuar" : ""}
                 >
                   Process to Checkout
                 </button>
