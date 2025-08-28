@@ -37,7 +37,7 @@ const ShippingForm: React.FC<{
   return (
     <div className="bg-white shadow-1 rounded-[10px] p-4 sm:p-8.5">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="font-medium text-lg text-dark">Cargar dirección de facturación</h3>
+        <h3 className="font-medium text-lg text-dark">Cargar dirección de envío</h3>
         {onCancel && (
           <button type="button" onClick={onCancel} className="text-blue text-sm">Cancelar</button>
         )}

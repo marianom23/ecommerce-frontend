@@ -1,15 +1,22 @@
 "use client";
-import React from "react";
+import React, {useState} from "react";
 import Breadcrumb from "../Common/Breadcrumb";
 import { useSession } from "next-auth/react";
 import Login from "./Login";
-import Shipping from "./Shipping";
+import Shipping from "./ShippingContainer";
 import ShippingMethod from "./ShippingMethod";
 import PaymentMethod from "./PaymentMethod";
 import Coupon from "./Coupon";
-import Billing from "./Billing";
+import Billing from "./BillingContainer";
+import BillingProfileContainer from "./BillingProfileContainer";
+import { AddressResponse } from "@/services/addressService";
+import { BillingProfileResponse } from "@/services/billingProfileService";
 
 const Checkout = () => {
+
+  const [shippingSelected, setShippingSelected] = useState<AddressResponse | null>(null);
+  const [billingAddressSelected, setBillingAddressSelected] = useState<AddressResponse | null>(null);
+  const [billingProfileSelected, setBillingProfileSelected] = useState<BillingProfileResponse | null>(null);
 
   const { status } = useSession();
   const canSubmit = status === "authenticated"; // más adelante sumás validaciones
@@ -28,7 +35,12 @@ const Checkout = () => {
                 <Login />
 
                 {/* <!-- billing details --> */}
-                <Billing />
+                <Billing onSelected={setBillingAddressSelected} />
+
+                <BillingProfileContainer
+                  billingAddressId={billingAddressSelected?.id ?? null}
+                  onSelected={setBillingProfileSelected}
+                />
 
                 {/* <!-- address box two --> */}
                 <Shipping />
@@ -140,11 +152,11 @@ const Checkout = () => {
                 {/* <!-- checkout button --> */}
                 <button
                   type="submit"
-                  disabled={!canSubmit}
-                  className={`w-full flex justify-center font-medium text-white bg-blue py-3 px-6 rounded-md ease-out duration-200 hover:bg-blue-dark mt-7.5 ${
-                    !canSubmit ? "opacity-60 cursor-not-allowed hover:bg-blue" : ""
+                  disabled={!shippingSelected || !billingAddressSelected || !billingProfileSelected}
+                  className={`w-full flex justify-center font-medium text-white bg-blue py-3 px-6 rounded-md mt-7.5 ${
+                    !shippingSelected || !billingAddressSelected || !billingProfileSelected
+                      ? "opacity-60 cursor-not-allowed" : ""
                   }`}
-                  title={!canSubmit ? "Iniciá sesión para continuar" : ""}
                 >
                   Process to Checkout
                 </button>

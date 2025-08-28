@@ -36,9 +36,9 @@ const ShippingContainer: React.FC<Props> = ({ onSelected }) => {
   if (status !== "authenticated") {
     return (
       <div className="mt-9">
-        <h2 className="font-medium text-dark text-xl sm:text-2xl mb-5.5">Billing details</h2>
+        <h2 className="font-medium text-dark text-xl sm:text-2xl mb-5.5">Shipping details</h2>
         <div className="bg-white shadow-1 rounded-[10px] p-4 sm:p-8.5">
-          <p className="text-dark mb-4">Iniciá sesión para cargar tu dirección de facturación.</p>
+          <p className="text-dark mb-4">Iniciá sesión para cargar tu dirección de envío.</p>
           <button
             type="button"
             onClick={() => signIn(undefined, { callbackUrl: "/checkout" })}
