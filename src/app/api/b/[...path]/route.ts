@@ -5,6 +5,10 @@ export async function GET(req: NextRequest, ctx: { params: { path: string[] } })
 export async function POST(req: NextRequest, ctx: { params: { path: string[] } }) { return forward(req, ctx.params.path); }
 export async function PUT(req: NextRequest, ctx: { params: { path: string[] } })  { return forward(req, ctx.params.path); }
 export async function DELETE(req: NextRequest, ctx: { params: { path: string[] } }){ return forward(req, ctx.params.path); }
+export async function PATCH(req: NextRequest, ctx: { params: { path: string[] } }) { return forward(req, ctx.params.path); }
+
+export async function OPTIONS(req: NextRequest, ctx: { params: { path: string[] } }) { return forward(req, ctx.params.path); }
+
 
 async function forward(req: NextRequest, path: string[]) {
   const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });

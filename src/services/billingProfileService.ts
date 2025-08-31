@@ -48,7 +48,6 @@ export const billingProfileService = {
     return api.get<BillingProfileResponse>(`${base}/${id}`);
   },
   create(payload: BillingProfileRequest) {
-    console.log("payload: ", payload);
     return api.post<BillingProfileResponse>(base, payload);
   },
   update(id: number, payload: BillingProfileRequest) {

@@ -4,19 +4,26 @@ import { useSession, signIn } from "next-auth/react";
 import { AddressResponse, addressService } from "@/services/addressService";
 import ShippingForm from "./ShippingForm";
 import ShippingList from "./ShippingList";
+import { orderService } from "@/services/orderService";
 
 type Props = {
+  orderId?: number | null;
   onSelected?: (addr: AddressResponse | null) => void; // para que Checkout sepa cuál eligió
 };
 
-const ShippingContainer: React.FC<Props> = ({ onSelected }) => {
+const ShippingContainer: React.FC<Props> = ({ orderId, onSelected }) => {
   const { status } = useSession();
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false); // mientras parcheamos en la orden
   const [list, setList] = useState<AddressResponse[]>([]);
-  const [mode, setMode] = useState<"list" | "form">("list"); // qué muestro
+  const [mode, setMode] = useState<"list" | "form">("list");
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const [okMsg, setOkMsg] = useState<string | null>(null);
 
   async function load() {
+    setErr(null);
+    setOkMsg(null);
     setLoading(true);
     try {
       const res = await addressService.list("SHIPPING");
@@ -24,21 +31,49 @@ const ShippingContainer: React.FC<Props> = ({ onSelected }) => {
       const first = res[0] ?? null;
       setSelectedId(first?.id ?? null);
       onSelected?.(first);
-      // si no hay direcciones ⇒ mostrar form; si hay ⇒ lista
       setMode(res.length ? "list" : "form");
     } finally {
       setLoading(false);
     }
   }
 
-  useEffect(() => { if (status === "authenticated") load(); }, [status]);
+  async function applyToOrder(addr: AddressResponse) {
+    if (!orderId) return; // todavía no hay orderId (por ejemplo si entró directo a /checkout)
+    setErr(null);
+    setOkMsg(null);
+    setSaving(true);
+    try {
+      await orderService.patchShippingAddress(orderId, {
+        shippingAddressId: addr.id,
+        // si más adelante pedís recipientName/phone, los mandás acá
+      });
+      setOkMsg("Dirección de envío aplicada a la orden ✓");
+      onSelected?.(addr);
+    } catch (e: any) {
+      setErr(
+        e?.response?.data?.message ||
+          e?.message ||
+          "No se pudo aplicar la dirección a la orden."
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  useEffect(() => {
+    if (status === "authenticated") load();
+  }, [status]);
 
   if (status !== "authenticated") {
     return (
       <div className="mt-9">
-        <h2 className="font-medium text-dark text-xl sm:text-2xl mb-5.5">Shipping details</h2>
+        <h2 className="font-medium text-dark text-xl sm:text-2xl mb-5.5">
+          Shipping details
+        </h2>
         <div className="bg-white shadow-1 rounded-[10px] p-4 sm:p-8.5">
-          <p className="text-dark mb-4">Iniciá sesión para cargar tu dirección de envío.</p>
+          <p className="text-dark mb-4">
+            Iniciá sesión para cargar tu dirección de envío.
+          </p>
           <button
             type="button"
             onClick={() => signIn(undefined, { callbackUrl: "/checkout" })}
@@ -53,15 +88,31 @@ const ShippingContainer: React.FC<Props> = ({ onSelected }) => {
 
   return (
     <div className="mt-9">
-      <h2 className="font-medium text-dark text-xl sm:text-2xl mb-5.5">Shipping details</h2>
+      <h2 className="font-medium text-dark text-xl sm:text-2xl mb-5.5">
+        Shipping details
+      </h2>
+
+      {err && (
+        <div className="bg-red-50 border border-red-200 text-red-700 rounded-md p-3 mb-3 text-sm">
+          {err}
+        </div>
+      )}
+      {okMsg && (
+        <div className="bg-green-50 border border-green-200 text-green-700 rounded-md p-3 mb-3 text-sm">
+          {okMsg}
+        </div>
+      )}
 
       {mode === "list" && (
         <ShippingList
           title="Datos de envío"
-          loading={loading}
+          loading={loading || saving}
           addresses={list}
           selectedId={selectedId}
-          onSelect={(a) => { setSelectedId(a?.id ?? null); onSelected?.(a); }}
+          onSelect={async (a) => {
+            setSelectedId(a?.id ?? null);
+            if (a) await applyToOrder(a); // ⬅️ parchea la orden
+          }}
           onAddNew={() => setMode("form")}
         />
       )}
@@ -69,10 +120,9 @@ const ShippingContainer: React.FC<Props> = ({ onSelected }) => {
       {mode === "form" && (
         <ShippingForm
           onSaved={async (created) => {
-            // recargo, vuelvo a lista, y dejo seleccionada la nueva
             await load();
             setSelectedId(created.id);
-            onSelected?.(created);
+            await applyToOrder(created); // ⬅️ también al crear nueva
             setMode("list");
           }}
           onCancel={() => setMode(list.length ? "list" : "form")}

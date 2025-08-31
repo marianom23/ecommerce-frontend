@@ -37,7 +37,7 @@ function formatMoney(n?: number, currency = "ARS") {
   }
 }
 
-const OrderList: React.FC<{
+const OrderListBox: React.FC<{
   className?: string;
   /** Si querés forzar refresh externo (p.ej. al aplicar cupón o cambiar envío) */
   reloadKey?: number | string;
@@ -170,4 +170,4 @@ const OrderList: React.FC<{
   );
 };
 
-export default OrderList;
+export default OrderListBox;

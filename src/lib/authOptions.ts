@@ -1,13 +1,12 @@
-// src/lib/authOptions.ts
 import GoogleProvider from "next-auth/providers/google";
 import AzureADProvider from "next-auth/providers/azure-ad";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { AuthOptions } from "next-auth";
-import { JWT } from "next-auth/jwt";
-import { Account, Profile, Session } from "next-auth";
+import type { AuthOptions } from "next-auth";
+import type { JWT } from "next-auth/jwt";
+import type { Account, Profile, Session } from "next-auth";
 
 export const authOptions: AuthOptions = {
-  secret: process.env.NEXTAUTH_SECRET,                // ✅ importante
+  secret: process.env.NEXTAUTH_SECRET,
   session: { strategy: "jwt" },
 
   providers: [
@@ -51,15 +50,18 @@ export const authOptions: AuthOptions = {
   ],
 
   callbacks: {
-    async jwt({ token, user, account, profile }: {
+    async jwt({
+      token, user, account, profile,
+    }: {
       token: JWT;
       user?: any;
       account?: Account | null;
       profile?: Profile;
     }): Promise<JWT> {
+
       // ► Credenciales
       if (user) {
-        token.backendJwt = user.token;         // ⬅️ guardado solo en token
+        token.backendJwt = user.token;
         token.id = user.id;
         token.email = user.email;
         token.firstName = user.firstName;
@@ -71,8 +73,14 @@ export const authOptions: AuthOptions = {
       // ► OAuth
       if (account && profile && account.id_token) {
         const email = (profile as any).email;
-        const first = (profile as any).given_name || profile.name?.split(" ")[0] || "Usuario";
-        const last  = (profile as any).family_name || profile.name?.split(" ").slice(1).join(" ") || "OAuth";
+        const first =
+          (profile as any).given_name ||
+          profile.name?.split(" ")[0] ||
+          "Usuario";
+        const last =
+          (profile as any).family_name ||
+          profile.name?.split(" ").slice(1).join(" ") ||
+          "OAuth";
 
         try {
           const res = await fetch("http://localhost:8080/api/oauth2/callback", {
@@ -88,11 +96,16 @@ export const authOptions: AuthOptions = {
           });
 
           const payload = await res.json();
-          const { status, data, message } = payload as { status: string; data?: any; message?: string };
+          const { status, data, message } = payload as {
+            status: string;
+            data?: any;
+            message?: string;
+          };
 
-          if (!res.ok || status !== "OK" || !data) throw new Error(message || "OAuth login failed");
+          if (!res.ok || status !== "OK" || !data)
+            throw new Error(message || "OAuth login failed");
 
-          token.backendJwt = data.token;       // ⬅️ guardado solo en token
+          token.backendJwt = data.token;
           token.id = data.id;
           token.email = data.email ?? email;
           token.firstName = data.firstName ?? first;
@@ -101,14 +114,18 @@ export const authOptions: AuthOptions = {
           token.verified = data.verified ?? true;
         } catch (e) {
           console.error("OAuth login error:", e);
-          throw new Error("OAuth login failed");
+          // ⚠️ Importante: NO tirar throw acá. Si rompés, NextAuth manda error=OAuthCallback
+          (token as any).oauthError = true;
         }
       }
 
       return token;
     },
 
-    async session({ session, token }: {
+    async session({
+      session,
+      token,
+    }: {
       session: Session;
       token: JWT & {
         backendJwt?: string;
@@ -121,7 +138,6 @@ export const authOptions: AuthOptions = {
       };
     }): Promise<Session> {
       // ❌ NO exponer backendJwt al cliente
-      // (session as any).backendJwt = undefined;  // o simplemente no lo seteamos
 
       // ✅ Solo datos de UI
       session.user = {

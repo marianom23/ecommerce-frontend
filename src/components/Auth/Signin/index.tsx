@@ -1,4 +1,3 @@
-// src/app/login/page.tsx
 "use client";
 
 import React, { useState } from "react";
@@ -6,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Breadcrumb from "@/components/Common/Breadcrumb";
 import { signIn } from "next-auth/react";
-import { cartService } from "@/services/cartService"; 
 
 const Signin = () => {
   const router = useRouter();
@@ -33,37 +31,27 @@ const Signin = () => {
     setLoading(true);
 
     try {
-      const result = await signIn("credentials", {
-        redirect: false,
+      await signIn("credentials", {
+        redirect: true,
+        callbackUrl: "/auth/post-login", // 👈 SIEMPRE post-login
         email: formData.email.trim().toLowerCase(),
         password: formData.password,
       });
-
-      if (result?.error) {
-        setError(result.error);
-      } else {
-        setSuccess("Signed in successfully. Redirecting…");
-
-        // 👇 Llamamos a attachCart después de loguearse
-        try {
-          await cartService.attachCart();
-          console.log("Cart attached successfully");
-        } catch (err) {
-          console.error("Error attaching cart:", err);
-          // No bloqueamos el flujo aunque falle
-        }
-
-        router.replace("/");
-      }
-
+      // No llega acá porque redirect=true
     } catch (err: any) {
       const msg = String(err?.message || "");
       setError(msg || "Could not sign in. Please try again.");
-    } finally {
       setLoading(false);
     }
   };
 
+  const handleSocial = (provider: "google" | "azure-ad") => {
+    setError("");
+    setSuccess("");
+    setLoading(true);
+    // Dejá que NextAuth haga su flujo OAuth y vuelva a /auth/post-login
+    signIn(provider, { callbackUrl: "/auth/post-login" });
+  };
 
   return (
     <>
@@ -133,8 +121,9 @@ const Signin = () => {
                 <div className="flex flex-col gap-4.5 mt-4.5">
                   <button
                     type="button"
-                    onClick={() => signIn("google")}
-                    className="flex justify-center items-center gap-3.5 rounded-lg border border-gray-3 bg-gray-1 p-3 ease-out duration-200 hover:bg-gray-2"
+                    onClick={() => handleSocial("google")}
+                    className="flex justify-center items-center gap-3.5 rounded-lg border border-gray-3 bg-gray-1 p-3 ease-out duration-200 hover:bg-gray-2 disabled:opacity-60"
+                    disabled={loading}
                   >
                     {/* SVG Google */}
                     <svg
@@ -185,8 +174,9 @@ const Signin = () => {
 
                   <button
                     type="button"
-                    onClick={() => signIn("azure-ad")}
-                    className="flex justify-center items-center gap-3.5 rounded-lg border border-gray-3 bg-gray-1 p-3 ease-out duration-200 hover:bg-gray-2"
+                    onClick={() => handleSocial("azure-ad")}
+                    className="flex justify-center items-center gap-3.5 rounded-lg border border-gray-3 bg-gray-1 p-3 ease-out duration-200 hover:bg-gray-2 disabled:opacity-60"
+                    disabled={loading}
                   >
                     {/* SVG Microsoft */}
                     <svg

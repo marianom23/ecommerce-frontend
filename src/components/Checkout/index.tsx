@@ -1,5 +1,5 @@
 "use client";
-import React, {useState} from "react";
+import React, { useState } from "react";
 import Breadcrumb from "../Common/Breadcrumb";
 import { useSession } from "next-auth/react";
 import Login from "./Login";
@@ -7,159 +7,143 @@ import Shipping from "./ShippingContainer";
 import ShippingMethod from "./ShippingMethod";
 import PaymentMethod from "./PaymentMethod";
 import Coupon from "./Coupon";
+import OrderList from "./OrderList";
 import Billing from "./BillingContainer";
 import BillingProfileContainer from "./BillingProfileContainer";
 import { AddressResponse } from "@/services/addressService";
 import { BillingProfileResponse } from "@/services/billingProfileService";
+import { useSearchParams, useRouter } from "next/navigation";
+import { orderService } from "@/services/orderService";
 
 const Checkout = () => {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const orderIdParam = searchParams.get("orderId");
+  const orderId = orderIdParam ? Number(orderIdParam) : null;
 
   const [shippingSelected, setShippingSelected] = useState<AddressResponse | null>(null);
   const [billingAddressSelected, setBillingAddressSelected] = useState<AddressResponse | null>(null);
   const [billingProfileSelected, setBillingProfileSelected] = useState<BillingProfileResponse | null>(null);
 
-  const { status } = useSession();
-  const canSubmit = status === "authenticated"; // más adelante sumás validaciones
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
 
+  const { status } = useSession();
+
+  const canSubmit = status === "authenticated";
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!orderId) return;
+    setErr(null);
+    setSaving(true);
+    try {
+      // Confirmá la orden. El service devuelve la orden directa (OrderResponse)
+      const order = await orderService.confirm(orderId, {
+        successUrl: `${window.location.origin}/checkout/success`,
+        failureUrl: `${window.location.origin}/checkout/failure`,
+        pendingUrl: `${window.location.origin}/checkout/pending`,
+        callbackUrl: `${window.location.origin}/api/payments/webhook`,
+      });
+
+      const redirect = order?.payment?.redirectUrl;
+      if (redirect) {
+        window.location.href = redirect;
+      } else {
+        // TRANSFER / CASH sin redirect: vamos a pending
+        router.push(`/checkout/pending?orderId=${orderId}`);
+      }
+    } catch (e: any) {
+      setErr(
+        e?.response?.data?.message ||
+          e?.message ||
+          "No se pudo confirmar la orden."
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <>
       <Breadcrumb title={"Checkout"} pages={["checkout"]} />
       <section className="overflow-hidden py-20 bg-gray-2">
         <div className="max-w-[1170px] w-full mx-auto px-4 sm:px-8 xl:px-0">
-          <form>
+          <form onSubmit={onSubmit}>
             <div className="flex flex-col lg:flex-row gap-7.5 xl:gap-11">
-              {/* <!-- checkout left --> */}
+              {/* left */}
               <div className="lg:max-w-[670px] w-full">
-                {/* <!-- login box --> */}
                 <Login />
-
-                {/* <!-- billing details --> */}
                 <Billing onSelected={setBillingAddressSelected} />
 
+                {/* Parchea la orden al elegir/crear perfil de facturación */}
                 <BillingProfileContainer
+                  orderId={orderId}
                   billingAddressId={billingAddressSelected?.id ?? null}
                   onSelected={setBillingProfileSelected}
                 />
 
-                {/* <!-- address box two --> */}
-                <Shipping />
+                {/* Parchea la orden al elegir/crear dirección de envío */}
+                <Shipping orderId={orderId} onSelected={setShippingSelected} />
 
-                {/* <!-- others note box --> */}
+                {/* Notas (opcional, si luego las querés enviar al back, agregá estado y PATCH) */}
                 <div className="bg-white shadow-1 rounded-[10px] p-4 sm:p-8.5 mt-7.5">
                   <div>
                     <label htmlFor="notes" className="block mb-2.5">
                       Other Notes (optional)
                     </label>
-
                     <textarea
-                      name="notes"
                       id="notes"
                       rows={5}
-                      placeholder="Notes about your order, e.g. speacial notes for delivery."
-                      className="rounded-md border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full p-5 outline-none duration-200 focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20"
-                    ></textarea>
+                      className="rounded-md border border-gray-3 bg-gray-1 w-full p-5 outline-none"
+                      placeholder="Notas sobre tu pedido (opcional)"
+                    />
                   </div>
                 </div>
               </div>
 
-              {/* // <!-- checkout right --> */}
+              {/* right */}
               <div className="max-w-[455px] w-full">
-                {/* <!-- order list box --> */}
-                <div className="bg-white shadow-1 rounded-[10px]">
-                  <div className="border-b border-gray-3 py-5 px-4 sm:px-8.5">
-                    <h3 className="font-medium text-xl text-dark">
-                      Your Order
-                    </h3>
-                  </div>
-
-                  <div className="pt-2.5 pb-8.5 px-4 sm:px-8.5">
-                    {/* <!-- title --> */}
-                    <div className="flex items-center justify-between py-5 border-b border-gray-3">
-                      <div>
-                        <h4 className="font-medium text-dark">Product</h4>
-                      </div>
-                      <div>
-                        <h4 className="font-medium text-dark text-right">
-                          Subtotal
-                        </h4>
-                      </div>
-                    </div>
-
-                    {/* <!-- product item --> */}
-                    <div className="flex items-center justify-between py-5 border-b border-gray-3">
-                      <div>
-                        <p className="text-dark">iPhone 14 Plus , 6/128GB</p>
-                      </div>
-                      <div>
-                        <p className="text-dark text-right">$899.00</p>
-                      </div>
-                    </div>
-
-                    {/* <!-- product item --> */}
-                    <div className="flex items-center justify-between py-5 border-b border-gray-3">
-                      <div>
-                        <p className="text-dark">Asus RT Dual Band Router</p>
-                      </div>
-                      <div>
-                        <p className="text-dark text-right">$129.00</p>
-                      </div>
-                    </div>
-
-                    {/* <!-- product item --> */}
-                    <div className="flex items-center justify-between py-5 border-b border-gray-3">
-                      <div>
-                        <p className="text-dark">Havit HV-G69 USB Gamepad</p>
-                      </div>
-                      <div>
-                        <p className="text-dark text-right">$29.00</p>
-                      </div>
-                    </div>
-
-                    {/* <!-- product item --> */}
-                    <div className="flex items-center justify-between py-5 border-b border-gray-3">
-                      <div>
-                        <p className="text-dark">Shipping Fee</p>
-                      </div>
-                      <div>
-                        <p className="text-dark text-right">$15.00</p>
-                      </div>
-                    </div>
-
-                    {/* <!-- total --> */}
-                    <div className="flex items-center justify-between pt-5">
-                      <div>
-                        <p className="font-medium text-lg text-dark">Total</p>
-                      </div>
-                      <div>
-                        <p className="font-medium text-lg text-dark text-right">
-                          $1072.00
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* <!-- coupon box --> */}
+                <OrderList />
+                <ShippingMethod />
                 <Coupon />
 
-                {/* <!-- shipping box --> */}
-                <ShippingMethod />
+                {/* Parchea método de pago al seleccionar */}
+                <PaymentMethod orderId={orderId} />
 
-                {/* <!-- payment box --> */}
-                <PaymentMethod />
+                {err && (
+                  <p className="text-red-600 text-sm mt-3">{err}</p>
+                )}
 
-                {/* <!-- checkout button --> */}
                 <button
                   type="submit"
-                  disabled={!shippingSelected || !billingAddressSelected || !billingProfileSelected}
+                  disabled={
+                    !canSubmit ||
+                    !orderId ||
+                    !billingAddressSelected ||
+                    !billingProfileSelected ||
+                    !shippingSelected ||
+                    saving
+                  }
                   className={`w-full flex justify-center font-medium text-white bg-blue py-3 px-6 rounded-md mt-7.5 ${
-                    !shippingSelected || !billingAddressSelected || !billingProfileSelected
-                      ? "opacity-60 cursor-not-allowed" : ""
+                    !canSubmit ||
+                    !orderId ||
+                    !billingAddressSelected ||
+                    !billingProfileSelected ||
+                    !shippingSelected ||
+                    saving
+                      ? "opacity-60 cursor-not-allowed"
+                      : ""
                   }`}
                 >
-                  Process to Checkout
+                  {saving ? "Procesando..." : "Process to Checkout"}
                 </button>
+
+                {!orderId && (
+                  <p className="text-xs text-dark-5 mt-2">
+                    Primero creá la orden desde el carrito para obtener el <code>orderId</code>.
+                  </p>
+                )}
               </div>
             </div>
           </form>
