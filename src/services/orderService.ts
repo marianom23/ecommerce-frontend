@@ -51,6 +51,7 @@ export type PaymentSummaryResponse = {
 
   // online (ej. MP/Stripe)
   redirectUrl?: string | null;
+  checkoutUrl?: string | null;
   providerPaymentId?: string | null;
 
   // transferencia (offline)
@@ -65,6 +66,7 @@ export type PaymentSummaryResponse = {
   // tiempos de transferencia (si los tenés en el backend)
   declareBy?: string | null;    // límite 30'
   reviewDueAt?: string | null;  // ventana 48h
+
 };
 
 export type OrderResponse = {

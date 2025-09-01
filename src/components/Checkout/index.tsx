@@ -29,7 +29,6 @@ const Checkout = () => {
   const [err, setErr] = useState<string | null>(null);
 
   const { status } = useSession();
-
   const canSubmit = status === "authenticated";
 
   async function onSubmit(e: React.FormEvent) {
@@ -38,17 +37,22 @@ const Checkout = () => {
     setErr(null);
     setSaving(true);
     try {
-      // Confirmá la orden. El service devuelve la orden directa (OrderResponse)
+      // Confirmá la orden. El back debe devolver OrderResponse con payment.redirectUrl o payment.checkoutUrl
       const order = await orderService.confirm(orderId, {
         successUrl: `${window.location.origin}/checkout/success`,
         failureUrl: `${window.location.origin}/checkout/failure`,
         pendingUrl: `${window.location.origin}/checkout/pending`,
-        callbackUrl: `${window.location.origin}/api/payments/webhook`,
+        // 👇 si tu webhook en el back es /api/payments/webhook/mercadopago:
+        callbackUrl: `${window.location.origin}/api/payments/webhook/mercadopago`,
       });
 
-      const redirect = order?.payment?.redirectUrl;
+      const redirect =
+        order?.payment?.redirectUrl ||
+        order?.payment?.checkoutUrl ||
+        null;
+
       if (redirect) {
-        window.location.href = redirect;
+        window.location.href = redirect; // 👉 redirección a Mercado Pago (Checkout Pro)
       } else {
         // TRANSFER / CASH sin redirect: vamos a pending
         router.push(`/checkout/pending?orderId=${orderId}`);
