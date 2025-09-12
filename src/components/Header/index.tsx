@@ -41,7 +41,7 @@ const Header = () => {
   });
 
   const options = [
-    { label: "All Categories", value: "0" },
+    { label: "Categorías", value: "0" },
     { label: "Desktop", value: "1" },
     { label: "Laptop", value: "2" },
     { label: "Monitor", value: "3" },
@@ -89,7 +89,7 @@ const Header = () => {
                       type="search"
                       name="search"
                       id="search"
-                      placeholder="I am shopping for..."
+                      placeholder="Buscar productos…"
                       autoComplete="off"
                       className="custom-search w-full rounded-r-[5px] bg-gray-1 !border-l-0 border border-gray-3 py-2.5 pl-4 pr-10 outline-none ease-in duration-200"
                     />
@@ -164,56 +164,52 @@ const Header = () => {
             <div className="flex w-full lg:w-auto justify-between items-center gap-5">
               <div className="flex items-center gap-5">
                 {status === "authenticated" ? (
-                  // ✅ Usuario logueado → mostrar nombre
-                  <div className="flex items-center gap-2.5 cursor-pointer">
-                    <svg
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
+                  <div className="flex items-center gap-2.5">
+                    {/* 👉 click en icono/nombre lleva a /my-account */}
+                    <Link
+                      href="/my-account"
+                      aria-label="Ir a Mi Cuenta"
+                      className="flex items-center gap-2.5 cursor-pointer"
                     >
-                      <path
-                        fillRule="evenodd"
-                        clipRule="evenodd"
-                        d="M12 1.25C9.37 1.25 7.25 3.37 7.25 6C7.25 8.62 9.37 10.75 12 10.75C14.62 10.75 16.75 8.62 16.75 6C16.75 3.37 14.62 1.25 12 1.25Z"
-                        fill="#3C50E0"
-                      />
-                      <path
-                        fillRule="evenodd"
-                        clipRule="evenodd"
-                        d="M12 12.25C9.68 12.25 7.55 12.78 5.98 13.66C4.42 14.54 3.25 15.87 3.25 17.5V17.6C3.25 18.76 3.25 20.22 4.53 21.26C5.15 21.77 6.04 22.14 7.23 22.38C8.42 22.62 9.97 22.75 12 22.75C14.03 22.75 15.58 22.62 16.77 22.38C17.96 22.14 18.84 21.77 19.47 21.26C20.75 20.22 20.75 18.76 20.75 17.6V17.5C20.75 15.87 19.58 14.54 18.02 13.66C16.44 12.78 14.31 12.25 12 12.25Z"
-                        fill="#3C50E0"
-                      />
-                    </svg>
+                      <svg
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          clipRule="evenodd"
+                          d="M12 1.25C9.37 1.25 7.25 3.37 7.25 6C7.25 8.62 9.37 10.75 12 10.75C14.62 10.75 16.75 8.62 16.75 6C16.75 3.37 14.62 1.25 12 1.25Z"
+                          fill="#3C50E0"
+                        />
+                        <path
+                          fillRule="evenodd"
+                          clipRule="evenodd"
+                          d="M12 12.25C9.68 12.25 7.55 12.78 5.98 13.66C4.42 14.54 3.25 15.87 3.25 17.5V17.6C3.25 18.76 3.25 20.22 4.53 21.26C5.15 21.77 6.04 22.14 7.23 22.38C8.42 22.62 9.97 22.75 12 22.75C14.03 22.75 15.58 22.62 16.77 22.38C17.96 22.14 18.84 21.77 19.47 21.26C20.75 20.22 20.75 18.76 20.75 17.6V17.5C20.75 15.87 19.58 14.54 18.02 13.66C16.44 12.78 14.31 12.25 12 12.25Z"
+                          fill="#3C50E0"
+                        />
+                      </svg>
 
-                    <div>
-                      <span className="block text-2xs text-dark-4 uppercase">
-                        account
-                      </span>
-                      <p className="font-medium text-custom-sm text-dark">
-                        {session.user?.firstName}
-                      </p>
-                    </div>
+                      <div>
+                        <span className="block text-2xs text-dark-4 uppercase">Mi Cuenta</span>
+                        <p className="font-medium text-custom-sm text-dark">
+                          {session.user?.firstName}
+                        </p>
+                      </div>
+                    </Link>
 
-                    {/* Botón Logout */}
+                    {/* Botón Logout separado (no dentro del Link) */}
                     <button
                       onClick={() => signOut({ callbackUrl: "/" })}
                       aria-label="Logout"
                       className="inline-flex items-center gap-1.5 rounded-full border border-gray-3 px-3 py-1.5 text-2xs font-medium text-dark hover:border-blue hover:bg-blue/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue/50"
                     >
-                      {/* ícono power */}
-                      <svg
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        className="opacity-80"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="opacity-80" xmlns="http://www.w3.org/2000/svg">
                         <path d="M12 3v8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                         <path d="M6.4 6.4a7 7 0 1 0 11.2 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                      </svg>                      
+                      </svg>
                     </button>
                   </div>
                 ) : (
@@ -242,9 +238,9 @@ const Header = () => {
 
                     <div>
                       <span className="block text-2xs text-dark-4 uppercase">
-                        account
+                        Mi Cuenta
                       </span>
-                      <p className="font-medium text-custom-sm text-dark">Sign In</p>
+                      <p className="font-medium text-custom-sm text-dark">Ingresar</p>
                     </div>
                   </Link>
                 )}

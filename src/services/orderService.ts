@@ -5,11 +5,30 @@ import { api } from "@/lib/api";
 const base = "/b/orders";
 
 /** ===== Tipos (enums/DTOs) ===== */
-export type OrderStatus = "PENDING" | "PAID" | "SHIPPED" | "DELIVERED" | "CANCELED";
-export type PaymentMethod = "MERCADO_PAGO" | "CARD" | "TRANSFER" | "CASH" | "OTHER";
-export type PaymentStatus = "INITIATED" | "PENDING" | "REVIEW" | "APPROVED" | "REJECTED" | "CANCELED" | "EXPIRED";
+export type OrderStatus =
+  | "PENDING"
+  | "PROCESSING"
+  | "ON_HOLD"
+  | "DELIVERED"
+  | "CANCELLED";
 
-/** Requests */
+export type PaymentMethod =
+  | "MERCADO_PAGO"
+  | "CARD"
+  | "BANK_TRANSFER"
+  | "CASH"
+  | "OTHER";
+
+export type PaymentStatus =
+  | "INITIATED"
+  | "PENDING"
+  | "REVIEW"
+  | "APPROVED"
+  | "REJECTED"
+  | "CANCELED"
+  | "EXPIRED";
+
+/** ===== Requests ===== */
 export type UpdateShippingAddressRequest = {
   shippingAddressId: number;
   recipientName?: string | null;
@@ -31,7 +50,28 @@ export type ConfirmOrderRequest = {
   callbackUrl?: string | null;
 };
 
-/** Responses */
+/** ===== Responses: LISTA (summary) ===== */
+export type OrderSummary = {
+  id: number;
+  orderNumber: string;
+  orderDate: string; // ISO
+  status: OrderStatus;
+  totalAmount: number | string; // según cómo serialices en el back
+  itemCount?: number;
+  firstItemThumb?: string | null;
+};
+
+export type PageResponse<T> = {
+  content: T[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrevious: boolean;
+};
+
+/** ===== Responses: DETALLE ===== */
 export type OrderItemResponse = {
   productId: number;
   variantId: number;
@@ -63,10 +103,9 @@ export type PaymentSummaryResponse = {
   offlineNote?: string | null;
   dueAt?: string | null; // ISO
 
-  // tiempos de transferencia (si los tenés en el backend)
-  declareBy?: string | null;    // límite 30'
-  reviewDueAt?: string | null;  // ventana 48h
-
+  // tiempos de transferencia (si los manejás)
+  declareBy?: string | null;
+  reviewDueAt?: string | null;
 };
 
 export type OrderResponse = {
@@ -95,9 +134,15 @@ export type OrderResponse = {
   shippingPhone?: string | null;
 
   // Billing snapshot
+  billingFullName?: string | null;
   billingDocumentType?: "CUIT" | "CUIL" | "DNI" | "PAS" | null;
   billingDocumentNumber?: string | null;
-  billingTaxCondition?: "CONSUMIDOR_FINAL" | "MONOTRIBUTO" | "RESPONSABLE_INSCRIPTO" | "EXENTO" | null;
+  billingTaxCondition?:
+    | "CONSUMIDOR_FINAL"
+    | "MONOTRIBUTO"
+    | "RESPONSABLE_INSCRIPTO"
+    | "EXENTO"
+    | null;
   billingBusinessName?: string | null;
   billingEmailForInvoices?: string | null;
   billingPhone?: string | null;
@@ -116,39 +161,58 @@ export type OrderResponse = {
   items: OrderItemResponse[];
 };
 
+/** ===== Params ===== */
+export type ListOrderParams = {
+  page?: number; // 0-based
+  size?: number;
+  sort?: string; // ej: "orderDate,desc"
+};
+
 /** ===== Métodos ===== */
 export const orderService = {
-  /** Crear orden desde el carrito del usuario (SIN body) */
-  create() {
-    return api.post<OrderResponse>(`${base}`);
+  /** === LISTA resumida paginada === */
+  listSummaries(params: ListOrderParams = {}) {
+    return api.get<PageResponse<OrderSummary>>(`${base}/summary`, { params });
   },
 
-  /** Obtener una orden propia */
+  /** === DETALLE === */
   getOne(id: number) {
     return api.get<OrderResponse>(`${base}/${id}`);
   },
 
-  /** Listar mis órdenes */
+
+  /** === DETALLE por NÚMERO === */
+  getOneByNumber(orderNumber: string) {
+    return api.get<OrderResponse>(`${base}/by-number/${encodeURIComponent(orderNumber)}`);
+  },
+
+
+  /** === Crear orden desde el carrito del usuario (SIN body) === */
+  create() {
+    return api.post<OrderResponse>(`${base}`);
+  },
+
+  /** === Listar mis órdenes (detalle completo) — legacy/compat === */
   listMine() {
     return api.get<OrderResponse[]>(`${base}`);
   },
 
-  /** Setear/actualizar shipping */
+  /** === Setear/actualizar shipping === */
   patchShippingAddress(id: number, payload: UpdateShippingAddressRequest) {
     return api.patch<OrderResponse>(`${base}/${id}/shipping-address`, payload);
   },
 
-  /** Setear/actualizar billing */
+  /** === Setear/actualizar billing === */
   patchBillingProfile(id: number, payload: UpdateBillingProfileRequest) {
     return api.patch<OrderResponse>(`${base}/${id}/billing-profile`, payload);
   },
 
-  /** Elegir método de pago */
+  /** === Elegir método de pago === */
   patchPaymentMethod(id: number, payload: UpdatePaymentMethodRequest) {
     return api.patch<OrderResponse>(`${base}/${id}/payment-method`, payload);
   },
 
-  /** Confirmar orden (crea Payment y congela edición) */
+  /** === Confirmar orden (crea Payment y congela edición) === */
   confirm(id: number, payload?: ConfirmOrderRequest) {
     return api.post<OrderResponse>(`${base}/${id}/confirm`, payload ?? {});
   },

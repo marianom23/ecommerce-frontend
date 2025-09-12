@@ -8,10 +8,16 @@ export const metadata: Metadata = {
   // other metadata
 };
 
-const MyAccountPage = () => {
+type Props = {
+  params: { section?: string[] };
+};
+
+const MyAccountPage = ({ params }: Props) => {
+  // section[0] será: 'dashboard' | 'orders' | 'downloads' | 'addresses' | 'account-details' | 'logout'
+  const current = params.section?.[0] ?? "dashboard";
   return (
     <main>
-      <MyAccount />
+      <MyAccount current={current} />
     </main>
   );
 };

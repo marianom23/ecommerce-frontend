@@ -18,7 +18,7 @@ const taxOptions: TaxCondition[] = [
 ];
 
 const BillingProfileForm: React.FC<{
-  billingAddressId: number;                          // <<— address ya elegida
+  billingAddressId: number;
   onSaved: (bp: BillingProfileResponse) => void;
   onCancel?: () => void;
 }> = ({ billingAddressId, onSaved, onCancel }) => {
@@ -26,11 +26,12 @@ const BillingProfileForm: React.FC<{
     documentType: "DNI",
     documentNumber: "",
     taxCondition: "CONSUMIDOR_FINAL",
+    fullName: "",                // 👈 NUEVO
     businessName: "",
     emailForInvoices: "",
     phone: "",
     billingAddressId,
-    isDefault: true, // si es el primero, queda default (el backend lo maneja bien igual)
+    isDefault: true,
   });
 
   const [loading, setLoading] = useState(false);
@@ -64,14 +65,32 @@ const BillingProfileForm: React.FC<{
       {err && <p className="mb-4 text-red-600 text-sm">{err}</p>}
 
       <div className="grid sm:grid-cols-2 gap-4">
+        {/* Full Name */}
+        <div className="sm:col-span-2">
+          <label className="block mb-2.5">Nombre y Apellido *</label>
+          <input
+            className="rounded-md border border-gray-3 bg-gray-1 w-full py-2.5 px-5 outline-none"
+            value={form.fullName ?? ""}
+            onChange={(e) => setForm((f) => ({ ...f, fullName: e.target.value }))}
+            placeholder="Ej: Juan Pérez"
+            required
+          />
+        </div>
+
         <div>
           <label className="block mb-2.5">Tipo de documento *</label>
           <select
             className="rounded-md border border-gray-3 bg-gray-1 w-full py-2.5 px-5 outline-none"
             value={form.documentType}
-            onChange={(e) => setForm((f) => ({ ...f, documentType: e.target.value as DocumentType }))}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, documentType: e.target.value as DocumentType }))
+            }
           >
-            {docTypes.map((d) => <option key={d} value={d}>{d}</option>)}
+            {docTypes.map((d) => (
+              <option key={d} value={d}>
+                {d}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -91,9 +110,15 @@ const BillingProfileForm: React.FC<{
           <select
             className="rounded-md border border-gray-3 bg-gray-1 w-full py-2.5 px-5 outline-none"
             value={form.taxCondition}
-            onChange={(e) => setForm((f) => ({ ...f, taxCondition: e.target.value as TaxCondition }))}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, taxCondition: e.target.value as TaxCondition }))
+            }
           >
-            {taxOptions.map((t) => <option key={t} value={t}>{t}</option>)}
+            {taxOptions.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -113,7 +138,9 @@ const BillingProfileForm: React.FC<{
             type="email"
             className="rounded-md border border-gray-3 bg-gray-1 w-full py-2.5 px-5 outline-none"
             value={form.emailForInvoices ?? ""}
-            onChange={(e) => setForm((f) => ({ ...f, emailForInvoices: e.target.value }))}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, emailForInvoices: e.target.value }))
+            }
             placeholder="Opcional"
           />
         </div>
@@ -132,7 +159,7 @@ const BillingProfileForm: React.FC<{
       <button
         type="button"
         onClick={save}
-        disabled={loading || !form.documentNumber}
+        disabled={loading || !form.documentNumber || !form.fullName}
         className="w-full inline-flex items-center justify-center font-medium text-white bg-blue py-3 px-6 rounded-md mt-5 disabled:opacity-60"
       >
         {loading ? "Guardando..." : "Guardar perfil de facturación"}

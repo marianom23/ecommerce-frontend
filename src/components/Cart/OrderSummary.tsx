@@ -48,13 +48,13 @@ const OrderSummary = () => {
     <div className="lg:max-w-[455px] w-full">
       <div className="bg-white shadow-1 rounded-[10px]">
         <div className="border-b border-gray-3 py-5 px-4 sm:px-8.5">
-          <h3 className="font-medium text-xl text-dark">Order Summary</h3>
+          <h3 className="font-medium text-xl text-dark">Resumen de la orden</h3>
         </div>
 
         <div className="pt-2.5 pb-8.5 px-4 sm:px-8.5">
           <div className="flex items-center justify-between py-5 border-b border-gray-3">
             <div>
-              <h4 className="font-medium text-dark">Product</h4>
+              <h4 className="font-medium text-dark">Producto</h4>
             </div>
             <div>
               <h4 className="font-medium text-dark text-right">Subtotal</h4>
@@ -96,7 +96,7 @@ const OrderSummary = () => {
             disabled={isLoading || cartItems.length === 0}
             className="w-full mt-7.5 inline-flex justify-center font-medium text-white bg-blue py-3 px-6 rounded-md ease-out duration-200 hover:bg-blue-dark disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            {isLoading ? "Creando orden..." : "Proceed to Checkout"}
+            {isLoading ? "Creando orden..." : "Proceder al pago"}
           </button>
         </div>
       </div>

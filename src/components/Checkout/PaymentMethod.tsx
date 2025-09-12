@@ -15,18 +15,18 @@ const PaymentMethod: React.FC<Props> = ({ orderId, onApplied }) => {
   const [okMsg, setOkMsg] = useState<string | null>(null);
 
   // mapeo UI -> enum backend
-  const mapUiToEnum = (key: "bank" | "cash" | "paypal"): PM => {
+  const mapUiToEnum = (key: "bank" /* | "cash" */ | "paypal"): PM => {
     switch (key) {
       case "bank":
-        return "TRANSFER";
-      case "cash":
-        return "CASH";      // si tu backend no tiene CASH, cambiá por "CARD" o "OTHER"
+        return "BANK_TRANSFER";
+      // case "cash":
+      //   return "CASH"; // ❌ no lo usamos
       case "paypal":
-        return "CARD";      // placeholder visual
+        return "CARD"; // placeholder visual
     }
   };
 
-  async function selectPayment(key: "bank" | "cash" | "paypal") {
+  async function selectPayment(key: "bank" /* | "cash" */ | "paypal") {
     const method = mapUiToEnum(key);
     setErr(null);
     setOkMsg(null);
@@ -50,9 +50,8 @@ const PaymentMethod: React.FC<Props> = ({ orderId, onApplied }) => {
     }
   }
 
-  const opt = (key: "bank" | "cash" | "paypal") => {
-    const isActive =
-      payment === mapUiToEnum(key); /* resalta si coincide con el enum */
+  const opt = (key: "bank" /* | "cash" */ | "paypal") => {
+    const isActive = payment === mapUiToEnum(key);
     return (
       <label
         htmlFor={key}
@@ -81,19 +80,36 @@ const PaymentMethod: React.FC<Props> = ({ orderId, onApplied }) => {
           <div className="flex items-center">
             <div className="pr-2.5">
               {key === "bank" && (
-                <Image src="/images/checkout/bank.svg" alt="bank" width={29} height={12} />
+                <Image
+                  src="/images/checkout/bank.svg"
+                  alt="bank"
+                  width={29}
+                  height={12}
+                />
               )}
+              {/* 
               {key === "cash" && (
-                <Image src="/images/checkout/cash.svg" alt="cash" width={21} height={21} />
-              )}
+                <Image
+                  src="/images/checkout/cash.svg"
+                  alt="cash"
+                  width={21}
+                  height={21}
+                />
+              )} 
+              */}
               {key === "paypal" && (
-                <Image src="/images/checkout/paypal.svg" alt="paypal" width={75} height={20} />
+                <Image
+                  src="/images/checkout/paypal.svg"
+                  alt="paypal"
+                  width={75}
+                  height={20}
+                />
               )}
             </div>
             <div className="border-l border-gray-4 pl-2.5">
               <p>
                 {key === "bank" && "Direct bank transfer"}
-                {key === "cash" && "Cash on delivery"}
+                {/* {key === "cash" && "Cash on delivery"} */}
                 {key === "paypal" && "Tarjeta (gateway)"}
               </p>
             </div>
@@ -124,7 +140,7 @@ const PaymentMethod: React.FC<Props> = ({ orderId, onApplied }) => {
 
         <div className="flex flex-col gap-3">
           {opt("bank")}
-          {opt("cash")}
+          {/* {opt("cash")} */}
           {opt("paypal")}
         </div>
       </div>

@@ -14,7 +14,7 @@ export type TaxCondition =
 export type BillingProfileRequest = {
   documentType: DocumentType;
   documentNumber: string;
-
+  fullName?: string; 
   taxCondition: TaxCondition;
   businessName?: string | null;
   emailForInvoices?: string | null;
@@ -29,7 +29,7 @@ export type BillingProfileResponse = {
 
   documentType: DocumentType;
   documentNumber: string;
-
+  fullName?: string; 
   taxCondition: TaxCondition;
   businessName?: string | null;
   emailForInvoices?: string | null;

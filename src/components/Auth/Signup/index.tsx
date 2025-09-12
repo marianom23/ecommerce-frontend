@@ -31,7 +31,7 @@ const Signup = () => {
     setSuccess("");
 
     if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match.");
+      setError("Las contraseñas no coinciden.");
       return;
     }
 
@@ -44,27 +44,26 @@ const Signup = () => {
         lastName: formData.lastName,
       });
 
-      setSuccess(payload?.message ?? "Account created successfully. Redirecting to login...");
+      setSuccess(payload?.message ?? "Cuenta creada correctamente. Redirigiendo al inicio de sesión...");
       setTimeout(() => router.push("/signin"), 2000);
     } catch (err: any) {
-      setError(err?.message || "Registration failed.");
+      setError(err?.message || "No se pudo completar el registro.");
     } finally {
       setLoading(false);
     }
   };
 
-
   return (
     <>
-      <Breadcrumb title={"Signup"} pages={["Signup"]} />
+      <Breadcrumb title={"Crear cuenta"} pages={["Crear cuenta"]} />
       <section className="overflow-hidden py-20 bg-gray-2">
         <div className="max-w-[1170px] w-full mx-auto px-4 sm:px-8 xl:px-0">
           <div className="max-w-[570px] w-full mx-auto rounded-xl bg-white shadow-1 p-4 sm:p-7.5 xl:p-11">
             <div className="text-center mb-11">
               <h2 className="font-semibold text-xl sm:text-2xl xl:text-heading-5 text-dark mb-1.5">
-                Create an Account
+                Crea tu cuenta
               </h2>
-              <p>Enter your detail below</p>
+              <p>Ingresa tus datos a continuación</p>
             </div>
 
             {/* Mensajes */}
@@ -75,10 +74,10 @@ const Signup = () => {
 
             <div className="mt-5.5">
               <form onSubmit={handleSubmit}>
-                {/* First Name */}
+                {/* Nombre */}
                 <div className="mb-5">
                   <label htmlFor="firstName" className="block mb-2.5">
-                    First Name <span className="text-red">*</span>
+                    Nombre <span className="text-red">*</span>
                   </label>
                   <input
                     type="text"
@@ -86,15 +85,15 @@ const Signup = () => {
                     id="firstName"
                     value={formData.firstName}
                     onChange={handleChange}
-                    placeholder="Enter your first name"
+                    placeholder="Ingresa tu nombre"
                     className="rounded-lg border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full py-3 px-5 outline-none"
                   />
                 </div>
 
-                {/* Last Name */}
+                {/* Apellido */}
                 <div className="mb-5">
                   <label htmlFor="lastName" className="block mb-2.5">
-                    Last Name <span className="text-red">*</span>
+                    Apellido <span className="text-red">*</span>
                   </label>
                   <input
                     type="text"
@@ -102,7 +101,7 @@ const Signup = () => {
                     id="lastName"
                     value={formData.lastName}
                     onChange={handleChange}
-                    placeholder="Enter your last name"
+                    placeholder="Ingresa tu apellido"
                     className="rounded-lg border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full py-3 px-5 outline-none"
                   />
                 </div>
@@ -110,7 +109,7 @@ const Signup = () => {
                 {/* Email */}
                 <div className="mb-5">
                   <label htmlFor="email" className="block mb-2.5">
-                    Email Address <span className="text-red">*</span>
+                    Correo electrónico <span className="text-red">*</span>
                   </label>
                   <input
                     type="email"
@@ -118,15 +117,16 @@ const Signup = () => {
                     id="email"
                     value={formData.email}
                     onChange={handleChange}
-                    placeholder="Enter your email address"
+                    placeholder="Ingresa tu correo electrónico"
                     className="rounded-lg border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full py-3 px-5 outline-none"
+                    autoComplete="email"
                   />
                 </div>
 
-                {/* Password */}
+                {/* Contraseña */}
                 <div className="mb-5">
                   <label htmlFor="password" className="block mb-2.5">
-                    Password <span className="text-red">*</span>
+                    Contraseña <span className="text-red">*</span>
                   </label>
                   <input
                     type="password"
@@ -134,16 +134,16 @@ const Signup = () => {
                     id="password"
                     value={formData.password}
                     onChange={handleChange}
-                    placeholder="Enter your password"
+                    placeholder="Ingresa tu contraseña"
                     className="rounded-lg border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full py-3 px-5 outline-none"
                     autoComplete="new-password"
                   />
                 </div>
 
-                {/* Confirm Password */}
+                {/* Repetir contraseña */}
                 <div className="mb-5">
                   <label htmlFor="confirmPassword" className="block mb-2.5">
-                    Re-type Password <span className="text-red">*</span>
+                    Repite la contraseña <span className="text-red">*</span>
                   </label>
                   <input
                     type="password"
@@ -151,29 +151,30 @@ const Signup = () => {
                     id="confirmPassword"
                     value={formData.confirmPassword}
                     onChange={handleChange}
-                    placeholder="Re-type your password"
+                    placeholder="Vuelve a escribir tu contraseña"
                     className="rounded-lg border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full py-3 px-5 outline-none"
                     autoComplete="new-password"
                   />
                 </div>
 
-                {/* Submit Button */}
+                {/* Botón enviar */}
                 <button
                   type="submit"
                   className="w-full flex justify-center font-medium text-white bg-dark py-3 px-6 rounded-lg ease-out duration-200 hover:bg-blue mt-7.5"
                   disabled={loading}
+                  aria-busy={loading}
                 >
-                  {loading ? "Creating Account..." : "Create Account"}
+                  {loading ? "Creando cuenta..." : "Crear cuenta"}
                 </button>
 
-                {/* Already have an account */}
+                {/* ¿Ya tienes cuenta? */}
                 <p className="text-center mt-6">
-                  Already have an account?
+                  ¿Ya tienes una cuenta?
                   <Link
                     href="/signin"
                     className="text-dark ease-out duration-200 hover:text-blue pl-2"
                   >
-                    Sign in Now
+                    Inicia sesión ahora
                   </Link>
                 </p>
               </form>

@@ -55,15 +55,15 @@ const Signin = () => {
 
   return (
     <>
-      <Breadcrumb title={"Signin"} pages={["Signin"]} />
+      <Breadcrumb title={"Ingresar"} pages={["Ingresar"]} />
       <section className="overflow-hidden py-20 bg-gray-2">
         <div className="max-w-[1170px] w-full mx-auto px-4 sm:px-8 xl:px-0">
           <div className="max-w-[570px] w-full mx-auto rounded-xl bg-white shadow-1 p-4 sm:p-7.5 xl:p-11">
             <div className="text-center mb-11">
               <h2 className="font-semibold text-xl sm:text-2xl xl:text-heading-5 text-dark mb-1.5">
-                Sign In to Your Account
+                Inicia sesión en tu cuenta
               </h2>
-              <p>Enter your detail below</p>
+              <p>Ingresa tus datos a continuación</p>
             </div>
 
             <div>
@@ -76,20 +76,20 @@ const Signin = () => {
                     id="email"
                     value={formData.email}
                     onChange={handleChange}
-                    placeholder="Enter your email"
+                    placeholder="Escribe tu email"
                     className="rounded-lg border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full py-3 px-5 outline-none duration-200 focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20"
                   />
                 </div>
 
                 <div className="mb-5">
-                  <label htmlFor="password" className="block mb-2.5">Password</label>
+                  <label htmlFor="password" className="block mb-2.5">Contraseña</label>
                   <input
                     type="password"
                     name="password"
                     id="password"
                     value={formData.password}
                     onChange={handleChange}
-                    placeholder="Enter your password"
+                    placeholder="Escribe tu contraseña"
                     className="rounded-lg border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full py-3 px-5 outline-none duration-200 focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20"
                   />
                 </div>
@@ -103,14 +103,14 @@ const Signin = () => {
                   className="w-full flex justify-center font-medium text-white bg-dark py-3 px-6 rounded-lg ease-out duration-200 hover:bg-blue mt-7.5"
                   disabled={loading}
                 >
-                  {loading ? "Signing in..." : "Sign in to account"}
+                  {loading ? "Entrando..." : "Ingresar a mi cuenta"}
                 </button>
 
                 <a
                   href="#"
                   className="block text-center text-dark-4 mt-4.5 ease-out duration-200 hover:text-dark"
                 >
-                  Forget your password?
+                  Olvidaste tu contraseña?
                 </a>
 
                 <span className="relative z-1 block font-medium text-center mt-4.5">
@@ -169,7 +169,7 @@ const Signin = () => {
                         </clipPath>
                       </defs>
                     </svg>
-                    Sign In with Google
+                    Ingresa con Google
                   </button>
 
                   <button
@@ -190,17 +190,17 @@ const Signin = () => {
                       <rect x="0"  y="13" width="11" height="11" fill="#00A4EF" />
                       <rect x="13" y="13" width="11" height="11" fill="#FFB900" />
                     </svg>
-                    Sign In with Microsoft
+                    Ingresa con Microsoft
                   </button>
                 </div>
 
                 <p className="text-center mt-6">
-                  Don&apos;t have an account?
+                  No tienes cuenta?
                   <Link
                     href="/signup"
                     className="text-dark ease-out duration-200 hover:text-blue pl-2"
                   >
-                    Sign Up Now!
+                    Registrate ahora!
                   </Link>
                 </p>
               </form>

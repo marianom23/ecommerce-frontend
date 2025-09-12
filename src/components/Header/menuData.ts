@@ -9,15 +9,41 @@ export const menuData: Menu[] = [
   },
   {
     id: 2,
-    title: "Shop",
+    title: "Productos",
     newTab: false,
     path: "/shop-with-sidebar",
   },
   {
     id: 3,
-    title: "Contact",
+    title: "Novedades",
     newTab: false,
-    path: "/contact",
+    path: "/",
+  },
+  {
+    id: 4,
+    title: "Marcas",
+    newTab: false,
+    path: "/",
+    submenu: [
+      {
+        id: 61,
+        title: "Shop With Sidebar",
+        newTab: false,
+        path: "/shop-with-sidebar",
+      },
+      {
+        id: 62,
+        title: "Shop Without Sidebar",
+        newTab: false,
+        path: "/shop-without-sidebar",
+      },
+      {
+        id: 64,
+        title: "Checkout",
+        newTab: false,
+        path: "/checkout",
+      },
+    ],
   },
   {
     id: 6,

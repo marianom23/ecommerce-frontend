@@ -1,67 +1,107 @@
+// components/account/orders/Orders.tsx
 import React, { useEffect, useState } from "react";
 import SingleOrder from "./SingleOrder";
-import ordersData from "./ordersData";
+import { orderService } from "@/services/orderService";
+import type { OrderSummary, PageResponse } from "@/services/orderService";
 
 const Orders = () => {
-  const [orders, setOrders] = useState<any>([]);
+  const [pageData, setPageData] = useState<PageResponse<OrderSummary> | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
+
+  const [page, setPage] = useState(0);
+  const size = 10;
 
   useEffect(() => {
-    fetch(`/api/order`)
-      .then((res) => res.json())
-      .then((data) => {
-        setOrders(data.orders);
+    setLoading(true);
+    orderService
+      .listSummaries({ page, size, sort: "orderDate,desc" })
+      .then((res) => {
+        setPageData(res);
+        setErr(null);
       })
-      .catch((err) => {
-        console.log(err.message);
-      });
-  }, []);
+      .catch((e) => setErr(e?.message ?? "Error al cargar pedidos"))
+      .finally(() => setLoading(false));
+  }, [page]);
+
+  if (loading) {
+    return <p className="py-9.5 px-4 sm:px-7.5 xl:px-10">Cargando pedidos…</p>;
+  }
+
+  if (err) {
+    return <p className="py-9.5 px-4 sm:px-7.5 xl:px-10 text-red">{err}</p>;
+  }
+
+  const orders = pageData?.content ?? [];
 
   return (
     <>
       <div className="w-full overflow-x-auto">
         <div className="min-w-[770px]">
-          {/* <!-- order item --> */}
-          {ordersData.length > 0 && (
-            <div className="items-center justify-between py-4.5 px-7.5 hidden md:flex ">
+          {orders.length > 0 && (
+            <div className="items-center justify-between py-4.5 px-7.5 hidden md:flex">
               <div className="min-w-[111px]">
-                <p className="text-custom-sm text-dark">Order</p>
+                <p className="text-custom-sm text-dark">Pedido</p>
               </div>
               <div className="min-w-[175px]">
-                <p className="text-custom-sm text-dark">Date</p>
+                <p className="text-custom-sm text-dark">Fecha</p>
               </div>
-
               <div className="min-w-[128px]">
-                <p className="text-custom-sm text-dark">Status</p>
+                <p className="text-custom-sm text-dark">Estado</p>
               </div>
-
               <div className="min-w-[213px]">
-                <p className="text-custom-sm text-dark">Title</p>
+                <p className="text-custom-sm text-dark">Artículos</p>
               </div>
-
               <div className="min-w-[113px]">
                 <p className="text-custom-sm text-dark">Total</p>
               </div>
-
               <div className="min-w-[113px]">
-                <p className="text-custom-sm text-dark">Action</p>
+                <p className="text-custom-sm text-dark">Acciones</p>
               </div>
             </div>
           )}
-          {ordersData.length > 0 ? (
-            ordersData.map((orderItem, key) => (
-              <SingleOrder key={key} orderItem={orderItem} smallView={false} />
+
+          {orders.length > 0 ? (
+            orders.map((o) => (
+              <SingleOrder
+                key={o.id}
+                summary={o}
+                smallView={false}
+              />
             ))
           ) : (
             <p className="py-9.5 px-4 sm:px-7.5 xl:px-10">
-              You don&apos;t have any orders!
+              ¡No tienes pedidos!
             </p>
           )}
         </div>
 
-        {ordersData.length > 0 &&
-          ordersData.map((orderItem, key) => (
-            <SingleOrder key={key} orderItem={orderItem} smallView={true} />
+        {orders.length > 0 &&
+          orders.map((o) => (
+            <SingleOrder key={`m-${o.id}`} summary={o} smallView={true} />
           ))}
+
+        {pageData && pageData.totalPages > 1 && (
+          <div className="flex items-center gap-3 py-4 px-7.5">
+            <button
+              disabled={page === 0}
+              onClick={() => setPage((p) => p - 1)}
+              className="px-3 py-1 border rounded disabled:opacity-50"
+            >
+              Anterior
+            </button>
+            <span className="text-sm">
+              {page + 1} / {pageData.totalPages}
+            </span>
+            <button
+              disabled={page + 1 >= pageData.totalPages}
+              onClick={() => setPage((p) => p + 1)}
+              className="px-3 py-1 border rounded disabled:opacity-50"
+            >
+              Siguiente
+            </button>
+          </div>
+        )}
       </div>
     </>
   );
