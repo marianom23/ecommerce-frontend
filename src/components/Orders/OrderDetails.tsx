@@ -101,7 +101,7 @@ const OrderDetails = ({ orderItem }: { orderItem: OrderResponse }) => {
       {/* Botón para ver más detalles */}
       <div className="px-7.5 pb-6">
         <Link
-          href={`/my-account/orders/${orderItem.id}`}
+          href={`/mi-cuenta/orders/${orderItem.id}`}
           className="inline-block bg-blue text-white text-sm font-medium py-2 px-4 rounded-md hover:bg-blue-dark transition"
         >
           Ver más detalles

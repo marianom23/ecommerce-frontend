@@ -13,7 +13,7 @@ const SingleOrder = ({ summary, smallView }: Props) => {
   const router = useRouter();
 
   const goToDetails = () => {
-    router.push(`/my-account/orders/${summary.orderNumber}`);
+    router.push(`/mi-cuenta/orders/${summary.orderNumber}`);
   };
 
   const orderIdShown = summary.orderNumber || String(summary.id);

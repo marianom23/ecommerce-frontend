@@ -69,32 +69,32 @@ const TabLink = ({
 
                   <div className="p-4 sm:p-7.5 xl:p-9">
                     <div className="flex flex-wrap xl:flex-nowrap xl:flex-col gap-4">
-                      <TabLink href="/my-account" active={current === "dashboard"}>
+                      <TabLink href="/mi-cuenta" active={current === "dashboard"}>
                         <svg className="fill-current" width="22" height="22" viewBox="0 0 22 22" aria-hidden />
                         Dashboard
                       </TabLink>
 
-                      <TabLink href="/my-account/orders" active={current === "orders"}>
+                      <TabLink href="/mi-cuenta/orders" active={current === "orders"}>
                         <svg className="fill-current" width="22" height="22" viewBox="0 0 22 22" aria-hidden />
                         Orders
                       </TabLink>
 
-                      <TabLink href="/my-account/downloads" active={current === "downloads"}>
+                      <TabLink href="/mi-cuenta/downloads" active={current === "downloads"}>
                         <svg className="fill-current" width="22" height="22" viewBox="0 0 22 22" aria-hidden />
                         Downloads
                       </TabLink>
 
-                      <TabLink href="/my-account/addresses" active={current === "addresses"}>
+                      <TabLink href="/mi-cuenta/addresses" active={current === "addresses"}>
                         <svg className="fill-current" width="22" height="22" viewBox="0 0 22 22" aria-hidden />
                         Addresses
                       </TabLink>
 
-                      <TabLink href="/my-account/account-details" active={current === "account-details"}>
+                      <TabLink href="/mi-cuenta/account-details" active={current === "account-details"}>
                         <svg className="fill-current" width="22" height="22" viewBox="0 0 22 22" aria-hidden />
                         Account Details
                       </TabLink>
 
-                      <TabLink href="/my-account/logout" active={current === "logout"}>
+                      <TabLink href="/mi-cuenta/logout" active={current === "logout"}>
                         <svg className="fill-current" width="22" height="22" viewBox="0 0 22 22" aria-hidden />
                         Logout
                       </TabLink>

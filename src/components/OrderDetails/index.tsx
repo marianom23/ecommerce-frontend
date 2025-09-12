@@ -98,8 +98,8 @@ export default function OrderDetails({ orderNumber }: Props) {
       <Breadcrumb
         title={`Order #${order.orderNumber}`}
         pages={[
-          { label: "My Account", href: "/my-account" },
-          { label: "Orders", href: "/my-account/orders" },
+          { label: "My Account", href: "/mi-cuenta" },
+          { label: "Orders", href: "/mi-cuenta/orders" },
           { label: `#${order.orderNumber}`, href: "#" },
         ]}
       />

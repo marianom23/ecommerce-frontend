@@ -1,4 +1,4 @@
-// app/my-account/orders/[orderNumber]/page.tsx
+// app/mi-cuenta/orders/[orderNumber]/page.tsx
 import OrderDetails from "@/components/OrderDetails";
 import { Metadata } from "next";
 

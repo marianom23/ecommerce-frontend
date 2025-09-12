@@ -165,9 +165,9 @@ const Header = () => {
               <div className="flex items-center gap-5">
                 {status === "authenticated" ? (
                   <div className="flex items-center gap-2.5">
-                    {/* 👉 click en icono/nombre lleva a /my-account */}
+                    {/* 👉 click en icono/nombre lleva a /mi-cuenta */}
                     <Link
-                      href="/my-account"
+                      href="/mi-cuenta"
                       aria-label="Ir a Mi Cuenta"
                       className="flex items-center gap-2.5 cursor-pointer"
                     >

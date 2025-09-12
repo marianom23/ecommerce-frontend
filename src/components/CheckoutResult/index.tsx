@@ -172,7 +172,7 @@ export default function CheckoutResult({ mode }: Props) {
                 </Link>
 
                 <Link
-                  href="/my-account/orders"
+                  href="/mi-cuenta/orders"
                   className="inline-flex items-center gap-2 font-medium text-blue border border-blue py-3 px-6 rounded-md ease-out duration-200 hover:bg-blue/10"
                 >
                   Ver mis pedidos
@@ -181,7 +181,7 @@ export default function CheckoutResult({ mode }: Props) {
                 {/* 👉 Enviá SIEMPRE a la MISMA RUTA basada en orderNumber */}
                 {(order?.orderNumber || extractedOrderNumber) && (
                   <Link
-                    href={`/my-account/orders/${encodeURIComponent(order?.orderNumber ?? extractedOrderNumber!)}`}
+                    href={`/mi-cuenta/orders/${encodeURIComponent(order?.orderNumber ?? extractedOrderNumber!)}`}
                     className="inline-flex items-center gap-2 font-medium text-blue border border-blue py-3 px-6 rounded-md ease-out duration-200 hover:bg-blue/10"
                   >
                     Ver orden #{order?.orderNumber ?? extractedOrderNumber}
