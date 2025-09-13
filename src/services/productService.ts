@@ -3,7 +3,7 @@ import { api, type PaginatedResponse } from "@/lib/api";
 import { type Product } from "@/types/product";
 
 // export type Product = { id: number; title: string; reviews: number; price: number; discountedPrice: number; imgs?: { thumbnails: string[]; previews: string[] } };
-export type ListParams = { page?: number; limit?: number; sort?: string; q?: string; inStockOnly?: boolean; };
+export type ListParams = { page?: number; limit?: number; sort?: string; q?:  string; categoryId?: number; minPrice?: number, maxPrice?: number, inStockOnly?: boolean; };
 export type CreateProductDto = { name: string; description?: string; price: number; sku?: string; brandId?: number; categoryId?: number; };
 export type UpdateProductDto = Partial<CreateProductDto>;
 

@@ -9,62 +9,81 @@ import ColorsDropdwon from "./ColorsDropdwon";
 import PriceDropdown from "./PriceDropdown";
 import SingleGridItem from "../Shop/SingleGridItem";
 import SingleListItem from "../Shop/SingleListItem";
-
+import { useUrlState } from "@/hooks/useUrlState";
 import { productService } from "@/services/productService";
 import type { Product } from "@/types/product";
 import type { PaginatedResponse } from "@/lib/api";
 
 const ShopWithSidebar: React.FC = () => {
+
+  const { params, setParams } = useUrlState();
+
   const [productStyle, setProductStyle] = useState<"grid" | "list">("grid");
   const [productSidebar, setProductSidebar] = useState(false);
   const [stickyMenu, setStickyMenu] = useState(false);
 
-  // ---- nuevo: estado productos/paginación/carga ----
   const [products, setProducts] = useState<Product[]>([]);
-  const [page, setPage] = useState(1);
-  const [pageSize] = useState(12); // usa el pageSize de tu back
+  const [page, setPage] = useState(() => Number(params.page ?? 1));
+  const [pageSize] = useState(12);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Mantén TUS opciones tal cual
   const options = [
     { label: "Latest Products", value: "0" },
     { label: "Best Selling", value: "1" },
     { label: "Old Products", value: "2" },
   ];
-  const [selectedOption, setSelectedOption] = useState("0");
+  const [selectedOption, setSelectedOption] = useState<string>(() => params.sort ?? "0");
 
-  // Mapeo interno del value -> sort del back
+  // si querés categoría/precio desde la URL:
+  const [categoryId, setCategoryId] = useState<number | undefined>(() =>
+    params.categoryId ? Number(params.categoryId) : undefined
+  );
+  const [minPrice, setMinPrice] = useState<number | undefined>(() =>
+    params.minPrice ? Number(params.minPrice) : undefined
+  );
+  const [maxPrice, setMaxPrice] = useState<number | undefined>(() =>
+    params.maxPrice ? Number(params.maxPrice) : undefined
+  );
+
+  // cuando cambian estados clave -> sincroniza URL
+  useEffect(() => {
+    setParams(
+      {
+        page,
+        sort: selectedOption,
+        categoryId,
+        minPrice,
+        maxPrice,
+      },
+      { replace: true }
+    );
+  }, [page, selectedOption, categoryId, minPrice, maxPrice, setParams]);
+
   const sortParam = useMemo(() => {
     switch (selectedOption) {
-      case "0":
-        return "latest";
-      case "1":
-        return "bestSelling";
-      case "2":
-        return "id";
-      default:
-        return "latest";
+      case "0": return "latest";
+      case "1": return "bestSelling";
+      case "2": return "id";
+      default:  return "latest";
     }
   }, [selectedOption]);
 
-  // Fetch de productos
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        setLoading(true);
-        setError(null);
-
+        setLoading(true); setError(null);
         const res = await productService.list({
           page,
-          limit: pageSize, // tu back lo recibe como "limit"
+          limit: pageSize,
           sort: sortParam,
-          // TODO: cuando conectes filtros, agrégalos acá
+          categoryId,
+          minPrice,
+          maxPrice,
         });
-
         const payload = res as PaginatedResponse<Product>;
         if (!cancelled) {
           setProducts(payload.items ?? []);
@@ -77,10 +96,8 @@ const ShopWithSidebar: React.FC = () => {
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => {
-      cancelled = true;
-    };
-  }, [page, pageSize, sortParam]);
+    return () => { cancelled = true; };
+  }, [page, pageSize, sortParam, categoryId, minPrice, maxPrice]);
 
   // Sticky sidebar button
   const handleStickyMenu = () => {
@@ -119,7 +136,6 @@ const ShopWithSidebar: React.FC = () => {
   const goToPage = (p: number) => {
     if (p < 1 || p > totalPages || p === page) return;
     setPage(p);
-    // scroll al top del listado para mejor UX
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
