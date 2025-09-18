@@ -96,10 +96,10 @@ export default function OrderDetails({ orderNumber }: Props) {
   return (
     <>
       <Breadcrumb
-        title={`Order #${order.orderNumber}`}
+        title={`Orden #${order.orderNumber}`}
         pages={[
-          { label: "My Account", href: "/mi-cuenta" },
-          { label: "Orders", href: "/mi-cuenta/orders" },
+          { label: "Mi Cuenta", href: "/mi-cuenta" },
+          { label: "Ordenes", href: "/mi-cuenta/orders" },
           { label: `#${order.orderNumber}`, href: "#" },
         ]}
       />

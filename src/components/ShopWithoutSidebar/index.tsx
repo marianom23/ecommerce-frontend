@@ -89,8 +89,8 @@ const ShopWithoutSidebar = () => {
   return (
     <>
       <Breadcrumb
-        title={"Explore All Products"}
-        pages={["shop", "/", "shop without sidebar"]}
+        title={"Explora los productos"}
+        pages={["productos", "/", "productos sin filtros"]}
       />
       <section className="overflow-hidden relative pb-20 pt-5 lg:pt-20 xl:pt-28 bg-[#f3f4f6]">
         <div className="max-w-[1170px] w-full mx-auto px-4 sm:px-8 xl:px-0">

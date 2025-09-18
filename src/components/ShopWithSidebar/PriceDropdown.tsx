@@ -1,14 +1,49 @@
-import { useState } from 'react';
-import RangeSlider from 'react-range-slider-input';
-import 'react-range-slider-input/dist/style.css';
+"use client";
+import { useEffect, useMemo, useState } from "react";
+import RangeSlider from "react-range-slider-input";
+import "react-range-slider-input/dist/style.css";
 
-const PriceDropdown = () => {
+type Props = {
+  minLimit: number;          // límites desde facets.priceRange.minPrice
+  maxLimit: number;          // límites desde facets.priceRange.maxPrice
+  valueFrom: number;         // valor actual seleccionado (o límite si no hay URL)
+  valueTo: number;           // valor actual seleccionado (o límite si no hay URL)
+  onChange: (from: number, to: number) => void; // aplicar selección
+  onClear?: () => void;      // limpiar filtro
+};
+
+const PriceDropdown: React.FC<Props> = ({
+  minLimit,
+  maxLimit,
+  valueFrom,
+  valueTo,
+  onChange,
+  onClear,
+}) => {
   const [toggleDropdown, setToggleDropdown] = useState(true);
 
-  const [selectedPrice, setSelectedPrice] = useState({
-    from: 0,
-    to: 100,
-  });
+  // Estado local para drag suave sin parpadeos
+  const [localFrom, setLocalFrom] = useState<number>(valueFrom);
+  const [localTo, setLocalTo] = useState<number>(valueTo);
+
+  // Cuando cambian límites o valor externo (URL), sincronizamos el local
+  useEffect(() => {
+    setLocalFrom(valueFrom);
+  }, [valueFrom]);
+  useEffect(() => {
+    setLocalTo(valueTo);
+  }, [valueTo]);
+
+  // Evitamos valores fuera de rango si el backend cambia los límites
+  const clamped = useMemo<[number, number]>(() => {
+    const from = Math.max(minLimit, Math.min(localFrom, maxLimit));
+    const to = Math.max(minLimit, Math.min(localTo, maxLimit));
+    return from <= to ? [from, to] : [to, from];
+  }, [localFrom, localTo, minLimit, maxLimit]);
+
+  const hasCustom =
+    (valueFrom !== minLimit && minLimit !== 0) ||
+    (valueTo !== maxLimit && maxLimit !== 0);
 
   return (
     <div className="bg-white shadow-1 rounded-lg">
@@ -16,14 +51,13 @@ const PriceDropdown = () => {
         onClick={() => setToggleDropdown(!toggleDropdown)}
         className="cursor-pointer flex items-center justify-between py-3 pl-6 pr-5.5"
       >
-        <p className="text-dark">Price</p>
+        <p className="text-dark">Precio</p>
         <button
           onClick={() => setToggleDropdown(!toggleDropdown)}
           id="price-dropdown-btn"
           aria-label="button for price dropdown"
-          className={`text-dark ease-out duration-200 ${
-            toggleDropdown && 'rotate-180'
-          }`}
+          className={`text-dark ease-out duration-200 ${toggleDropdown && "rotate-180"}`}
+          type="button"
         >
           <svg
             className="fill-current"
@@ -43,42 +77,64 @@ const PriceDropdown = () => {
         </button>
       </div>
 
-      {/* // <!-- dropdown menu --> */}
-      <div className={`p-6 ${toggleDropdown ? 'block' : 'hidden'}`}>
-        <div id="pricingOne">
-          <div className="price-range">
-            <RangeSlider
-              id="range-slider-gradient"
-              className="margin-lg"
-              step={'any'}
-              onInput={(e) =>
-                setSelectedPrice({
-                  from: Math.floor(e[0]),
-                  to: Math.ceil(e[1]),
-                })
-              }
-            />
+      {/* dropdown menu */}
+      <div className={`p-6 ${toggleDropdown ? "block" : "hidden"}`}>
+        <div className="price-range">
+          <RangeSlider
+            id="range-slider-gradient"
+            className="margin-lg"
+            min={minLimit}
+            max={maxLimit}
+            step={1}
+            value={clamped}
+            onInput={([from, to]) => {
+              setLocalFrom(Math.floor(from));
+              setLocalTo(Math.ceil(to));
+            }}
+            onThumbDragEnd={() => {
+              // aplicamos al soltar
+              onChange(clamped[0], clamped[1]);
+            }}
+          />
 
-            <div className="price-amount flex items-center justify-between pt-4">
-              <div className="text-custom-xs text-dark-4 flex rounded border border-gray-3/80">
-                <span className="block border-r border-gray-3/80 px-2.5 py-1.5">
-                  $
-                </span>
-                <span id="minAmount" className="block px-3 py-1.5">
-                  {selectedPrice.from}
-                </span>
-              </div>
+          <div className="price-amount flex items-center justify-between pt-4">
+            <div className="text-custom-xs text-dark-4 flex rounded border border-gray-3/80">
+              <span className="block border-r border-gray-3/80 px-2.5 py-1.5">$</span>
+              <span id="minAmount" className="block px-3 py-1.5">{clamped[0]}</span>
+            </div>
 
-              <div className="text-custom-xs text-dark-4 flex rounded border border-gray-3/80">
-                <span className="block border-r border-gray-3/80 px-2.5 py-1.5">
-                  $
-                </span>
-                <span id="maxAmount" className="block px-3 py-1.5">
-                  {selectedPrice.to}
-                </span>
-              </div>
+            <div className="text-custom-xs text-dark-4 flex rounded border border-gray-3/80">
+              <span className="block border-r border-gray-3/80 px-2.5 py-1.5">$</span>
+              <span id="maxAmount" className="block px-3 py-1.5">{clamped[1]}</span>
             </div>
           </div>
+
+          {/* <div className="flex gap-2 pt-4">
+            <button
+              type="button"
+              className="px-3 py-1.5 text-sm rounded border border-gray-300 hover:bg-gray-50"
+              onClick={() => onChange(clamped[0], clamped[1])}
+            >
+              Aplicar
+            </button>
+            <button
+              type="button"
+              className="px-3 py-1.5 text-sm rounded border border-gray-300 hover:bg-gray-50 disabled:opacity-40"
+              disabled={!hasCustom}
+              onClick={() => {
+                setLocalFrom(minLimit);
+                setLocalTo(maxLimit);
+                onClear?.();
+              }}
+            >
+              Limpiar
+            </button>
+          </div> */}
+
+          {/* hint del rango total */}
+          {/* <p className="mt-3 text-xs text-gray-500">
+            Rango del catálogo: ${minLimit} – ${maxLimit}
+          </p> */}
         </div>
       </div>
     </div>

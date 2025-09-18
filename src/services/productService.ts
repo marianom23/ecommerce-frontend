@@ -1,9 +1,11 @@
 // lib/services/productService.ts
 import { api, type PaginatedResponse } from "@/lib/api";
 import { type Product } from "@/types/product";
-
+import {
+  type ProductFacetsResponse,
+} from "@/types/facets";
 // export type Product = { id: number; title: string; reviews: number; price: number; discountedPrice: number; imgs?: { thumbnails: string[]; previews: string[] } };
-export type ListParams = { page?: number; limit?: number; sort?: string; q?:  string; categoryId?: number; minPrice?: number, maxPrice?: number, inStockOnly?: boolean; };
+export type ListParams = { page?: number; limit?: number; sort?: string; q?:  string; categoryId?: number; minPrice?: number, maxPrice?: number, brandIds?: number[], inStockOnly?: boolean; };
 export type CreateProductDto = { name: string; description?: string; price: number; sku?: string; brandId?: number; categoryId?: number; };
 export type UpdateProductDto = Partial<CreateProductDto>;
 
@@ -13,6 +15,9 @@ const baseAdmin  = "/b/products";
 export const productService = {
   list(params: ListParams) {
     return api.get<PaginatedResponse<Product>>(basePublic, { params });
+  },
+  getFacets(params: ListParams) {
+    return api.get<ProductFacetsResponse>(`${basePublic}/facets`, { params });
   },
   getOne(id: number) {
     return api.get<Product>(`${basePublic}/${id}`);

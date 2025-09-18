@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import Breadcrumb from "../Common/Breadcrumb";
 import CustomSelect from "./CustomSelect";
 import CategoryDropdown from "./CategoryDropdown";
-import GenderDropdown from "./GenderDropdown";
+import BrandDropdown from "./BrandDropdown";
 import SizeDropdown from "./SizeDropdown";
 import ColorsDropdwon from "./ColorsDropdwon";
 import PriceDropdown from "./PriceDropdown";
@@ -12,12 +12,68 @@ import SingleListItem from "../Shop/SingleListItem";
 import { useUrlState } from "@/hooks/useUrlState";
 import { productService } from "@/services/productService";
 import type { Product } from "@/types/product";
+import type { CategoryFacet } from "@/types/facets";
 import type { PaginatedResponse } from "@/lib/api";
 
-const ShopWithSidebar: React.FC = () => {
+type PriceRange = { minPrice: number; maxPrice: number };
 
+const ShopWithSidebar: React.FC = () => {
+  /******************
+   * Helpers de parseo
+   ******************/
+  const parseBool = (v: unknown): boolean | undefined => {
+    if (v === true || v === false) return v;
+    if (typeof v !== "string") return undefined;
+    const s = v.toLowerCase();
+    if (s === "true" || s === "1") return true;
+    if (s === "false" || s === "0") return false;
+    return undefined;
+  };
+
+  const parseCsvNums = (v: unknown): number[] | undefined => {
+    if (Array.isArray(v)) {
+      const nums = v
+        .map((x) => (typeof x === "number" ? x : Number(x)))
+        .filter((n) => !Number.isNaN(n));
+      return nums.length ? nums : undefined;
+    }
+    if (typeof v === "string" && v.trim() !== "") {
+      const nums = v
+        .split(",")
+        .map((s) => Number(s.trim()))
+        .filter((n) => !Number.isNaN(n));
+      return nums.length ? nums : undefined;
+    }
+    return undefined;
+  };
+
+  const parseNum = (v: unknown): number | undefined => {
+    if (typeof v === "number") return Number.isNaN(v) ? undefined : v;
+    if (typeof v === "string" && v.trim() !== "") {
+      const n = Number(v);
+      return Number.isNaN(n) ? undefined : n;
+    }
+    return undefined;
+  };
+
+  /******************
+   * URL params
+   ******************/
   const { params, setParams } = useUrlState();
 
+  // Derivados seguros desde la URL
+  const urlCategoryId = useMemo(() => parseNum(params.categoryId), [params.categoryId]);
+  const urlMinPrice   = useMemo(() => parseNum(params.minPrice),   [params.minPrice]);
+  const urlMaxPrice   = useMemo(() => parseNum(params.maxPrice),   [params.maxPrice]);
+  const urlInStock    = useMemo(() => parseBool(params.inStockOnly), [params.inStockOnly]);
+  const urlSort       = useMemo(() => (typeof params.sort === "string" ? params.sort : "0"), [params.sort]);
+  const urlQ          = useMemo(() => (typeof params.q === "string" ? params.q : undefined), [params.q]);
+  const urlBrandIds   = useMemo(() => parseCsvNums(params.brandIds), [params.brandIds]);
+
+
+  /******************
+   * Estados UI y datos
+   ******************/
   const [productStyle, setProductStyle] = useState<"grid" | "list">("grid");
   const [productSidebar, setProductSidebar] = useState(false);
   const [stickyMenu, setStickyMenu] = useState(false);
@@ -35,20 +91,25 @@ const ShopWithSidebar: React.FC = () => {
     { label: "Best Selling", value: "1" },
     { label: "Old Products", value: "2" },
   ];
-  const [selectedOption, setSelectedOption] = useState<string>(() => params.sort ?? "0");
+  const [selectedOption, setSelectedOption] = useState<string>(urlSort);
 
-  // si querés categoría/precio desde la URL:
-  const [categoryId, setCategoryId] = useState<number | undefined>(() =>
-    params.categoryId ? Number(params.categoryId) : undefined
-  );
-  const [minPrice, setMinPrice] = useState<number | undefined>(() =>
-    params.minPrice ? Number(params.minPrice) : undefined
-  );
-  const [maxPrice, setMaxPrice] = useState<number | undefined>(() =>
-    params.maxPrice ? Number(params.maxPrice) : undefined
-  );
+  // Filtros controlados
+  const [categoryId, setCategoryId] = useState<number | undefined>(urlCategoryId);
+  const [minPrice, setMinPrice] = useState<number | undefined>(urlMinPrice);
+  const [maxPrice, setMaxPrice] = useState<number | undefined>(urlMaxPrice);
+  const [inStockOnly, setInStockOnly] = useState<boolean | undefined>(urlInStock);
+  const [brandIds, setBrandIds] = useState<number[] | undefined>(urlBrandIds);
 
-  // cuando cambian estados clave -> sincroniza URL
+  // Facetas (categorías)
+  const [categoryFacets, setCategoryFacets] = useState<CategoryFacet[]>([]);
+  const [brandFacets, setBrandFacets] = useState<CategoryFacet[]>([]);
+  const [priceRange, setPriceRange] = useState<PriceRange | null>(null);
+  const [facetsLoading, setFacetsLoading] = useState(false);
+  const [facetsError, setFacetsError] = useState<string | null>(null);
+
+  /******************
+   * Sync URL cuando cambian filtros/página
+   ******************/
   useEffect(() => {
     setParams(
       {
@@ -57,11 +118,17 @@ const ShopWithSidebar: React.FC = () => {
         categoryId,
         minPrice,
         maxPrice,
+        inStockOnly,
+        q: urlQ, 
+        brandIds: brandIds?.join(","),
       },
       { replace: true }
     );
-  }, [page, selectedOption, categoryId, minPrice, maxPrice, setParams]);
+  }, [page, selectedOption, categoryId, minPrice, maxPrice, inStockOnly, urlQ, brandIds, setParams]);
 
+  /******************
+   * Sort param para el backend
+   ******************/
   const sortParam = useMemo(() => {
     switch (selectedOption) {
       case "0": return "latest";
@@ -71,6 +138,9 @@ const ShopWithSidebar: React.FC = () => {
     }
   }, [selectedOption]);
 
+  /******************
+   * Fetch: Productos paginados
+   ******************/
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -83,12 +153,16 @@ const ShopWithSidebar: React.FC = () => {
           categoryId,
           minPrice,
           maxPrice,
+          inStockOnly,
+          q: urlQ,
+          brandIds, // ⬅️ nuevo
         });
         const payload = res as PaginatedResponse<Product>;
         if (!cancelled) {
           setProducts(payload.items ?? []);
           setTotal(payload.total ?? 0);
-          setTotalPages(payload.totalPages ?? 1);
+          const tp = payload.totalPages ?? Math.max(1, Math.ceil((payload.total ?? 0) / pageSize));
+          setTotalPages(tp);
         }
       } catch (e: any) {
         if (!cancelled) setError(e?.message ?? "Error loading products");
@@ -97,15 +171,58 @@ const ShopWithSidebar: React.FC = () => {
       }
     })();
     return () => { cancelled = true; };
-  }, [page, pageSize, sortParam, categoryId, minPrice, maxPrice]);
+  }, [page, pageSize, sortParam, categoryId, minPrice, maxPrice, inStockOnly, urlQ, brandIds]);
 
-  // Sticky sidebar button
+
+  /******************
+   * Fetch: Facetas (categorías)
+   * Importante: NO pasamos categoryId para que muestre todas las opciones posibles
+   ******************/
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        setFacetsLoading(true); setFacetsError(null);
+        const facets = await productService.getFacets({
+          q: urlQ,
+          inStockOnly,
+          minPrice,
+          maxPrice,
+          // no pasamos categoryId ni brandIds para opciones globales
+        });
+        if (!cancelled) {
+          setCategoryFacets(facets.categoryFacets ?? []);
+          setBrandFacets(facets.brandFacets ?? []);
+          if (facets.priceRange?.minPrice != null && facets.priceRange?.maxPrice != null) {
+            setPriceRange({
+              minPrice: Number(facets.priceRange.minPrice),
+              maxPrice: Number(facets.priceRange.maxPrice),
+            });
+          } else {
+            setPriceRange(null);
+          }
+        }
+      } catch (e: any) {
+        if (!cancelled) setFacetsError(e?.message ?? "Error loading facets");
+      } finally {
+        if (!cancelled) setFacetsLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [urlQ, inStockOnly, minPrice, maxPrice]);
+
+
+  /******************
+   * Sticky sidebar button
+   ******************/
   const handleStickyMenu = () => {
     if (window.scrollY >= 80) setStickyMenu(true);
     else setStickyMenu(false);
   };
 
-  // Cerrar sidebar clickeando afuera
+  /******************
+   * Cerrar sidebar clickeando afuera
+   ******************/
   useEffect(() => {
     window.addEventListener("scroll", handleStickyMenu);
 
@@ -122,7 +239,9 @@ const ShopWithSidebar: React.FC = () => {
     };
   }, [productSidebar]);
 
-  // Rango "Showing"
+  /******************
+   * Rango "Showing"
+   ******************/
   const showingFrom = useMemo(
     () => (products.length ? (page - 1) * pageSize + 1 : 0),
     [page, pageSize, products.length]
@@ -132,14 +251,15 @@ const ShopWithSidebar: React.FC = () => {
     [page, pageSize, products.length]
   );
 
-  // Helpers de paginación (manteniendo estilos)
+  /******************
+   * Paginación
+   ******************/
   const goToPage = (p: number) => {
     if (p < 1 || p > totalPages || p === page) return;
     setPage(p);
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // construye items tipo: 1 2 3 4 5 ... last
   const buildPageNumbers = () => {
     const items: (number | string)[] = [];
     const maxNums = 5;
@@ -163,15 +283,9 @@ const ShopWithSidebar: React.FC = () => {
     return items;
   };
 
-  // Datos mock estáticos originales (solo para UI de filtros)
-  const categories = [
-    { name: "Desktop", products: 10, isRefined: true },
-    { name: "Laptop", products: 12, isRefined: false },
-    { name: "Monitor", products: 30, isRefined: false },
-    { name: "UPS", products: 23, isRefined: false },
-    { name: "Phone", products: 10, isRefined: false },
-    { name: "Watch", products: 13, isRefined: false },
-  ];
+  /******************
+   * Datos mock estáticos (otros filtros visuales)
+   ******************/
   const genders = [
     { name: "Men", products: 10 },
     { name: "Women", products: 23 },
@@ -180,12 +294,12 @@ const ShopWithSidebar: React.FC = () => {
 
   return (
     <>
-      <Breadcrumb title={"Explore All Products"} pages={["shop", "/", "shop with sidebar"]} />
+      <Breadcrumb title={"Explora los productos"} pages={["productos", "/", "productos con filtros"]} />
 
       <section className="overflow-hidden relative pb-20 pt-5 lg:pt-20 xl:pt-28 bg-[#f3f4f6]">
         <div className="max-w-[1170px] w-full mx-auto px-4 sm:px-8 xl:px-0">
           <div className="flex gap-7.5">
-            {/* <!-- Sidebar Start --> */}
+            {/* Sidebar Start */}
             <div
               className={`sidebar-content fixed xl:z-1 z-9999 left-0 top-0 xl:translate-x-0 xl:static max-w-[310px] xl:max-w-[270px] w-full ease-out duration-200 ${
                 productSidebar ? "translate-x-0 bg-white p-5 h-screen overflow-y-auto" : "-translate-x-full"
@@ -211,7 +325,7 @@ const ShopWithSidebar: React.FC = () => {
 
               <form onSubmit={(e) => e.preventDefault()}>
                 <div className="flex flex-col gap-6">
-                  {/* <!-- filter box --> */}
+                  {/* filter box */}
                   <div className="bg-white shadow-1 rounded-lg py-4 px-5">
                     <div className="flex items-center justify-between">
                       <p>Filtros:</p>
@@ -219,8 +333,12 @@ const ShopWithSidebar: React.FC = () => {
                         className="text-blue"
                         type="button"
                         onClick={() => {
-                          // Resetea filtros (cuando estén cableados)
                           setSelectedOption("0");
+                          setCategoryId(undefined);
+                          setMinPrice(undefined);
+                          setMaxPrice(undefined);
+                          setInStockOnly(undefined);
+                          setBrandIds(undefined);
                           setPage(1);
                         }}
                       >
@@ -229,38 +347,57 @@ const ShopWithSidebar: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* <!-- category box --> */}
-                  <CategoryDropdown categories={categories} />
+                  {/* category box (dinámico) */}
+                  <CategoryDropdown
+                    categories={categoryFacets}
+                    selectedId={categoryId}
+                    onChange={(id) => { setCategoryId(id); setPage(1); }}
+                  />
+                  {facetsLoading && <p className="px-5 text-sm text-gray-500">Cargando categorías…</p>}
+                  {facetsError && !facetsLoading && <p className="px-5 text-sm text-red-500">{facetsError}</p>}
 
-                  {/* <!-- gender box --> */}
-                  <GenderDropdown genders={genders} />
-
-                  {/* // <!-- size box --> */}
-                  <SizeDropdown />
-
-                  {/* // <!-- color box --> */}
-                  <ColorsDropdwon />
-
-                  {/* // <!-- price range box --> */}
-                  <PriceDropdown />
+                  {/* otros filtros (mock/pendientes de cablear) */}
+                  <BrandDropdown
+                    brands={brandFacets}
+                    selectedIds={brandIds}
+                    onChange={(ids) => { setBrandIds(ids); setPage(1); }}
+                  />
+                  {/* <SizeDropdown />
+                  <ColorsDropdwon /> */}
+                  <PriceDropdown
+                    minLimit={priceRange?.minPrice ?? 0}
+                    maxLimit={priceRange?.maxPrice ?? 0}
+                    // valores seleccionados (URL o rango completo)
+                    valueFrom={minPrice ?? priceRange?.minPrice ?? 0}
+                    valueTo={maxPrice ?? priceRange?.maxPrice ?? 0}
+                    onChange={(from, to) => {
+                      setMinPrice(from);
+                      setMaxPrice(to);
+                      setPage(1);
+                    }}
+                    onClear={() => {
+                      setMinPrice(undefined);
+                      setMaxPrice(undefined);
+                      setPage(1);
+                    }}
+                  />
+                  {facetsLoading && <p className="px-5 text-sm text-gray-500">Cargando precio…</p>}
+                  {facetsError && !facetsLoading && <p className="px-5 text-sm text-red-500">{facetsError}</p>}
                 </div>
               </form>
             </div>
-            {/* // <!-- Sidebar End --> */}
+            {/* Sidebar End */}
 
-            {/* // <!-- Content Start --> */}
+            {/* Content Start */}
             <div className="xl:max-w-[870px] w-full">
               <div className="rounded-lg bg-white shadow-1 pl-3 pr-2.5 py-2.5 mb-6">
                 <div className="flex items-center justify-between">
-                  {/* <!-- top bar left --> */}
+                  {/* top bar left */}
                   <div className="flex flex-wrap items-center gap-4">
                     <CustomSelect
                       options={options}
                       value={selectedOption}
-                      onChange={(v: string) => {
-                        setSelectedOption(v);
-                        setPage(1);
-                      }}
+                      onChange={(v: string) => { setSelectedOption(v); setPage(1); }}
                     />
                     <p>
                       Mostrando{" "}
@@ -271,7 +408,7 @@ const ShopWithSidebar: React.FC = () => {
                     </p>
                   </div>
 
-                  {/* <!-- top bar right --> */}
+                  {/* top bar right */}
                   <div className="flex items-center gap-2.5">
                     <button
                       onClick={() => setProductStyle("grid")}
@@ -354,7 +491,7 @@ const ShopWithSidebar: React.FC = () => {
                 </div>
               </div>
 
-              {/* <!-- Products Grid/List Content Start --> */}
+              {/* Products Grid/List */}
               <div
                 className={`${
                   productStyle === "grid"
@@ -387,9 +524,8 @@ const ShopWithSidebar: React.FC = () => {
                     )
                   )}
               </div>
-              {/* <!-- Products Grid/List Content End --> */}
 
-              {/* <!-- Products Pagination Start (mismos estilos) --> */}
+              {/* Pagination */}
               <div className="flex justify-center mt-15">
                 <div className="bg-white shadow-1 rounded-md p-2">
                   <ul className="flex items-center">
@@ -468,9 +604,9 @@ const ShopWithSidebar: React.FC = () => {
                   </ul>
                 </div>
               </div>
-              {/* <!-- Products Pagination End --> */}
+              {/* Pagination End */}
             </div>
-            {/* // <!-- Content End --> */}
+            {/* Content End */}
           </div>
         </div>
       </section>

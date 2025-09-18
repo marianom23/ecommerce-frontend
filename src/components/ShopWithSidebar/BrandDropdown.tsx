@@ -1,20 +1,27 @@
-// components/Filters/CategoryDropdown.tsx
 "use client";
-import { useState } from "react";
-import type { CategoryFacet } from "@/types/facets";
+import { useState, useMemo } from "react";
+import type { CategoryFacet } from "@/types/facets"; // misma forma {id,name,count}
 
 type Props = {
-  categories: CategoryFacet[];
-  selectedId?: number;
-  onChange: (id?: number) => void; // undefined = sin filtro
+  brands: CategoryFacet[];
+  selectedIds?: number[];
+  onChange: (ids?: number[]) => void; // undefined = sin filtro
 };
 
-const CategoryItem = ({ facet, selected, onClick }: { facet: CategoryFacet; selected: boolean; onClick: () => void }) => {
+const BrandItem = ({
+  facet,
+  selected,
+  toggle,
+}: {
+  facet: CategoryFacet;
+  selected: boolean;
+  toggle: () => void;
+}) => {
   return (
     <button
-      className={`${selected ? "text-blue" : ""} group flex items-center justify-between ease-out duration-200 hover:text-blue`}
-      onClick={onClick}
       type="button"
+      className={`${selected ? "text-blue" : ""} group flex items-center justify-between ease-out duration-200 hover:text-blue`}
+      onClick={toggle}
     >
       <div className="flex items-center gap-2">
         <div className={`cursor-pointer flex items-center justify-center rounded w-4 h-4 border ${selected ? "border-blue bg-blue" : "bg-white border-gray-3"}`}>
@@ -27,7 +34,7 @@ const CategoryItem = ({ facet, selected, onClick }: { facet: CategoryFacet; sele
             xmlns="http://www.w3.org/2000/svg"
           >
             <path
-              d="M8.33317 2.5L3.74984 7.08333L1.6665 5"
+              d="M8.333 2.5L3.75 7.083 1.667 5"
               stroke="white"
               strokeWidth="1.94437"
               strokeLinecap="round"
@@ -45,8 +52,18 @@ const CategoryItem = ({ facet, selected, onClick }: { facet: CategoryFacet; sele
   );
 };
 
-const CategoryDropdown: React.FC<Props> = ({ categories, selectedId, onChange }) => {
+const BrandDropdown: React.FC<Props> = ({ brands, selectedIds, onChange }) => {
   const [toggleDropdown, setToggleDropdown] = useState(true);
+
+  const selectedSet = useMemo(() => new Set(selectedIds ?? []), [selectedIds]);
+
+  const toggleId = (id: number) => {
+    const next = new Set(selectedSet);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    const arr = Array.from(next);
+    onChange(arr.length ? arr : undefined);
+  };
 
   return (
     <div className="bg-white shadow-1 rounded-lg">
@@ -54,8 +71,12 @@ const CategoryDropdown: React.FC<Props> = ({ categories, selectedId, onChange })
         onClick={(e) => { e.preventDefault(); setToggleDropdown(!toggleDropdown); }}
         className={`cursor-pointer flex items-center justify-between py-3 pl-6 pr-5.5 ${toggleDropdown && "shadow-filter"}`}
       >
-        <p className="text-dark">Categoría</p>
-        <button aria-label="button for category dropdown" className={`text-dark ease-out duration-200 ${toggleDropdown && "rotate-180"}`} type="button">
+        <p className="text-dark">Marcas</p>
+        <button
+          aria-label="button for brand dropdown"
+          className={`text-dark ease-out duration-200 ${toggleDropdown && "rotate-180"}`}
+          type="button"
+        >
           <svg
             className="fill-current"
             width="24"
@@ -78,19 +99,19 @@ const CategoryDropdown: React.FC<Props> = ({ categories, selectedId, onChange })
         {/* Opción para limpiar selección */}
         <button
           type="button"
-          className={`${!selectedId ? "text-blue" : ""} group flex items-center justify-between ease-out duration-200 hover:text-blue`}
+          className={`${!selectedIds?.length ? "text-blue" : ""} group flex items-center justify-between ease-out duration-200 hover:text-blue`}
           onClick={() => onChange(undefined)}
         >
           <span>Todos</span>
           <span className="bg-gray-2 inline-flex rounded-[30px] text-custom-xs px-2">—</span>
         </button>
 
-        {categories.map((facet) => (
-          <CategoryItem
+        {brands.map((facet) => (
+          <BrandItem
             key={facet.id ?? facet.name}
             facet={facet}
-            selected={selectedId === facet.id}
-            onClick={() => onChange(selectedId === facet.id ? undefined : facet.id)}
+            selected={selectedSet.has(facet.id as number)}
+            toggle={() => toggleId(facet.id as number)}
           />
         ))}
       </div>
@@ -98,4 +119,4 @@ const CategoryDropdown: React.FC<Props> = ({ categories, selectedId, onChange })
   );
 };
 
-export default CategoryDropdown;
+export default BrandDropdown;
