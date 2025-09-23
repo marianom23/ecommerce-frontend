@@ -22,6 +22,7 @@ export default function PostLogin() {
 
     (async () => {
       try {
+        await cartService.get(); 
         await cartService.attachCart(); // idempotente en backend
       } catch (e: any) {
         console.error("attachCart failed:", e);
