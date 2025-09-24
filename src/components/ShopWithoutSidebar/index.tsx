@@ -23,22 +23,21 @@ const ShopWithoutSidebar = () => {
   // Mantén TUS opciones tal cual
   const options = [
     { label: "Latest Products", value: "0" },
-    { label: "Best Selling", value: "1" },
+    { label: "Best Selling (7d)", value: "1" },
     { label: "Old Products", value: "2" },
+    { label: "Best Selling (30d)", value: "3" }, // opcional
   ];
+
   const [selectedOption, setSelectedOption] = useState("0");
 
   // Mapeo interno del value -> sort que entiende tu back
   const sortParam = useMemo(() => {
     switch (selectedOption) {
-      case "0":
-        return "latest";
-      case "1":
-        return "bestSelling";
-      case "2":
-        return "id";
-      default:
-        return "latest";
+      case "0": return "latest";
+      case "1": return "bestSellingWeek";     // usa 7 días fijo
+      case "2": return "id";
+      case "3": return "bestSellingSince";    // y mandás sinceDays=30
+      default:  return "latest";
     }
   }, [selectedOption]);
 
@@ -51,8 +50,9 @@ const ShopWithoutSidebar = () => {
 
         const res = await productService.list({
           page,
-          limit: pageSize, // tu back lo recibe como "limit" pero responde "pageSize"
+          limit: pageSize,
           sort: sortParam,
+          sinceDays: selectedOption === "3" ? 30 : undefined,
         });
 
         console.log("productos: ", res);
