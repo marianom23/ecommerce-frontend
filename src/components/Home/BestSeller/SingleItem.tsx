@@ -1,42 +1,44 @@
 "use client";
 import React from "react";
-import { Product } from "@/types/product";
-import { useModalContext } from "@/app/context/QuickViewModalContext";
-import { useDispatch } from "react-redux";
-import { AppDispatch } from "@/redux/store";
-import { updateQuickView } from "@/redux/features/quickView-slice";
-import { addItemToCart } from "@/redux/features/cart-slice";
 import Image from "next/image";
 import Link from "next/link";
+import { useDispatch } from "react-redux";
+import { AppDispatch } from "@/redux/store";
+import { Product } from "@/types/product";
+import { useModalContext } from "@/app/context/QuickViewModalContext";
+import { updateQuickView } from "@/redux/features/quickView-slice";
+import { addCartItem } from "@/redux/features/cart-slice";
 import { addItemToWishlist } from "@/redux/features/wishlist-slice";
+import toast from "react-hot-toast";
 
 const SingleItem = ({ item }: { item: Product }) => {
   const { openModal } = useModalContext();
   const dispatch = useDispatch<AppDispatch>();
 
-  // update the QuickView state
   const handleQuickViewUpdate = () => {
     dispatch(updateQuickView({ ...item }));
   };
 
-  // add to cart
-  const handleAddToCart = () => {
-    dispatch(
-      addItemToCart({
-        ...item,
-        quantity: 1,
-      })
-    );
+  // igual que en SingleGridItem: si no hay variante por defecto, abrir QuickView
+  const shouldOpenVariantPicker = (p: Product) =>
+    p.variantCount === 0 || p.variantCount > 1 || p.defaultVariantId == null;
+
+  const handleAddToCart = async () => {
+    if (shouldOpenVariantPicker(item)) {
+      dispatch(updateQuickView({ ...item }));
+      openModal();
+      toast("Debes elegir una variante del producto", { icon: "👈" });
+      return;
+    }
+    await dispatch(addCartItem({
+      productId: item.id,
+      variantId: item.defaultVariantId!, // garantizado por el guard anterior
+      quantity: 1,
+    }));
   };
 
   const handleItemToWishList = () => {
-    dispatch(
-      addItemToWishlist({
-        ...item,
-        status: "available",
-        quantity: 1,
-      })
-    );
+    dispatch(addItemToWishlist({ ...item, status: "available", quantity: 1 }));
   };
 
   return (
@@ -76,12 +78,11 @@ const SingleItem = ({ item }: { item: Product }) => {
                 height={14}
               />
             </div>
-
             <p className="text-custom-sm">({item.reviews})</p>
           </div>
 
           <h3 className="font-medium text-dark ease-out duration-200 hover:text-blue mb-1.5">
-            <Link href="/shop-details"> {item.title} </Link>
+            <Link href="/shop-details">{item.title}</Link>
           </h3>
 
           <span className="flex items-center justify-center gap-2 font-medium text-lg">
@@ -91,19 +92,17 @@ const SingleItem = ({ item }: { item: Product }) => {
         </div>
 
         <div className="flex justify-center items-center">
-          <Image src={item.imgs.previews[0]} alt="" width={280} height={280} />
+          <Image src={item.imgs.previews[0]} alt={item.title ?? ""} width={280} height={280} />
         </div>
 
         <div className="absolute right-0 bottom-0 translate-x-full u-w-full flex flex-col gap-2 p-5.5 ease-linear duration-300 group-hover:translate-x-0">
           <button
-            onClick={() => {
-              handleQuickViewUpdate();
-              openModal();
-            }}
+            onClick={() => { handleQuickViewUpdate(); openModal(); }}
             aria-label="button for quick view"
             id="bestOne"
             className="flex items-center justify-center w-9 h-9 rounded-[5px] shadow-1 ease-out duration-200 text-dark bg-white hover:text-white hover:bg-blue"
           >
+            {/* eye icon */}
             <svg
               className="fill-current"
               width="16"
@@ -128,11 +127,12 @@ const SingleItem = ({ item }: { item: Product }) => {
           </button>
 
           <button
-            onClick={() => handleAddToCart()}
+            onClick={handleAddToCart}
             aria-label="button for add to cart"
             id="addCartOne"
             className="flex items-center justify-center w-9 h-9 rounded-[5px] shadow-1 ease-out duration-200 text-dark bg-white hover:text-white hover:bg-blue"
           >
+            {/* cart icon */}
             <svg
               className="fill-current"
               width="16"
@@ -161,7 +161,6 @@ const SingleItem = ({ item }: { item: Product }) => {
               />
             </svg>
           </button>
-
           <button
             onClick={() => {
               handleItemToWishList();

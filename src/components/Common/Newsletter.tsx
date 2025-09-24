@@ -9,7 +9,7 @@ const Newsletter = () => {
           {/* <!-- bg shapes --> */}
           <Image
             src="/images/shapes/newsletter-bg.jpg"
-            alt="background illustration"
+            alt="ilustración de fondo"
             className="absolute -z-1 w-full h-full left-0 top-0 rounded-xl"
             width={1170}
             height={200}
@@ -19,11 +19,11 @@ const Newsletter = () => {
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8 px-4 sm:px-7.5 xl:pl-12.5 xl:pr-14 py-11">
             <div className="max-w-[491px] w-full">
               <h2 className="max-w-[399px] text-white font-bold text-lg sm:text-xl xl:text-heading-4 mb-3">
-                Don&apos;t Miss Out Latest Trends & Offers
+                No te pierdas las últimas tendencias y ofertas
               </h2>
               <p className="text-white">
-                Register to receive news about the latest offers & discount
-                codes
+                Registrate para recibir novedades sobre las últimas ofertas y
+                códigos de descuento
               </p>
             </div>
 
@@ -34,14 +34,14 @@ const Newsletter = () => {
                     type="email"
                     name="email"
                     id="email"
-                    placeholder="Enter your email"
+                    placeholder="Ingresá tu correo electrónico"
                     className="w-full bg-gray-1 border border-gray-3 outline-none rounded-md placeholder:text-dark-4 py-3 px-5"
                   />
                   <button
                     type="submit"
                     className="inline-flex justify-center py-3 px-7 text-white bg-blue font-medium rounded-md ease-out duration-200 hover:bg-blue-dark"
                   >
-                    Subscribe
+                    Suscribirme
                   </button>
                 </div>
               </form>

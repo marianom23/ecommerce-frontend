@@ -1,102 +1,126 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import CustomSelect from "./CustomSelect";
+import Image from "next/image";
+
+import CustomSelect, { type SelectOption } from "./CustomSelect";
+import { productService } from "@/services/productService";
 import { menuData } from "./menuData";
-import { useSession, signOut } from "next-auth/react";
 import Dropdown from "./Dropdown";
-// import { useAppSelector } from "@/redux/store";
+
+import { useSession, signOut } from "next-auth/react";
 import { useSelector } from "react-redux";
 import { selectTotalPrice, selectItemsCount } from "@/redux/features/cart-slice";
 import { useCartModalContext } from "@/app/context/CartSidebarModalContext";
 
-import Image from "next/image";
-
 const Header = () => {
   const { data: session, status } = useSession();
+  const router = useRouter();
+
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("0"); // "0" = Todas
+  const [catOptions, setCatOptions] = useState<SelectOption[]>([
+    { label: "Categorías", value: "0" },
+  ]);
+  const [catsLoading, setCatsLoading] = useState(false);
   const [navigationOpen, setNavigationOpen] = useState(false);
   const [stickyMenu, setStickyMenu] = useState(false);
-  const { openCartModal } = useCartModalContext();
 
-  // const product = useAppSelector((state) => state.cartReducer.items);
+  const { openCartModal } = useCartModalContext();
   const totalPrice = useSelector(selectTotalPrice);
   const totalItems = useSelector(selectItemsCount);
 
-  const handleOpenCartModal = () => {
-    openCartModal();
-  };
+  const handleOpenCartModal = () => openCartModal();
 
   // Sticky menu
-  const handleStickyMenu = () => {
-    if (window.scrollY >= 80) {
-      setStickyMenu(true);
-    } else {
-      setStickyMenu(false);
-    }
-  };
-
   useEffect(() => {
-    window.addEventListener("scroll", handleStickyMenu);
-  });
+    const handleSticky = () => setStickyMenu(window.scrollY >= 80);
+    window.addEventListener("scroll", handleSticky);
+    handleSticky();
+    return () => window.removeEventListener("scroll", handleSticky);
+  }, []);
 
-  const options = [
-    { label: "Categorías", value: "0" },
-    { label: "Desktop", value: "1" },
-    { label: "Laptop", value: "2" },
-    { label: "Monitor", value: "3" },
-    { label: "Phone", value: "4" },
-    { label: "Watch", value: "5" },
-    { label: "Mouse", value: "6" },
-    { label: "Tablet", value: "7" },
-  ];
+  // Cargar categorías reales (facets)
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        setCatsLoading(true);
+        const facets = await productService.getFacets({}); // sin filtros → todas
+        const mapped: SelectOption[] = [
+          { label: "Categorías", value: "0" },
+          ...(facets?.categoryFacets ?? []).map((c: any) => ({
+            label: c.name,
+            value: String(c.id),
+          })),
+        ];
+        if (!cancelled) setCatOptions(mapped);
+      } catch {
+        if (!cancelled) setCatOptions([{ label: "Categorías", value: "0" }]);
+      } finally {
+        if (!cancelled) setCatsLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   return (
     <header
-      className={`fixed left-0 top-0 w-full z-9999 bg-white transition-all ease-in-out duration-300 ${
-        stickyMenu && "shadow"
-      }`}
+      className={`fixed left-0 top-0 w-full z-9999 bg-white transition-all ease-in-out duration-300 ${stickyMenu && "shadow"}`}
     >
       <div className="max-w-[1170px] mx-auto px-4 sm:px-7.5 xl:px-0">
-        {/* <!-- header top start --> */}
-        <div
+        {/* header top */}
+                <div
           className={`flex flex-col lg:flex-row gap-5 items-end lg:items-center xl:justify-between ease-out duration-200 ${
             stickyMenu ? "py-4" : "py-6"
           }`}
         >
-          {/* <!-- header top left --> */}
+          {/* left */}
           <div className="xl:w-auto flex-col sm:flex-row w-full flex sm:justify-between sm:items-center gap-5 sm:gap-10">
             <Link className="flex-shrink-0" href="/">
-              <Image
-                src="/images/logo/logo.svg"
-                alt="Logo"
-                width={219}
-                height={36}
-              />
+              <Image src="/images/logo/logo.svg" alt="Logo" width={219} height={36} />
             </Link>
 
+            {/* buscador */}
             <div className="max-w-[475px] w-full">
-              <form>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const params = new URLSearchParams();
+                  if (searchQuery.trim()) params.set("q", searchQuery.trim());
+                  if (selectedCategory !== "0") params.set("categoryId", selectedCategory);
+                  router.push(`/productos?${params.toString()}`);
+                }}
+              >
                 <div className="flex items-center">
-                  <CustomSelect options={options} />
+                  <CustomSelect
+                    options={catOptions}
+                    value={selectedCategory}
+                    onChange={(v) => setSelectedCategory(String(v))}
+                    aria-label="Seleccionar categoría"
+                  />
 
                   <div className="relative max-w-[333px] sm:min-w-[333px] w-full">
-                    {/* <!-- divider --> */}
+                    {/* divider */}
                     <span className="absolute left-0 top-1/2 -translate-y-1/2 inline-block w-px h-5.5 bg-gray-4"></span>
+
                     <input
                       onChange={(e) => setSearchQuery(e.target.value)}
                       value={searchQuery}
                       type="search"
                       name="search"
                       id="search"
-                      placeholder="Buscar productos…"
+                      placeholder={catsLoading ? "Cargando categorías…" : "Buscar productos…"}
                       autoComplete="off"
                       className="custom-search w-full rounded-r-[5px] bg-gray-1 !border-l-0 border border-gray-3 py-2.5 pl-4 pr-10 outline-none ease-in duration-200"
+                      aria-label="Buscar productos"
                     />
 
                     <button
                       id="search-btn"
-                      aria-label="Search"
+                      type="submit"
+                      aria-label="Buscar"
                       className="flex items-center justify-center absolute right-3 top-1/2 -translate-y-1/2 ease-in duration-200 hover:text-blue"
                     >
                       <svg
@@ -123,6 +147,7 @@ const Header = () => {
           <div className={`flex w-full lg:w-auto items-center ${ status === "authenticated" ? "gap-4.5" : "gap-7.5" } transition-all duration-200`}
           >
             <div className="hidden xl:flex items-center gap-3.5 flex-shrink-0">
+              {/* soporte */}
               <svg
                 width="24"
                 height="24"
@@ -147,7 +172,6 @@ const Header = () => {
                   fill="#3C50E0"
                 />
               </svg>
-
               <div>
                 <span className="block text-2xs text-dark-4 uppercase">
                   24/7 SUPPORT
@@ -158,19 +182,20 @@ const Header = () => {
               </div>
             </div>
 
-            {/* <!-- divider --> */}
+            {/* divider */}
             <span className="hidden xl:block w-px h-7.5 bg-gray-4"></span>
 
+            {/* cuenta + carrito */}
             <div className="flex w-full lg:w-auto justify-between items-center gap-5">
               <div className="flex items-center gap-5">
                 {status === "authenticated" ? (
                   <div className="flex items-center gap-2.5">
-                    {/* 👉 click en icono/nombre lleva a /mi-cuenta */}
                     <Link
                       href="/mi-cuenta"
                       aria-label="Ir a Mi Cuenta"
                       className="flex items-center gap-2.5 cursor-pointer"
                     >
+                      {/* icono usuario */}
                       <svg
                         width="24"
                         height="24"
@@ -191,16 +216,14 @@ const Header = () => {
                           fill="#3C50E0"
                         />
                       </svg>
-
                       <div>
                         <span className="block text-2xs text-dark-4 uppercase">Mi Cuenta</span>
                         <p className="font-medium text-custom-sm text-dark">
                           {session.user?.firstName}
-                        </p>
+                        </p>                      
                       </div>
                     </Link>
 
-                    {/* Botón Logout separado (no dentro del Link) */}
                     <button
                       onClick={() => signOut({ callbackUrl: "/" })}
                       aria-label="Logout"
@@ -213,8 +236,8 @@ const Header = () => {
                     </button>
                   </div>
                 ) : (
-                  // ❌ No logueado → Sign In
                   <Link href="/signin" className="flex items-center gap-2.5">
+                    {/* icono usuario */}
                     <svg
                       width="24"
                       height="24"
@@ -235,11 +258,10 @@ const Header = () => {
                         fill="#3C50E0"
                       />
                     </svg>
-
                     <div>
                       <span className="block text-2xs text-dark-4 uppercase">
                         Mi Cuenta
-                      </span>
+                      </span>                      
                       <p className="font-medium text-custom-sm text-dark">Ingresar</p>
                     </div>
                   </Link>
@@ -248,8 +270,9 @@ const Header = () => {
                 <button
                   onClick={handleOpenCartModal}
                   className="flex items-center gap-2.5"
-                >
+                >                  
                   <span className="inline-block relative">
+                    {/* icono carrito */}
                     <svg
                       width="24"
                       height="24"
@@ -287,17 +310,13 @@ const Header = () => {
                   </span>
 
                   <div>
-                    <span className="block text-2xs text-dark-4 uppercase">
-                      cart
-                    </span>
-                    <p className="font-medium text-custom-sm text-dark">
-                      ${totalPrice}
-                    </p>
+                    <span className="block text-2xs text-dark-4 uppercase">Carrito</span>
+                    <p className="font-medium text-custom-sm text-dark">${totalPrice}</p>
                   </div>
                 </button>
               </div>
 
-              {/* <!-- Hamburger Toggle BTN --> */}
+              {/* Hamburguesa */}
               <button
                 id="Toggle"
                 aria-label="Toggler"
@@ -337,33 +356,26 @@ const Header = () => {
                   </span>
                 </span>
               </button>
-              {/* //   <!-- Hamburger Toggle BTN --> */}
             </div>
           </div>
         </div>
-        {/* <!-- header top end --> */}
+        {/* header top end */}
       </div>
 
       <div className="border-t border-gray-3">
         <div className="max-w-[1170px] mx-auto px-4 sm:px-7.5 xl:px-0">
           <div className="flex items-center justify-between">
-            {/* <!--=== Main Nav Start ===--> */}
+            {/* Main Nav */}
             <div
               className={`w-[288px] absolute right-4 top-full xl:static xl:w-auto h-0 xl:h-auto invisible xl:visible xl:flex items-center justify-between ${
-                navigationOpen &&
-                `!visible bg-white shadow-lg border border-gray-3 !h-auto max-h-[400px] overflow-y-scroll rounded-md p-5`
+                navigationOpen && `!visible bg-white shadow-lg border border-gray-3 !h-auto max-h-[400px] overflow-y-scroll rounded-md p-5`
               }`}
             >
-              {/* <!-- Main Nav Start --> */}
               <nav>
                 <ul className="flex xl:items-center flex-col xl:flex-row gap-5 xl:gap-6">
                   {menuData.map((menuItem, i) =>
                     menuItem.submenu ? (
-                      <Dropdown
-                        key={i}
-                        menuItem={menuItem}
-                        stickyMenu={stickyMenu}
-                      />
+                      <Dropdown key={i} menuItem={menuItem} stickyMenu={stickyMenu} />
                     ) : (
                       <li
                         key={i}
@@ -373,8 +385,7 @@ const Header = () => {
                           href={menuItem.path}
                           className={`hover:text-blue text-custom-sm font-medium text-dark flex ${
                             stickyMenu ? "xl:py-4" : "xl:py-6"
-                          }`}
-                        >
+                          }`}                        >
                           {menuItem.title}
                         </Link>
                       </li>
@@ -382,18 +393,14 @@ const Header = () => {
                   )}
                 </ul>
               </nav>
-              {/* //   <!-- Main Nav End --> */}
             </div>
-            {/* // <!--=== Main Nav End ===--> */}
 
-            {/* // <!--=== Nav Right Start ===--> */}
+            {/* Right nav */}
             <div className="hidden xl:block">
               <ul className="flex items-center gap-5.5">
                 <li className="py-4">
-                  <a
-                    href="#"
-                    className="flex items-center gap-1.5 font-medium text-custom-sm text-dark hover:text-blue"
-                  >
+                  <a href="#" className="flex items-center gap-1.5 font-medium text-custom-sm text-dark hover:text-blue">
+                    {/* ojo: seguía en inglés, si querés lo traducimos en el layout */}
                     <svg
                       className="fill-current"
                       width="16"
@@ -414,12 +421,8 @@ const Header = () => {
                     Recently Viewed
                   </a>
                 </li>
-
                 <li className="py-4">
-                  <Link
-                    href="/wishlist"
-                    className="flex items-center gap-1.5 font-medium text-custom-sm text-dark hover:text-blue"
-                  >
+                  <Link href="/wishlist" className="flex items-center gap-1.5 font-medium text-custom-sm text-dark hover:text-blue">
                     <svg
                       className="fill-current"
                       width="16"
@@ -438,7 +441,7 @@ const Header = () => {
                 </li>
               </ul>
             </div>
-            {/* <!--=== Nav Right End ===--> */}
+            {/* Right nav end */}
           </div>
         </div>
       </div>

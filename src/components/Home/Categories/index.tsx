@@ -1,16 +1,29 @@
 "use client";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { useCallback, useRef, useEffect } from "react";
-import data from "./categoryData";
+import { useCallback, useRef, useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 
-// Import Swiper styles
+// Swiper styles
 import "swiper/css/navigation";
 import "swiper/css";
+
+import { productService } from "@/services/productService";
+import type { CategoryFacet } from "@/types/facets";
 import SingleItem from "./SingleItem";
 
+type UICategory = {
+  id: number;
+  title: string;
+  img?: string | null; // opcional, por si tu backend no expone imagen
+  count?: number;
+};
+
 const Categories = () => {
-  const sliderRef = useRef(null);
+  const sliderRef = useRef<any>(null);
+  const [items, setItems] = useState<UICategory[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const handlePrev = useCallback(() => {
     if (!sliderRef.current) return;
@@ -23,16 +36,49 @@ const Categories = () => {
   }, []);
 
   useEffect(() => {
-    if (sliderRef.current) {
+    if (sliderRef.current?.swiper && !sliderRef.current.swiper.initialized) {
       sliderRef.current.swiper.init();
     }
+  }, []);
+
+  // Fetch categorías desde facets (globales, sin categoryId para ver TODAS)
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const facets = await productService.getFacets({
+          // Si querés filtrar por q / inStockOnly / price, se pueden pasar acá.
+          // Importante: NO pasar categoryId para que muestre todas.
+        });
+
+        if (cancelled) return;
+
+        const cats = (facets?.categoryFacets ?? []).map((c: CategoryFacet) => ({
+          id: Number(c.id),
+          title: c.name,
+          // si tu backend trae imagen de la categoría, usala acá (p.ej. c.imageUrl)
+          img: (c as any)?.imageUrl ?? null,
+          count: c.count,
+        }));
+
+        setItems(cats);
+      } catch (e: any) {
+        if (!cancelled) setError(e?.message ?? "Error cargando categorías");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
   }, []);
 
   return (
     <section className="overflow-hidden pt-17.5">
       <div className="max-w-[1170px] w-full mx-auto px-4 sm:px-8 xl:px-0 pb-15 border-b border-gray-3">
         <div className="swiper categories-carousel common-carousel">
-          {/* <!-- section title --> */}
+          {/* Título sección */}
           <div className="mb-10 flex items-center justify-between">
             <div>
               <span className="flex items-center gap-2.5 font-medium text-dark mb-1.5">
@@ -70,15 +116,15 @@ const Categories = () => {
                     </clipPath>
                   </defs>
                 </svg>
-                Categories
+                Categorías
               </span>
               <h2 className="font-semibold text-xl xl:text-heading-5 text-dark">
-                Browse by Category
+                Buscar por Categoría
               </h2>
             </div>
 
             <div className="flex items-center gap-3">
-              <button onClick={handlePrev} className="swiper-button-prev">
+              <button onClick={handlePrev} className="swiper-button-prev" aria-label="Anterior">
                 <svg
                   className="fill-current"
                   width="24"
@@ -96,7 +142,7 @@ const Categories = () => {
                 </svg>
               </button>
 
-              <button onClick={handleNext} className="swiper-button-next">
+              <button onClick={handleNext} className="swiper-button-next" aria-label="Siguiente">
                 <svg
                   className="fill-current"
                   width="24"
@@ -116,30 +162,38 @@ const Categories = () => {
             </div>
           </div>
 
-          <Swiper
-            ref={sliderRef}
-            slidesPerView={6}
-            breakpoints={{
-              // when window width is >= 640px
-              0: {
-                slidesPerView: 2,
-              },
-              1000: {
-                slidesPerView: 4,
-                // spaceBetween: 4,
-              },
-              // when window width is >= 768px
-              1200: {
-                slidesPerView: 6,
-              },
-            }}
-          >
-            {data.map((item, key) => (
-              <SwiperSlide key={key}>
-                <SingleItem item={item} />
-              </SwiperSlide>
-            ))}
-          </Swiper>
+          {/* Contenido */}
+          {loading && (
+            <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-6">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="h-40 rounded-full bg-white shadow-1 animate-pulse" />
+              ))}
+            </div>
+          )}
+
+          {error && !loading && (
+            <div className="rounded-md bg-white shadow-1 p-6 text-center text-red-500">
+              {error}
+            </div>
+          )}
+
+          {!loading && !error && (
+            <Swiper
+              ref={sliderRef}
+              slidesPerView={6}
+              breakpoints={{
+                0: { slidesPerView: 2 },
+                1000: { slidesPerView: 4 },
+                1200: { slidesPerView: 6 },
+              }}
+            >
+              {items.map((item) => (
+                <SwiperSlide key={item.id}>
+                  <SingleItem item={item} />
+                </SwiperSlide>
+              ))}
+            </Swiper>
+          )}
         </div>
       </div>
     </section>

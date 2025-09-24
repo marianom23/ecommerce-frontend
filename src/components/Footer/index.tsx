@@ -11,7 +11,7 @@ const Footer = () => {
         <div className="flex flex-wrap xl:flex-nowrap gap-10 xl:gap-19 xl:justify-between pt-17.5 xl:pt-22.5 pb-10 xl:pb-15">
           <div className="max-w-[330px] w-full">
             <h2 className="mb-7.5 text-custom-1 font-medium text-dark">
-              Help & Support
+              Ayuda y Soporte
             </h2>
 
             <ul className="flex flex-col gap-3">
@@ -32,7 +32,7 @@ const Footer = () => {
                     />
                   </svg>
                 </span>
-                685 Market Street,Las Vegas, LA 95820,United States.
+                Chacras de Coria, Lujan de Cuyo, Mendoza.
               </li>
 
               <li>
@@ -61,7 +61,7 @@ const Footer = () => {
                       fill="#3C50E0"
                     />
                   </svg>
-                  (+099) 532-786-9843
+                  (+054) 261-218-4782
                 </a>
               </li>
 
@@ -113,7 +113,7 @@ const Footer = () => {
                 </svg>
               </a>
 
-              <a
+              {/* <a
                 href="#"
                 aria-label="Twitter Social Link"
                 className="flex ease-out duration-200 hover:text-blue"
@@ -131,7 +131,7 @@ const Footer = () => {
                     fill=""
                   />
                 </svg>
-              </a>
+              </a> */}
 
               <a
                 href="#"
@@ -198,23 +198,23 @@ const Footer = () => {
 
           <div className="w-full sm:w-auto">
             <h2 className="mb-7.5 text-custom-1 font-medium text-dark">
-              Account
+              Cuenta
             </h2>
 
             <ul className="flex flex-col gap-3.5">
               <li>
                 <a className="ease-out duration-200 hover:text-blue" href="#">
-                  My Account
+                  Mi Cuenta
                 </a>
               </li>
               <li>
                 <a className="ease-out duration-200 hover:text-blue" href="#">
-                  Login / Register
+                  Ingresar / Registrarme
                 </a>
               </li>
               <li>
                 <a className="ease-out duration-200 hover:text-blue" href="#">
-                  Cart
+                  Carrito
                 </a>
               </li>
               <li>
@@ -224,7 +224,7 @@ const Footer = () => {
               </li>
               <li>
                 <a className="ease-out duration-200 hover:text-blue" href="#">
-                  Shop
+                  Productos
                 </a>
               </li>
             </ul>
@@ -232,33 +232,33 @@ const Footer = () => {
 
           <div className="w-full sm:w-auto">
             <h2 className="mb-7.5 text-custom-1 font-medium text-dark">
-              Quick Link
+              Links utiles
             </h2>
 
             <ul className="flex flex-col gap-3">
               <li>
                 <a className="ease-out duration-200 hover:text-blue" href="#">
-                  Privacy Policy
+                  Política de Privacidad
                 </a>
               </li>
               <li>
                 <a className="ease-out duration-200 hover:text-blue" href="#">
-                  Refund Policy
+                  Política de Reembolso
                 </a>
               </li>
               <li>
                 <a className="ease-out duration-200 hover:text-blue" href="#">
-                  Terms of Use
+                  Términos de Uso
                 </a>
               </li>
               <li>
                 <a className="ease-out duration-200 hover:text-blue" href="#">
-                  FAQ’s
+                  Preguntas Frecuentes
                 </a>
               </li>
               <li>
                 <a className="ease-out duration-200 hover:text-blue" href="#">
-                  Contact
+                  Contacto
                 </a>
               </li>
             </ul>
@@ -338,11 +338,11 @@ const Footer = () => {
         <div className="max-w-[1170px] mx-auto px-4 sm:px-8 xl:px-0">
           <div className="flex gap-5 flex-wrap items-center justify-between">
             <p className="text-dark font-medium">
-              &copy; {year}. All rights reserved by PimjoLabs.
+              &copy; {year}. Todos los derechos reservados por HorneroTech.
             </p>
 
             <div className="flex flex-wrap items-center gap-4">
-              <p className="font-medium">We Accept:</p>
+              <p className="font-medium">Aceptamos:</p>
 
               <div className="flex flex-wrap items-center gap-6">
                 <a href="#" aria-label="payment system with visa card">
@@ -353,11 +353,11 @@ const Footer = () => {
                     height={22}
                   />
                 </a>
-                <a href="#" aria-label="payment system with paypal">
+                <a href="#" aria-label="payment system with mercado pago">
                   <Image
-                    src="/images/payment/payment-02.svg"
-                    alt="paypal"
-                    width={18}
+                    src="/images/payment/mercado-pago.svg"
+                    alt="mercado pago"
+                    width={120}
                     height={21}
                   />
                 </a>
@@ -365,22 +365,22 @@ const Footer = () => {
                   <Image
                     src="/images/payment/payment-03.svg"
                     alt="master card"
-                    width={33}
+                    width={43}
                     height={24}
                   />
                 </a>
-                <a href="#" aria-label="payment system with apple pay">
+                <a href="#" aria-label="payment system with naranja">
                   <Image
-                    src="/images/payment/payment-04.svg"
-                    alt="apple pay"
-                    width={52.94}
+                    src="/images/payment/naranja.svg"
+                    alt="naranja"
+                    width={80.94}
                     height={22}
                   />
                 </a>
-                <a href="#" aria-label="payment system with google pay">
+                <a href="#" aria-label="payment system with american express">
                   <Image
-                    src="/images/payment/payment-05.svg"
-                    alt="google pay"
+                    src="/images/payment/american-express.svg"
+                    alt="american express"
                     width={56}
                     height={22}
                   />
