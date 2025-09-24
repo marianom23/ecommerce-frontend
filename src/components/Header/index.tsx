@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -8,7 +8,7 @@ import CustomSelect, { type SelectOption } from "./CustomSelect";
 import { productService } from "@/services/productService";
 import { menuData } from "./menuData";
 import Dropdown from "./Dropdown";
-
+import type { CategoryFacet } from "@/types/facets";
 import { useSession, signOut } from "next-auth/react";
 import { useSelector } from "react-redux";
 import { selectTotalPrice, selectItemsCount } from "@/redux/features/cart-slice";
@@ -17,7 +17,8 @@ import { useCartModalContext } from "@/app/context/CartSidebarModalContext";
 const Header = () => {
   const { data: session, status } = useSession();
   const router = useRouter();
-
+  const [brandFacets, setBrandFacets] = useState<CategoryFacet[]>([]);
+  const [brandsLoading, setBrandsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("0"); // "0" = Todas
   const [catOptions, setCatOptions] = useState<SelectOption[]>([
@@ -33,6 +34,22 @@ const Header = () => {
 
   const handleOpenCartModal = () => openCartModal();
 
+  const computedMenu = useMemo(() => {
+  return menuData.map((item) => {
+    if (item.title === "Marcas") {
+      return {
+        ...item,
+        // submenu con mismas props que el resto y SIN cantidad
+        submenu: (brandFacets ?? []).map((b) => ({
+          title: b.name,
+          path: `/productos?brandIds=${b.id}`,
+        })),
+      };
+    }
+    return item;
+  });
+}, [brandFacets]);
+
   // Sticky menu
   useEffect(() => {
     const handleSticky = () => setStickyMenu(window.scrollY >= 80);
@@ -41,11 +58,13 @@ const Header = () => {
     return () => window.removeEventListener("scroll", handleSticky);
   }, []);
 
-  // Cargar categorías reales (facets)
+
+  // Cargar (facets)
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
+        setBrandsLoading(true);
         setCatsLoading(true);
         const facets = await productService.getFacets({}); // sin filtros → todas
         const mapped: SelectOption[] = [
@@ -55,11 +74,16 @@ const Header = () => {
             value: String(c.id),
           })),
         ];
-        if (!cancelled) setCatOptions(mapped);
+        if (!cancelled) {
+          setBrandFacets(facets?.brandFacets ?? []);
+          setCatOptions(mapped)
+        }
       } catch {
         if (!cancelled) setCatOptions([{ label: "Categorías", value: "0" }]);
+        if (!cancelled) setBrandFacets([]);
       } finally {
         if (!cancelled) setCatsLoading(false);
+        if (!cancelled) setBrandsLoading(false);
       }
     })();
     return () => { cancelled = true; };
@@ -373,25 +397,26 @@ const Header = () => {
             >
               <nav>
                 <ul className="flex xl:items-center flex-col xl:flex-row gap-5 xl:gap-6">
-                  {menuData.map((menuItem, i) =>
-                    menuItem.submenu ? (
-                      <Dropdown key={i} menuItem={menuItem} stickyMenu={stickyMenu} />
-                    ) : (
-                      <li
-                        key={i}
-                        className="group relative before:w-0 before:h-[3px] before:bg-blue before:absolute before:left-0 before:top-0 before:rounded-b-[3px] before:ease-out before:duration-200 hover:before:w-full "
+                {computedMenu.map((menuItem, i) =>
+                  menuItem.submenu ? (
+                    <Dropdown key={i} menuItem={menuItem} stickyMenu={stickyMenu} />
+                  ) : (
+                    <li
+                      key={i}
+                      className="group relative before:w-0 before:h-[3px] before:bg-blue before:absolute before:left-0 before:top-0 before:rounded-b-[3px] before:ease-out before:duration-200 hover:before:w-full "
+                    >
+                      <Link
+                        href={menuItem.path}
+                        className={`hover:text-blue text-custom-sm font-medium text-dark flex ${
+                          stickyMenu ? "xl:py-4" : "xl:py-6"
+                        }`}
                       >
-                        <Link
-                          href={menuItem.path}
-                          className={`hover:text-blue text-custom-sm font-medium text-dark flex ${
-                            stickyMenu ? "xl:py-4" : "xl:py-6"
-                          }`}                        >
-                          {menuItem.title}
-                        </Link>
-                      </li>
-                    )
-                  )}
-                </ul>
+                        {menuItem.title}
+                      </Link>
+                    </li>
+                  )
+                )}
+              </ul>
               </nav>
             </div>
 
