@@ -1,17 +1,28 @@
+// app/login/page.tsx  (tu Signin actual)
 "use client";
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Breadcrumb from "@/components/Common/Breadcrumb";
 import { signIn } from "next-auth/react";
 
-const Signin = () => {
-  const router = useRouter();
-  const [formData, setFormData] = useState({ email: "", password: "" });
+const sanitizeNext = (raw: string | null): string => {
+  if (!raw) return "/";
+  try {
+    // Solo permitimos paths relativos internos
+    const url = decodeURIComponent(raw);
+    if (url.startsWith("/") && !url.startsWith("//")) return url;
+  } catch {}
+  return "/";
+};
 
+const Signin = () => {
+  const params = useSearchParams();
+  const next = sanitizeNext(params.get("next")); // 👈 destino dinámico
+
+  const [formData, setFormData] = useState({ email: "", password: "" });
   const [error, setError] = useState<string>("");
-  const [success, setSuccess] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -21,7 +32,6 @@ const Signin = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setSuccess("");
 
     if (!formData.email || !formData.password) {
       setError("Please enter your email and password.");
@@ -29,28 +39,24 @@ const Signin = () => {
     }
 
     setLoading(true);
-
     try {
       await signIn("credentials", {
         redirect: true,
-        callbackUrl: "/auth/post-login", // 👈 SIEMPRE post-login
+        callbackUrl: next, // 👈 vamos directo al destino
         email: formData.email.trim().toLowerCase(),
         password: formData.password,
       });
-      // No llega acá porque redirect=true
+      // no llega acá (redirect=true)
     } catch (err: any) {
-      const msg = String(err?.message || "");
-      setError(msg || "Could not sign in. Please try again.");
+      setError(err?.message || "Could not sign in. Please try again.");
       setLoading(false);
     }
   };
 
   const handleSocial = (provider: "google" | "azure-ad") => {
     setError("");
-    setSuccess("");
     setLoading(true);
-    // Dejá que NextAuth haga su flujo OAuth y vuelva a /auth/post-login
-    signIn(provider, { callbackUrl: "/auth/post-login" });
+    signIn(provider, { callbackUrl: next }); // 👈 también respeta `next`
   };
 
   return (
@@ -66,66 +72,55 @@ const Signin = () => {
               <p>Ingresa tus datos a continuación</p>
             </div>
 
-            <div>
-              <form onSubmit={handleSubmit}>
-                <div className="mb-5">
-                  <label htmlFor="email" className="block mb-2.5">Email</label>
-                  <input
-                    type="email"
-                    name="email"
-                    id="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    placeholder="Escribe tu email"
-                    className="rounded-lg border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full py-3 px-5 outline-none duration-200 focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20"
-                  />
-                </div>
+            <form onSubmit={handleSubmit}>
+              <div className="mb-5">
+                <label htmlFor="email" className="block mb-2.5">Email</label>
+                <input
+                  type="email" name="email" id="email"
+                  value={formData.email} onChange={handleChange}
+                  placeholder="Escribe tu email"
+                  className="rounded-lg border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full py-3 px-5 outline-none duration-200 focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20"
+                />
+              </div>
 
-                <div className="mb-5">
-                  <label htmlFor="password" className="block mb-2.5">Contraseña</label>
-                  <input
-                    type="password"
-                    name="password"
-                    id="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    placeholder="Escribe tu contraseña"
-                    className="rounded-lg border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full py-3 px-5 outline-none duration-200 focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20"
-                  />
-                </div>
+              <div className="mb-5">
+                <label htmlFor="password" className="block mb-2.5">Contraseña</label>
+                <input
+                  type="password" name="password" id="password"
+                  value={formData.password} onChange={handleChange}
+                  placeholder="Escribe tu contraseña"
+                  className="rounded-lg border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full py-3 px-5 outline-none duration-200 focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20"
+                />
+              </div>
 
-                {error && (
-                  <p className="text-red-500 text-sm text-center mb-4">{error}</p>
-                )}
+              {error && <p className="text-red-500 text-sm text-center mb-4">{error}</p>}
 
-                <button
-                  type="submit"
-                  className="w-full flex justify-center font-medium text-white bg-dark py-3 px-6 rounded-lg ease-out duration-200 hover:bg-blue mt-7.5"
-                  disabled={loading}
-                >
-                  {loading ? "Entrando..." : "Ingresar a mi cuenta"}
-                </button>
+              <button
+                type="submit"
+                className="w-full flex justify-center font-medium text-white bg-dark py-3 px-6 rounded-lg ease-out duration-200 hover:bg-blue mt-7.5"
+                disabled={loading}
+              >
+                {loading ? "Entrando..." : "Ingresar a mi cuenta"}
+              </button>
 
                 <a
                   href="#"
                   className="block text-center text-dark-4 mt-4.5 ease-out duration-200 hover:text-dark"
                 >
-                  Olvidaste tu contraseña?
-                </a>
+                ¿Olvidaste tu contraseña?
+              </a>
 
-                <span className="relative z-1 block font-medium text-center mt-4.5">
-                  <span className="block absolute -z-1 left-0 top-1/2 h-px w-full bg-gray-3"></span>
-                  <span className="inline-block px-3 bg-white">Or</span>
-                </span>
+              <span className="relative z-1 block font-medium text-center mt-4.5">
+                <span className="block absolute -z-1 left-0 top-1/2 h-px w-full bg-gray-3"></span>
+                <span className="inline-block px-3 bg-white">Or</span>
+              </span>
 
-                <div className="flex flex-col gap-4.5 mt-4.5">
-                  <button
-                    type="button"
-                    onClick={() => handleSocial("google")}
-                    className="flex justify-center items-center gap-3.5 rounded-lg border border-gray-3 bg-gray-1 p-3 ease-out duration-200 hover:bg-gray-2 disabled:opacity-60"
-                    disabled={loading}
-                  >
-                    {/* SVG Google */}
+              <div className="flex flex-col gap-4.5 mt-4.5">
+                <button
+                  type="button" onClick={() => handleSocial("google")}
+                  className="flex justify-center items-center gap-3.5 rounded-lg border border-gray-3 bg-gray-1 p-3 hover:bg-gray-2 disabled:opacity-60"
+                  disabled={loading}
+                >
                     <svg
                       width="20"
                       height="20"
@@ -169,15 +164,14 @@ const Signin = () => {
                         </clipPath>
                       </defs>
                     </svg>
-                    Ingresa con Google
-                  </button>
+                  Ingresa con Google
+                </button>
 
-                  <button
-                    type="button"
-                    onClick={() => handleSocial("azure-ad")}
-                    className="flex justify-center items-center gap-3.5 rounded-lg border border-gray-3 bg-gray-1 p-3 ease-out duration-200 hover:bg-gray-2 disabled:opacity-60"
-                    disabled={loading}
-                  >
+                <button
+                  type="button" onClick={() => handleSocial("azure-ad")}
+                  className="flex justify-center items-center gap-3.5 rounded-lg border border-gray-3 bg-gray-1 p-3 hover:bg-gray-2 disabled:opacity-60"
+                  disabled={loading}
+                >
                     {/* SVG Microsoft */}
                     <svg
                       width="22"
@@ -190,21 +184,19 @@ const Signin = () => {
                       <rect x="0"  y="13" width="11" height="11" fill="#00A4EF" />
                       <rect x="13" y="13" width="11" height="11" fill="#FFB900" />
                     </svg>
-                    Ingresa con Microsoft
-                  </button>
-                </div>
+                  Ingresa con Microsoft
+                </button>
+              </div>
 
-                <p className="text-center mt-6">
+              <p className="text-center mt-6">
                   No tienes cuenta?
                   <Link
                     href="/signup"
                     className="text-dark ease-out duration-200 hover:text-blue pl-2"
-                  >
-                    Registrate ahora!
-                  </Link>
-                </p>
-              </form>
-            </div>
+                  >                  ¡Regístrate ahora!
+                </Link>
+              </p>
+            </form>
           </div>
         </div>
       </section>
