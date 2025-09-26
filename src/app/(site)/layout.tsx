@@ -1,3 +1,4 @@
+// app/layout.tsx
 "use client";
 import { useState, useEffect } from "react";
 import "../css/euclid-circular-a-font.css";
@@ -16,23 +17,16 @@ import PreviewSliderModal from "@/components/Common/PreviewSlider";
 
 import ScrollToTop from "@/components/Common/ScrollToTop";
 import PreLoader from "@/components/Common/PreLoader";
-
-// 👇 importa el Toaster
 import { Toaster } from "react-hot-toast";
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const [loading, setLoading] = useState<boolean>(true);
+import CartBootstrapper from "@/components/CartBootstrapper";
 
-  useEffect(() => {
-    setTimeout(() => setLoading(false), 1000);
-  }, []);
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const [loading, setLoading] = useState(true);
+  useEffect(() => { const t = setTimeout(() => setLoading(false), 1000); return () => clearTimeout(t); }, []);
 
   return (
-    <html lang="en" suppressHydrationWarning={true}>
+    <html lang="en" suppressHydrationWarning>
       <body>
         {loading ? (
           <PreLoader />
@@ -40,6 +34,7 @@ export default function RootLayout({
           <>
             <SessionProvider>
               <ReduxProvider>
+                <CartBootstrapper />
                 <CartModalProvider>
                   <ModalProvider>
                     <PreviewSliderProvider>
@@ -54,15 +49,14 @@ export default function RootLayout({
               </ReduxProvider>
             </SessionProvider>
 
-            {/* react hot toast */}
             <Toaster
               position="top-right"
               containerStyle={{ zIndex: 2147483647 }}
               toastOptions={{
                 duration: 3000,
-                style: { background: "#111827", color: "#fff" }, // tailwind gray-900
-                success: { iconTheme: { primary: '#10B981', secondary: '#fff' } },
-                error:   { iconTheme: { primary: '#EF4444', secondary: '#fff' } },
+                style: { background: "#111827", color: "#fff" },
+                success: { iconTheme: { primary: "#10B981", secondary: "#fff" } },
+                error:   { iconTheme: { primary: "#EF4444", secondary: "#fff" } },
               }}
             />
             <ScrollToTop />
