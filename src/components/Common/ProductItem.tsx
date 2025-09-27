@@ -37,8 +37,6 @@ const ProductItem = ({ item }: { item: Product }) => {
     dispatch(
       addItemToWishlist({
         ...item,
-        status: "available",
-        quantity: 1,
       })
     );
   };

@@ -38,7 +38,7 @@ const SingleItem = ({ item }: { item: Product }) => {
   };
 
   const handleItemToWishList = () => {
-    dispatch(addItemToWishlist({ ...item, status: "available", quantity: 1 }));
+    dispatch(addItemToWishlist({ ...item}));
   };
 
   return (

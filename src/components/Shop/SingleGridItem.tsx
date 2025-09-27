@@ -1,58 +1,71 @@
+// app/(site)/(pages)/shop/SingleGridItem.tsx
 "use client";
 import React from "react";
 import { Product } from "@/types/product";
 import { useModalContext } from "@/app/context/QuickViewModalContext";
 import { updateQuickView } from "@/redux/features/quickView-slice";
 import { addCartItem } from "@/redux/features/cart-slice";
-import { addItemToWishlist } from "@/redux/features/wishlist-slice";
+import { toggleWishlist } from "@/redux/features/wishlist-slice";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/redux/store";
+import { useAppSelector } from "@/redux/store";
 import toast from "react-hot-toast";
 import Link from "next/link";
 import Image from "next/image";
 
 const SingleGridItem = ({ item }: { item: Product }) => {
-
   const { openModal } = useModalContext();
-
   const dispatch = useDispatch<AppDispatch>();
-
-  // update the QuickView state
-  const handleQuickViewUpdate = () => {
-    dispatch(updateQuickView({ ...item }));
-  };
+  const wishlistItems = useAppSelector((s) => s.wishlistReducer.items);
+  const isInWishlist = wishlistItems.some((p) => p.id === item.id);
 
   const shouldOpenVariantPicker = (p: Product) =>
     p.variantCount === 0 || p.variantCount > 1 || p.defaultVariantId == null;
+
+  const handleQuickViewUpdate = () => {
+    dispatch(updateQuickView({ ...item }));
+  };
 
   const handleAddToCart = async () => {
     if (shouldOpenVariantPicker(item)) {
       dispatch(updateQuickView({ ...item }));
       openModal();
-      toast("Debes elegir una variante del producto", {
-        icon: "👈",
-      });
+      toast("Debes elegir una variante del producto", { icon: "👈" });
       return;
     }
-    await dispatch(addCartItem({ productId: item.id, variantId: item.defaultVariantId!, quantity: 1 }));
-  };
-
-
-  const handleItemToWishList = () => {
-    dispatch(
-      addItemToWishlist({
-        ...item,
-        status: "available",
+    await dispatch(
+      addCartItem({
+        productId: item.id,
+        variantId: item.defaultVariantId!, // seguro por el guard
         quantity: 1,
       })
     );
   };
-  
+
+  const handleItemToWishList = async () => {
+    const res = await dispatch(toggleWishlist(item));
+    const products = res.payload as Product[] | undefined;
+    if (products) {
+      const isIn = products.some((p) => p.id === item.id);
+      toast(isIn ? "Añadido a tu wishlist" : "Quitado de tu wishlist");
+    }
+  };
+
+  const imgSrc =
+    item.imgs?.previews?.[0] ??
+    item.imgs?.thumbnails?.[0] ??
+    "/placeholder.png";
+    
+  // 👇 CLASES DINÁMICAS ajustadas para asegurar el relleno
+  const wishlistButtonClasses = `
+    flex items-center justify-center w-9 h-9 rounded-[5px] shadow-1 ease-out duration-200 bg-white 
+    ${isInWishlist ? "text-blue" : "text-dark hover:text-blue"}
+  `;
 
   return (
     <div className="group">
       <div className="relative overflow-hidden flex items-center justify-center rounded-lg bg-white shadow-1 min-h-[270px] mb-4">
-        <Image src={item.imgs.previews[0]} alt="" width={250} height={250} />
+        <Image src={imgSrc} alt={item.title} width={250} height={250} />
 
         <div className="absolute left-0 bottom-0 translate-y-full w-full flex items-center justify-center gap-2.5 pb-5 ease-linear duration-200 group-hover:translate-y-0">
           <button
@@ -60,10 +73,10 @@ const SingleGridItem = ({ item }: { item: Product }) => {
               openModal();
               handleQuickViewUpdate();
             }}
-            id="newOne"
             aria-label="button for quick view"
             className="flex items-center justify-center w-9 h-9 rounded-[5px] shadow-1 ease-out duration-200 text-dark bg-white hover:text-blue"
           >
+            {/* icono ojo */}
             <svg
               className="fill-current"
               width="16"
@@ -88,18 +101,20 @@ const SingleGridItem = ({ item }: { item: Product }) => {
           </button>
 
           <button
-            onClick={() => handleAddToCart()}
+            onClick={handleAddToCart}
             className="inline-flex font-medium text-custom-sm py-[7px] px-5 rounded-[5px] bg-blue text-white ease-out duration-200 hover:bg-blue-dark"
           >
             Add to cart
           </button>
 
           <button
-            onClick={() => handleItemToWishList()}
+            onClick={handleItemToWishList}
             aria-label="button for favorite select"
             id="favOne"
-            className="flex items-center justify-center w-9 h-9 rounded-[5px] shadow-1 ease-out duration-200 text-dark bg-white hover:text-blue"
+            // 👇 Aplicamos las clases dinámicas aquí
+            className={wishlistButtonClasses}
           >
+            {/* icono corazón */}
             <svg
               className="fill-current"
               width="16"

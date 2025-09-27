@@ -1,36 +1,64 @@
+// app/(site)/(pages)/wishlist/SingleItem.tsx
+"use client";
 import React from "react";
-import { AppDispatch } from "@/redux/store";
-import { useDispatch } from "react-redux";
-
-import { removeItemFromWishlist } from "@/redux/features/wishlist-slice";
-import { addCartItem } from "@/redux/features/cart-slice";
-
 import Image from "next/image";
+import { useDispatch } from "react-redux";
+import { AppDispatch } from "@/redux/store";
+import type { Product } from "@/types/product";
+import { removeFromWishlist } from "@/redux/features/wishlist-slice";
+import { addCartItem } from "@/redux/features/cart-slice";
+import { useRouter } from "next/navigation";
+import { useModalContext } from "@/app/context/QuickViewModalContext";
+import { updateQuickView } from "@/redux/features/quickView-slice";
+import toast from "react-hot-toast";
 
-const SingleItem = ({ item }) => {
+
+const SingleItem: React.FC<{ item: Product }> = ({ item }) => {
+
+  const { openModal } = useModalContext();
+
   const dispatch = useDispatch<AppDispatch>();
+  const router = useRouter();
 
-  const handleRemoveFromWishlist = () => {
-    dispatch(removeItemFromWishlist(item.id));
+  const handleRemoveFromWishlist = async () => {
+    await dispatch(removeFromWishlist(item.id));
   };
 
-  const handleAddToCart = () => {
-    dispatch(
+  const shouldOpenVariantPicker = (p: Product) =>
+  p.variantCount === 0 || p.variantCount > 1 || p.defaultVariantId == null;
+
+  const handleAddToCart = async () => {
+    if (shouldOpenVariantPicker(item)) {
+      // cargar el producto en el QuickView y abrir modal
+      dispatch(updateQuickView({ ...item }));
+      openModal();
+      toast("Debes elegir una variante del producto", { icon: "👈" }); // opcional
+      return;
+    }
+    await dispatch(
       addCartItem({
-        ...item,
+        productId: item.id,
+        variantId: item.defaultVariantId!,
         quantity: 1,
       })
     );
+    // toast.success("Agregado al carrito"); // opcional
   };
+
+  const imgSrc =
+    item.imgs?.thumbnails?.[0] ??
+    item.imgs?.previews?.[0] ??
+    "/placeholder.png";
 
   return (
     <div className="flex items-center border-t border-gray-3 py-5 px-10">
       <div className="min-w-[83px]">
         <button
-          onClick={() => handleRemoveFromWishlist()}
-          aria-label="button for remove product from wishlist"
-          className="flex items-center justify-center rounded-lg max-w-[38px] w-full h-9.5 bg-gray-2 border border-gray-3 ease-out duration-200 hover:bg-red-light-6 hover:border-red-light-4 hover:text-red"
+          onClick={handleRemoveFromWishlist}
+          aria-label="remove product from wishlist"
+          className="flex items-center justify-center rounded-lg max-w-[38px] w-full h-9.5 bg-gray-2 border border-gray-3 hover:bg-red-light-6 hover:border-red-light-4 hover:text-red"
         >
+          {/* icono X */}
           <svg
             className="fill-current"
             width="22"
@@ -53,13 +81,12 @@ const SingleItem = ({ item }) => {
         </button>
       </div>
 
-      <div className="min-w-[387px]">
+      <div className="min-w-[500px]">
         <div className="flex items-center justify-between gap-5">
           <div className="w-full flex items-center gap-5.5">
             <div className="flex items-center justify-center rounded-[5px] bg-gray-2 max-w-[80px] w-full h-17.5">
               <Image src={item.imgs?.thumbnails[0]} alt="product" width={200} height={200} />
             </div>
-
             <div>
               <h3 className="text-dark ease-out duration-200 hover:text-blue">
                 <a href="#"> {item.title} </a>
@@ -69,11 +96,11 @@ const SingleItem = ({ item }) => {
         </div>
       </div>
 
-      <div className="min-w-[205px]">
-        <p className="text-dark">${item.discountedPrice}</p>
+      <div className="min-w-[300px]">
+        <p className="text-dark">${Number(item.discountedPrice ?? item.price ?? 0).toFixed(2)}</p>
       </div>
 
-      <div className="min-w-[265px]">
+      {/* <div className="min-w-[265px]">
         <div className="flex items-center gap-1.5">
           <svg
             width="20"
@@ -100,7 +127,7 @@ const SingleItem = ({ item }) => {
 
           <span className="text-red"> Out of Stock </span>
         </div>
-      </div>
+      </div> */}
 
       <div className="min-w-[150px] flex justify-end">
         <button
