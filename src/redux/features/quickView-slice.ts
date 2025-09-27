@@ -15,6 +15,8 @@ const initialState = {
     id: 0,
     images: [],
     imgs: { thumbnails: [], previews: [] },
+    variantCount: 0,
+    defaultVariantId: 0
   } as Product,
 } as InitialState;
 

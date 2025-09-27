@@ -1,20 +1,23 @@
-// app/mi-cuenta/orders/[orderNumber]/page.tsx
 import OrderDetails from "@/components/OrderDetails";
-import { Metadata } from "next";
+import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Order Detail | NextCommerce",
   description: "Order detail page",
 };
 
-const OrderDetailsPage = ({ params }: { params: { orderNumber: string } }) => {
-  const { orderNumber } = params;
+type Params = { orderNumber: string };
+
+export default async function OrderDetailsPage({
+  params,
+}: {
+  params: Promise<Params>;
+}) {
+  const { orderNumber } = await params;
 
   return (
     <main>
       <OrderDetails orderNumber={orderNumber} />
     </main>
   );
-};
-
-export default OrderDetailsPage;
+}

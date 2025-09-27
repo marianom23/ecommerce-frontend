@@ -12,9 +12,10 @@ const initialState = {
     price: 0,
     discountedPrice: 0,
     img: "",
-    images: [],
     id: 0,
     imgs: { thumbnails: [], previews: [] },
+    variantCount: 0,
+    defaultVariantId: 0
   },
 } as InitialState;
 

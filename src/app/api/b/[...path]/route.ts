@@ -1,14 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 
-export async function GET(req: NextRequest, ctx: { params: { path: string[] } })  { return forward(req, ctx.params.path); }
-export async function POST(req: NextRequest, ctx: { params: { path: string[] } }) { return forward(req, ctx.params.path); }
-export async function PUT(req: NextRequest, ctx: { params: { path: string[] } })  { return forward(req, ctx.params.path); }
-export async function DELETE(req: NextRequest, ctx: { params: { path: string[] } }){ return forward(req, ctx.params.path); }
-export async function PATCH(req: NextRequest, ctx: { params: { path: string[] } }) { return forward(req, ctx.params.path); }
+type Ctx = { params: Promise<{ path: string[] }> };
 
-export async function OPTIONS(req: NextRequest, ctx: { params: { path: string[] } }) { return forward(req, ctx.params.path); }
-
+export async function GET(req: NextRequest, ctx: Ctx) {
+  const { path } = await ctx.params;
+  return forward(req, path);
+}
+export async function POST(req: NextRequest, ctx: Ctx) {
+  const { path } = await ctx.params;
+  return forward(req, path);
+}
+export async function PUT(req: NextRequest, ctx: Ctx) {
+  const { path } = await ctx.params;
+  return forward(req, path);
+}
+export async function DELETE(req: NextRequest, ctx: Ctx) {
+  const { path } = await ctx.params;
+  return forward(req, path);
+}
+export async function PATCH(req: NextRequest, ctx: Ctx) {
+  const { path } = await ctx.params;
+  return forward(req, path);
+}
+export async function OPTIONS(req: NextRequest, ctx: Ctx) {
+  const { path } = await ctx.params;
+  return forward(req, path);
+}
 
 async function forward(req: NextRequest, path: string[]) {
   const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
@@ -24,21 +42,17 @@ async function forward(req: NextRequest, path: string[]) {
     headers: {
       Authorization: `Bearer ${jwt}`,
       "Content-Type": req.headers.get("content-type") ?? "",
-      Cookie: req.headers.get("cookie") ?? "",           // 👈 reenviá cookies del usuario al backend
+      Cookie: req.headers.get("cookie") ?? "",
     },
-    body: ["GET","HEAD"].includes(req.method) ? undefined : await req.arrayBuffer(),
+    body: ["GET", "HEAD"].includes(req.method) ? undefined : await req.arrayBuffer(),
     cache: "no-store",
   });
 
-  // devolvé el body en streaming y TODOS los headers, incluyendo Set-Cookie
   const resp = new NextResponse(r.body, { status: r.status });
 
-  // ⚠️ Set-Cookie puede venir múltiple. Usá append, no set.
   r.headers.forEach((value, key) => {
     if (key.toLowerCase() === "set-cookie") {
-      // Algunos runtimes agrupan varios Set-Cookie en una sola línea separada por coma.
-      // Esto los separa de forma segura: cada cookie tiene un "name=value" sin coma después del '='
-      value.split(/,(?=[^;]+=[^;]+)/g).forEach(v => resp.headers.append("set-cookie", v));
+      value.split(/,(?=[^;]+=[^;]+)/g).forEach((v) => resp.headers.append("set-cookie", v));
     } else {
       resp.headers.set(key, value);
     }

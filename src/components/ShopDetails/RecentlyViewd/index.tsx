@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import shopData from "@/components/Shop/shopData";
+// import shopData from "@/components/Shop/shopData";
 import ProductItem from "@/components/Common/ProductItem";
 import Image from "next/image";
 import Link from "next/link";
@@ -83,7 +83,7 @@ const RecentlyViewdItems = () => {
             </div>
           </div>
 
-          <Swiper
+          {/* <Swiper
             ref={sliderRef}
             slidesPerView={4}
             spaceBetween={20}
@@ -94,7 +94,7 @@ const RecentlyViewdItems = () => {
                 <ProductItem item={item} />
               </SwiperSlide>
             ))}
-          </Swiper>
+          </Swiper> */}
         </div>
       </div>
     </section>

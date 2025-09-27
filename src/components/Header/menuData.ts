@@ -21,14 +21,14 @@ export const menuData: Menu[] = [
       { id: 72, title: "Mail Success", newTab: false, path: "/mail-success" },
     ],
   },
-  {
-    id: 7, title: "Blogs", newTab: false, path: "/",
-    submenu: [
-      { id: 73, title: "Blog Grid with sidebar", newTab: false, path: "/blogs/blog-grid-with-sidebar" },
-      { id: 74, title: "Blog Grid", newTab: false, path: "/blogs/blog-grid" },
-      { id: 75, title: "Blog details with sidebar", newTab: false, path: "/blogs/blog-details-with-sidebar" },
-      { id: 76, title: "Blog details", newTab: false, path: "/blogs/blog-details" },
-    ],
-  },
+  // {
+  //   id: 7, title: "Blogs", newTab: false, path: "/",
+  //   submenu: [
+  //     { id: 73, title: "Blog Grid with sidebar", newTab: false, path: "/blogs/blog-grid-with-sidebar" },
+  //     { id: 74, title: "Blog Grid", newTab: false, path: "/blogs/blog-grid" },
+  //     { id: 75, title: "Blog details with sidebar", newTab: false, path: "/blogs/blog-details-with-sidebar" },
+  //     { id: 76, title: "Blog details", newTab: false, path: "/blogs/blog-details" },
+  //   ],
+  // },
 ];
 
