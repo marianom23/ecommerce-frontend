@@ -1,25 +1,18 @@
-// components/CartBootstrapper.tsx
 "use client";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { fetchCart, attachCart } from "@/redux/features/cart-slice";
 import { useAppDispatch } from "@/redux/hooks";
+import { fetchCartGuest, fetchCartLogged } from "@/redux/features/cart-slice";
 
 export default function CartBootstrapper() {
-  const dispatch = useAppDispatch();
   const { status } = useSession();
-  const booted = useRef(false);
-
-  useEffect(() => {
-    if (!booted.current) {
-      booted.current = true;
-      void dispatch(fetchCart());
-    }
-  }, [dispatch]);
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
     if (status === "authenticated") {
-      void dispatch(attachCart()).then(() => void dispatch(fetchCart()));
+      void dispatch(fetchCartLogged());  // -> /b/cart/me
+    } else if (status === "unauthenticated") {
+      void dispatch(fetchCartGuest());   // -> /p/cart/me
     }
   }, [status, dispatch]);
 

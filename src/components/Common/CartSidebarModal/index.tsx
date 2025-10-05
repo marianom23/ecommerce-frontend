@@ -4,7 +4,7 @@ import { useCartModalContext } from "@/app/context/CartSidebarModalContext";
 import Link from "next/link";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch } from "@/redux/store";
-import { fetchCart, selectCartItems, selectTotalPrice } from "@/redux/features/cart-slice";
+import { selectCartItems, selectTotalPrice } from "@/redux/features/cart-slice";
 import SingleItem from "./SingleItem";
 import EmptyCart from "./EmptyCart";
 
@@ -19,13 +19,6 @@ const CartSidebarModal = () => {
   const dispatch = useDispatch<AppDispatch>();
   const cartItems = useSelector(selectCartItems);
   const totalPrice = useSelector(selectTotalPrice);
-
-  useEffect(() => {
-    // cargar carrito del backend al abrir
-    if (isCartModalOpen) {
-      dispatch(fetchCart());
-    }
-  }, [isCartModalOpen, dispatch]);
 
   useEffect(() => {
     // cerrar al click fuera

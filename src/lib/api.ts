@@ -19,7 +19,7 @@ function isServiceResult<T>(x: any): x is ServiceResult<T> {
   return !!x && typeof x === "object" && "data" in x && "status" in x;
 }
 
-const instance = axios.create({
+export const instance = axios.create({
   baseURL: "/api",
   timeout: 10000,
   withCredentials: true,

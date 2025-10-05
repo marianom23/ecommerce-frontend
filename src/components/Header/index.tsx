@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-
+import { authService } from "@/services/authService"
 import CustomSelect, { type SelectOption } from "./CustomSelect";
 import { productService } from "@/services/productService";
 import { menuData } from "./menuData";
@@ -249,7 +249,7 @@ const Header = () => {
                     </Link>
 
                     <button
-                      onClick={() => signOut({ callbackUrl: "/" })}
+                      onClick={() => authService.logout("/")}
                       aria-label="Logout"
                       className="inline-flex items-center gap-1.5 rounded-full border border-gray-3 px-3 py-1.5 text-2xs font-medium text-dark hover:border-blue hover:bg-blue/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue/50"
                     >
