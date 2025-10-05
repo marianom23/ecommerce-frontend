@@ -1,8 +1,7 @@
+"use client";
 import React, { useMemo } from "react";
-import { useDispatch } from "react-redux";
-import { AppDispatch } from "@/redux/store";
 import Image from "next/image";
-import { decrementCartItem, incrementCartItem, removeCartItem } from "@/redux/features/cart-slice";
+import { useCart } from "@/hooks/useCart";
 
 type SingleItemProps = {
   item: {
@@ -26,20 +25,24 @@ const currency = new Intl.NumberFormat("es-AR", {
 });
 
 const SingleItem: React.FC<SingleItemProps> = ({ item }) => {
-  const dispatch = useDispatch<AppDispatch>();
+  const { removeItem, increment, decrement } = useCart();
 
-  const handleRemoveFromCart = () => dispatch(removeCartItem(item.id));
-  const handleIncrease = () => dispatch(incrementCartItem(item.id));
-  const handleDecrease = () => { if (item.quantity > 1) dispatch(decrementCartItem(item.id)); };
+  const handleRemoveFromCart = () => removeItem(item.id);
+  const handleIncrease = () => increment(item.id);
+  const handleDecrease = () => { if (item.quantity > 1) decrement(item.id); };
 
-  // Parsear atributos si vienen (size, color, etc.)
+  // Parseo de atributos (size/color, etc.)
   const attributes = useMemo(() => {
     try {
-      return item.attributesJson ? JSON.parse(item.attributesJson) as Record<string, string> : null;
+      return item.attributesJson
+        ? (JSON.parse(item.attributesJson) as Record<string, string>)
+        : null;
     } catch {
       return null;
     }
   }, [item.attributesJson]);
+
+  const hasDiscount = item.unitDiscountedPrice < item.unitPrice;
 
   return (
     <div className="flex items-center justify-between gap-5">
@@ -58,7 +61,6 @@ const SingleItem: React.FC<SingleItemProps> = ({ item }) => {
             <a href="#">{item.name}</a>
           </h3>
 
-          {/* Atributos (opcional) */}
           {attributes && (
             <p className="text-xs text-gray-600 mb-1">
               {Object.entries(attributes)
@@ -68,9 +70,20 @@ const SingleItem: React.FC<SingleItemProps> = ({ item }) => {
           )}
 
           <div className="flex items-center gap-3 flex-wrap">
-            <p className="text-custom-sm">
-              Precio: {currency.format(item.unitDiscountedPrice)}
+            <p className="text-custom-sm flex items-center gap-2">
+              Precio:
+              {hasDiscount ? (
+                <>
+                  <span className="line-through text-gray-500">
+                    {currency.format(item.unitPrice)}
+                  </span>
+                  <span>{currency.format(item.unitDiscountedPrice)}</span>
+                </>
+              ) : (
+                <span>{currency.format(item.unitDiscountedPrice)}</span>
+              )}
             </p>
+
             <span className="text-custom-sm text-gray-600">•</span>
 
             {/* Controles de cantidad */}
@@ -103,7 +116,7 @@ const SingleItem: React.FC<SingleItemProps> = ({ item }) => {
 
       <button
         onClick={handleRemoveFromCart}
-        aria-label="button for remove product from cart"
+        aria-label="Quitar producto del carrito"
         className="flex items-center justify-center rounded-lg max-w-[38px] w-full h-9.5 bg-gray-2 border border-gray-3 text-dark ease-out duration-200 hover:bg-red-light-6 hover:border-red-light-4 hover:text-red"
       >
         <svg

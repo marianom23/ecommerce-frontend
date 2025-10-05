@@ -1,12 +1,6 @@
 import React, { useMemo } from "react";
 import Image from "next/image";
-import { useDispatch } from "react-redux";
-import { AppDispatch } from "@/redux/store";
-import {
-  decrementCartItem,
-  incrementCartItem,
-  removeCartItem,
-} from "@/redux/features/cart-slice";
+import { useCart } from "@/hooks/useCart";
 
 type CartItem = {
   id: number;                 // cart_item id
@@ -25,7 +19,7 @@ type Props = {
   item: CartItem;
   /** layout:
    *  - "row": usado en la tabla del carrito (imagen+texto compactos)
-   *  - "card": no usado aquí, pero coincide con el del sidebar
+   *  - "card": similar al sidebar con controles
    */
   layout?: "row" | "card";
 };
@@ -37,7 +31,7 @@ const currency = new Intl.NumberFormat("es-AR", {
 });
 
 const SingleItem: React.FC<Props> = ({ item, layout = "row" }) => {
-  const dispatch = useDispatch<AppDispatch>();
+  const { removeItem, increment, decrement } = useCart();
 
   const attributes = useMemo(() => {
     try {
@@ -50,36 +44,34 @@ const SingleItem: React.FC<Props> = ({ item, layout = "row" }) => {
   }, [item.attributesJson]);
 
   if (layout === "row") {
-    // versión compacta para la tabla del carrito
+    // versión compacta para la tabla del carrito (sin controles aquí)
     return (
-      <>
-        <div className="w-full flex items-center gap-5.5">
-          <div className="flex items-center justify-center rounded-[5px] bg-gray-2 max-w-[80px] w-full h-17.5 overflow-hidden">
-            <Image
-              width={160}
-              height={160}
-              src={item.imageUrl || "/placeholder.png"}
-              alt={item.name}
-            />
-          </div>
-          <div className="min-w-0">
-            <h3 className="text-dark ease-out duration-200 hover:text-blue truncate">
-              <a href="#">{item.name}</a>
-            </h3>
-            {attributes && (
-              <p className="text-xs text-gray-600">
-                {Object.entries(attributes)
-                  .map(([k, v]) => `${k}: ${v}`)
-                  .join(" • ")}
-              </p>
-            )}
-          </div>
+      <div className="w-full flex items-center gap-5.5">
+        <div className="flex items-center justify-center rounded-[5px] bg-gray-2 max-w-[80px] w-full h-17.5 overflow-hidden">
+          <Image
+            width={160}
+            height={160}
+            src={item.imageUrl || "/placeholder.png"}
+            alt={item.name}
+          />
         </div>
-      </>
+        <div className="min-w-0">
+          <h3 className="text-dark ease-out duration-200 hover:text-blue truncate">
+            <a href="#">{item.name}</a>
+          </h3>
+          {attributes && (
+            <p className="text-xs text-gray-600">
+              {Object.entries(attributes)
+                .map(([k, v]) => `${k}: ${v}`)
+                .join(" • ")}
+            </p>
+          )}
+        </div>
+      </div>
     );
   }
 
-  // layout "card" (similar al sidebar, por si querés reusar)
+  // layout "card" (controles, subtotal y botón eliminar)
   return (
     <div className="flex items-center justify-between gap-5">
       <div className="w-full flex items-center gap-6">
@@ -91,10 +83,12 @@ const SingleItem: React.FC<Props> = ({ item, layout = "row" }) => {
             height={100}
           />
         </div>
+
         <div className="min-w-0">
           <h3 className="font-medium text-dark mb-1 truncate">
             <a href="#">{item.name}</a>
           </h3>
+
           {attributes && (
             <p className="text-xs text-gray-600 mb-1">
               {Object.entries(attributes)
@@ -102,14 +96,18 @@ const SingleItem: React.FC<Props> = ({ item, layout = "row" }) => {
                 .join(" • ")}
             </p>
           )}
+
           <div className="flex items-center gap-3 flex-wrap">
             <p className="text-custom-sm">
               Precio: {currency.format(item.unitDiscountedPrice)}
             </p>
+
             <span className="text-custom-sm text-gray-600">•</span>
+
+            {/* Controles de cantidad */}
             <div className="flex items-center gap-2" aria-label="Controles de cantidad">
               <button
-                onClick={() => item.quantity > 1 && dispatch(decrementCartItem(item.id))}
+                onClick={() => item.quantity > 1 && decrement(item.id)}
                 aria-label="Disminuir cantidad"
                 disabled={item.quantity <= 1}
                 className="w-8 h-8 border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-40"
@@ -120,13 +118,14 @@ const SingleItem: React.FC<Props> = ({ item, layout = "row" }) => {
                 {item.quantity}
               </span>
               <button
-                onClick={() => dispatch(incrementCartItem(item.id))}
+                onClick={() => increment(item.id)}
                 aria-label="Aumentar cantidad"
                 className="w-8 h-8 border border-gray-300 rounded hover:bg-gray-100"
               >
                 +
               </button>
             </div>
+
             <span className="text-custom-sm text-gray-700">
               Subtotal: {currency.format(item.subtotal)}
             </span>
@@ -135,11 +134,10 @@ const SingleItem: React.FC<Props> = ({ item, layout = "row" }) => {
       </div>
 
       <button
-        onClick={() => dispatch(removeCartItem(item.id))}
-        aria-label="button for remove product from cart"
+        onClick={() => removeItem(item.id)}
+        aria-label="Quitar producto del carrito"
         className="flex items-center justify-center rounded-lg max-w-[38px] w-full h-9.5 bg-gray-2 border border-gray-3 text-dark ease-out duration-200 hover:bg-red-light-6 hover:border-red-light-4 hover:text-red"
       >
-        {/* trash icon igual al del sidebar */}
         <svg
           className="fill-current"
           width="22"

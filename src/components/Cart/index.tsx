@@ -1,21 +1,13 @@
 "use client";
-import React, { useEffect } from "react";
+import React from "react";
 import Link from "next/link";
 import Breadcrumb from "../Common/Breadcrumb";
 import Discount from "./Discount";
-import { useDispatch, useSelector } from "react-redux";
-import { AppDispatch } from "@/redux/store";
-import {
-  fetchCart,
-  selectCartItems,
-  selectTotalPrice,
-  removeCartItem,
-  decrementCartItem,
-  clearCart,
-  incrementCartItem,
-} from "@/redux/features/cart-slice";
 import OrderSummary from "./OrderSummary";
-import SingleItem from "./SingleItem"; // (el de abajo, unificado con el del sidebar)
+import SingleItem from "./SingleItem";
+import { useSelector } from "react-redux";
+import { selectCartItems, selectTotalPrice } from "@/redux/features/cart-slice";
+import { useCart } from "@/hooks/useCart";
 
 const formatter = new Intl.NumberFormat("es-AR", {
   style: "currency",
@@ -24,19 +16,13 @@ const formatter = new Intl.NumberFormat("es-AR", {
 });
 
 const Cart = () => {
-  const dispatch = useDispatch<AppDispatch>();
   const cartItems = useSelector(selectCartItems);
   const totalPrice = useSelector(selectTotalPrice);
 
-  useEffect(() => {
-    dispatch(fetchCart());
-  }, [dispatch]);
+  // usar helpers del hook (ya envían los thunks correctos)
+  const { clear, increment, decrement, removeItem } = useCart();
 
-  const handleClearCart = () => {
-    dispatch(clearCart());
-  };
-
-
+  const handleClearCart = () => clear();
 
   return (
     <>
@@ -105,13 +91,13 @@ const Cart = () => {
                         >
                           <button
                             onClick={() =>
-                              item.quantity > 1 &&
-                              dispatch(decrementCartItem(item.id))
+                              item.quantity > 1 && decrement(item.id)
                             }
                             aria-label="Disminuir cantidad"
                             className="flex items-center justify-center w-11.5 h-11.5 ease-out duration-200 hover:text-blue disabled:opacity-40"
                             disabled={item.quantity <= 1}
                           >
+                            {/* - icon */}
                             <svg
                               className="fill-current"
                               width="20"
@@ -132,10 +118,11 @@ const Cart = () => {
                           </span>
 
                           <button
-                            onClick={() => dispatch(incrementCartItem(item.id))}
+                            onClick={() => increment(item.id)}
                             aria-label="Aumentar cantidad"
                             className="flex items-center justify-center w-11.5 h-11.5 ease-out duration-200 hover:text-blue"
                           >
+                            {/* + icon */}
                             <svg
                               className="fill-current"
                               width="20"
@@ -167,11 +154,11 @@ const Cart = () => {
                       {/* Action */}
                       <div className="min-w-[50px] flex justify-end">
                         <button
-                          onClick={() => dispatch(removeCartItem(item.id))}
-                          aria-label="button for remove product from cart"
+                          onClick={() => removeItem(item.id)}
+                          aria-label="Quitar producto"
                           className="flex items-center justify-center rounded-lg max-w-[38px] w-full h-9.5 bg-gray-2 border border-gray-3 text-dark ease-out duration-200 hover:bg-red-light-6 hover:border-red-light-4 hover:text-red"
                         >
-                          {/* Trash icon */}
+                          {/* trash */}
                           <svg
                             className="fill-current"
                             width="22"
@@ -217,6 +204,7 @@ const Cart = () => {
         <>
           <div className="text-center mt-8">
             <div className="mx-auto pb-7.5">
+              {/* ícono vacío */}
               <svg
                 className="mx-auto"
                 width="100"
@@ -247,13 +235,13 @@ const Cart = () => {
               </svg>
             </div>
 
-            <p className="pb-6">Your cart is empty!</p>
+            <p className="pb-6">¡Tu carrito está vacío!</p>
 
             <Link
               href="/productos"
               className="w-96 mx-auto flex justify-center font-medium text-white bg-dark py-[13px] px-6 rounded-md ease-out duration-200 hover:bg-opacity-95"
             >
-              Continue Shopping
+              Seguir comprando
             </Link>
           </div>
         </>

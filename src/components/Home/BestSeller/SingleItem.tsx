@@ -7,11 +7,14 @@ import { AppDispatch } from "@/redux/store";
 import { Product } from "@/types/product";
 import { useModalContext } from "@/app/context/QuickViewModalContext";
 import { updateQuickView } from "@/redux/features/quickView-slice";
-import { addCartItem } from "@/redux/features/cart-slice";
+import { useCart } from "@/hooks/useCart";
 import { addItemToWishlist } from "@/redux/features/wishlist-slice";
 import toast from "react-hot-toast";
 
 const SingleItem = ({ item }: { item: Product }) => {
+
+  const { addItem } = useCart();
+
   const { openModal } = useModalContext();
   const dispatch = useDispatch<AppDispatch>();
 
@@ -23,19 +26,20 @@ const SingleItem = ({ item }: { item: Product }) => {
   const shouldOpenVariantPicker = (p: Product) =>
     p.variantCount === 0 || p.variantCount > 1 || p.defaultVariantId == null;
 
-  const handleAddToCart = async () => {
-    if (shouldOpenVariantPicker(item)) {
-      dispatch(updateQuickView({ ...item }));
-      openModal();
-      toast("Debes elegir una variante del producto", { icon: "👈" });
-      return;
-    }
-    await dispatch(addCartItem({
-      productId: item.id,
-      variantId: item.defaultVariantId!, // garantizado por el guard anterior
-      quantity: 1,
-    }));
-  };
+    const handleAddToCart = async () => {
+      if (shouldOpenVariantPicker(item)) {
+        dispatch(updateQuickView({ ...item }));
+        openModal();
+        toast("Debes elegir una variante del producto", { icon: "👈" });
+        return;
+      }
+
+      await addItem({
+        productId: item.id,
+        variantId: item.defaultVariantId!, // garantizado por el guard
+        quantity: 1,
+      });
+    };
 
   const handleItemToWishList = () => {
     dispatch(addItemToWishlist({ ...item}));

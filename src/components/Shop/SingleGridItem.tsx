@@ -4,7 +4,7 @@ import React from "react";
 import { Product } from "@/types/product";
 import { useModalContext } from "@/app/context/QuickViewModalContext";
 import { updateQuickView } from "@/redux/features/quickView-slice";
-import { addCartItem } from "@/redux/features/cart-slice";
+import { useCart } from "@/hooks/useCart";
 import { toggleWishlist } from "@/redux/features/wishlist-slice";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/redux/store";
@@ -18,7 +18,7 @@ const SingleGridItem = ({ item }: { item: Product }) => {
   const dispatch = useDispatch<AppDispatch>();
   const wishlistItems = useAppSelector((s) => s.wishlistReducer.items);
   const isInWishlist = wishlistItems.some((p) => p.id === item.id);
-
+  const { addItem } = useCart();
   const shouldOpenVariantPicker = (p: Product) =>
     p.variantCount === 0 || p.variantCount > 1 || p.defaultVariantId == null;
 
@@ -33,13 +33,13 @@ const SingleGridItem = ({ item }: { item: Product }) => {
       toast("Debes elegir una variante del producto", { icon: "👈" });
       return;
     }
-    await dispatch(
-      addCartItem({
-        productId: item.id,
-        variantId: item.defaultVariantId!, // seguro por el guard
-        quantity: 1,
-      })
-    );
+
+    // Producto simple o con variante por defecto conocida
+    await addItem({
+      productId: item.id,
+      variantId: item.defaultVariantId, // viaja solo si existe
+      quantity: 1,
+    });
   };
 
   const handleItemToWishList = async () => {

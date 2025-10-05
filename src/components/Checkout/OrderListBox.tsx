@@ -52,7 +52,7 @@ const OrderListBox: React.FC<{
     setLoading(true);
     setErr(null);
     try {
-      const data = await cartService.get();
+      const data = await cartService.getLogged();
       // Acomodamos por si tu API no trae todos los campos:
       const normalized: Cart = {
         items: (data as any)?.items ?? [],

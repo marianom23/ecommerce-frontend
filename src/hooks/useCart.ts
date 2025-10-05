@@ -1,13 +1,30 @@
 // hooks/useCart.ts
 "use client";
+
+import { useSession } from "next-auth/react";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import {
-  addCartItem,
-  removeCartItem,
-  incrementCartItem,
-  decrementCartItem,
-  clearCart,
-  fetchCart,
+  // lecturas
+  fetchCartGuest,
+  fetchCartLogged,
+
+  // mutaciones guest
+  addCartItemGuest,
+  removeCartItemGuest,
+  incrementCartItemGuest,
+  decrementCartItemGuest,
+  clearCartGuest,
+  updateCartItemQuantityGuest,
+
+  // mutaciones logged
+  addCartItemLogged,
+  removeCartItemLogged,
+  incrementCartItemLogged,
+  decrementCartItemLogged,
+  clearCartLogged,
+  updateCartItemQuantityLogged,
+
+  // selects
   selectCart,
   selectCartItems,
   selectItemsCount,
@@ -16,22 +33,44 @@ import {
 
 export function useCart() {
   const dispatch = useAppDispatch();
+  const { status } = useSession(); // "authenticated" | "unauthenticated" | "loading"
+
   const cart = useAppSelector(selectCart);
   const items = useAppSelector(selectCartItems);
   const totalItems = useAppSelector(selectItemsCount);
   const totalPrice = useAppSelector(selectTotalPrice);
+
+  const isLogged = status === "authenticated";
 
   return {
     cart,
     items,
     totalItems,
     totalPrice,
+
+    // lecturas
+    refresh: () => isLogged ? dispatch(fetchCartLogged()) : dispatch(fetchCartGuest()),
+    refreshGuest: () => dispatch(fetchCartGuest()),
+    refreshLogged: () => dispatch(fetchCartLogged()),
+
+    // mutaciones
     addItem: (p: { productId: number; variantId?: number; quantity: number }) =>
-      dispatch(addCartItem(p)),
-    removeItem: (id: number) => dispatch(removeCartItem(id)),
-    increment: (id: number) => dispatch(incrementCartItem(id)),
-    decrement: (id: number) => dispatch(decrementCartItem(id)),
-    clear: () => dispatch(clearCart()),
-    refresh: () => dispatch(fetchCart()),
+      isLogged ? dispatch(addCartItemLogged(p)) : dispatch(addCartItemGuest(p)),
+
+    updateQuantity: (itemId: number, quantity: number) =>
+      isLogged
+        ? dispatch(updateCartItemQuantityLogged({ itemId, quantity }))
+        : dispatch(updateCartItemQuantityGuest({ itemId, quantity })),
+
+    removeItem: (id: number) =>
+      isLogged ? dispatch(removeCartItemLogged(id)) : dispatch(removeCartItemGuest(id)),
+
+    increment: (id: number) =>
+      isLogged ? dispatch(incrementCartItemLogged(id)) : dispatch(incrementCartItemGuest(id)),
+
+    decrement: (id: number) =>
+      isLogged ? dispatch(decrementCartItemLogged(id)) : dispatch(decrementCartItemGuest(id)),
+
+    clear: () => (isLogged ? dispatch(clearCartLogged()) : dispatch(clearCartGuest())),
   };
 }

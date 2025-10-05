@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useState } from "react";
 
 import { useModalContext } from "@/app/context/QuickViewModalContext";
 import { AppDispatch, useAppSelector } from "@/redux/store";
-import { addCartItem } from "@/redux/features/cart-slice";
+import { useCart } from "@/hooks/useCart";
 import { useDispatch } from "react-redux";
 import Image from "next/image";
 import { usePreviewSlider } from "@/app/context/PreviewSliderContext";
@@ -21,7 +21,7 @@ const QuickViewModal = () => {
   const { isModalOpen, closeModal } = useModalContext();
   const { openPreviewModal } = usePreviewSlider();
   const dispatch = useDispatch<AppDispatch>();
-
+  const { addItem } = useCart(); // 👈
   // Producto “light” (del listado) — trae price/discountedPrice/imgs
   const product = useAppSelector((state) => state.quickViewReducer.value as {
     id: number;
@@ -174,23 +174,21 @@ const QuickViewModal = () => {
     const variantId =
       details?.hasVariants ? (selectedVariantId ?? undefined) : undefined;
 
-    // (opcional) guard extra: si requiere variante y no está elegida, no intentes postear
     if (details?.hasVariants && !variantId) {
-      // toast.warn?.("Elegí una variante antes de agregar");
+      // acá podrías dar feedback si querés
+      // toast("Elegí una variante", { icon: "👉" });
       return;
     }
 
-    const action = await dispatch(
-      addCartItem({
-        productId,
-        variantId,         // solo viaja si existe
-        quantity,          // usa el estado actual
-      })
-    );
+    await addItem({
+      productId,
+      variantId,
+      quantity, // del estado local
+    });
 
-    // feedback opcional
-    // if (addCartItem.fulfilled.match(action)) toast.success("Producto agregado");
-    // else if (!((action.payload as any)?.data?.code === "NEEDS_VARIANT")) toast.error((action.payload as any)?.message ?? "Error");
+    // (opcional): cerrar el modal o dar feedback
+    // closeModal();
+    // toast.success("Producto agregado");
   };
 
 

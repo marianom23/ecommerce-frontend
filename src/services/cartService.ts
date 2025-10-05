@@ -2,43 +2,32 @@
 import { api } from "@/lib/api";
 import type { Cart, AddItemDto, UpdateItemDto } from "@/types/cart";
 
-const basePublic = "/p/cart";   // guest
-const baseLogged = "/b/cart";   // autenticado (inyecta Authorization)
+const baseGuest = "/p/cart";   // guest (usa cookie cart_session)
+const baseLogged = "/b/cart";  // logged (inyecta Authorization vía /api/b proxy)
 
 export const cartService = {
-  // --- lecturas ---
-  getGuest() {
-    return api.get<Cart>(`${basePublic}/me`);
-  },
-  getLogged() {
-    return api.get<Cart>(`${baseLogged}/me`);
-  },
+  /* ========== LECTURAS ========== */
+  getGuest:  () => api.get<Cart>(`${baseGuest}/me`),
+  getLogged: () => api.get<Cart>(`${baseLogged}/me`),
 
-  // --- mutaciones guest (si estás logueado y tu cookie apunta a cart de user, backend devuelve 403) ---
-  add(body: AddItemDto) {
-    return api.post<Cart>(`${basePublic}/items`, body);
-  },
-  increment(itemId: number) {
-    return api.patch<Cart>(`${basePublic}/items/${itemId}/increment`);
-  },
-  decrement(itemId: number) {
-    return api.patch<Cart>(`${basePublic}/items/${itemId}/decrement`);
-  },
-  quantity(itemId: number, body: UpdateItemDto) {
-    return api.patch<Cart>(`${basePublic}/items/${itemId}`, body);
-  },
-  removeItem(itemId: number) {
-    return api.del<Cart>(`${basePublic}/items/${itemId}`);
-  },
-  clear() {
-    return api.del<Cart>(basePublic);
-  },
-  applyCoupon(code: string) {
-    return api.post<Cart>(`${basePublic}/coupon`, { code });
-  },
+  /* ========== MUTACIONES GUEST ========== */
+  addGuest:        (body: AddItemDto)                   => api.post<Cart>(`${baseGuest}/items`, body),
+  incrementGuest:  (itemId: number)                     => api.patch<Cart>(`${baseGuest}/items/${itemId}/increment`),
+  decrementGuest:  (itemId: number)                     => api.patch<Cart>(`${baseGuest}/items/${itemId}/decrement`),
+  quantityGuest:   (itemId: number, body: UpdateItemDto)=> api.patch<Cart>(`${baseGuest}/items/${itemId}`, body),
+  removeGuest:     (itemId: number)                     => api.del<Cart>(`${baseGuest}/items/${itemId}`),
+  clearGuest:      ()                                   => api.del<Cart>(baseGuest),
+  applyCouponGuest:(code: string)                       => api.post<Cart>(`${baseGuest}/coupon`, { code }),
 
-  // --- logged-only ---
-  attachCart() {
-    return api.post<Cart>(`${baseLogged}/attach`);
-  },
+  /* ========== MUTACIONES LOGGED ========== */
+  addLogged:        (body: AddItemDto)                   => api.post<Cart>(`${baseLogged}/items`, body),
+  incrementLogged:  (itemId: number)                     => api.patch<Cart>(`${baseLogged}/items/${itemId}/increment`),
+  decrementLogged:  (itemId: number)                     => api.patch<Cart>(`${baseLogged}/items/${itemId}/decrement`),
+  quantityLogged:   (itemId: number, body: UpdateItemDto)=> api.patch<Cart>(`${baseLogged}/items/${itemId}`, body),
+  removeLogged:     (itemId: number)                     => api.del<Cart>(`${baseLogged}/items/${itemId}`),
+  clearLogged:      ()                                   => api.del<Cart>(baseLogged),
+  applyCouponLogged:(code: string)                       => api.post<Cart>(`${baseLogged}/coupon`, { code }),
+
+  /* ========== UTILIDAD ========== */
+  attachCart: () => api.post<Cart>(`${baseLogged}/attach`),
 };

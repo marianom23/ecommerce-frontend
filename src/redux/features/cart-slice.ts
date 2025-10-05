@@ -1,3 +1,4 @@
+// redux/features/cart-slice.ts
 import { createAsyncThunk, createSlice, createSelector, PayloadAction } from "@reduxjs/toolkit";
 import { cartService } from "@/services/cartService";
 import type { RootState } from "../store";
@@ -12,84 +13,82 @@ type CartState = {
 
 const initialState: CartState = { cart: null, loading: false, error: null };
 
-/* ========================= THUNKS ========================= */
-
-// Lecturas separadas: guest vs logged
-export const fetchCartGuest  = createAsyncThunk<Cart>(
-  "cart/fetchGuest",
-  async () => await cartService.getGuest()
-);
-
-export const fetchCartLogged = createAsyncThunk<Cart>(
-  "cart/fetchLogged",
-  async () => await cartService.getLogged()
-);
-
-// Helper por si algún service te devuelve { data }
+// helper por si algún service devuelve { data }
 const pickCart = (res: any): Cart => (res?.data ?? res) as Cart;
 
-// Mutaciones (guest endpoints)
-export const addCartItem = createAsyncThunk<Cart,
-  { productId: number; variantId?: number; quantity: number }
->(
-  "cart/addItem",
-  async (body) => {
-    const res = await cartService.add(body);
-    return pickCart(res);
-  }
+/* ========== LECTURAS ========== */
+export const fetchCartGuest  = createAsyncThunk<Cart>("cart/fetchGuest",  async () => await cartService.getGuest());
+export const fetchCartLogged = createAsyncThunk<Cart>("cart/fetchLogged", async () => await cartService.getLogged());
+
+/* ========== MUTACIONES GUEST ========== */
+export const addCartItemGuest = createAsyncThunk<Cart,
+  { productId: number; variantId?: number; quantity: number }>(
+  "cart/addItemGuest",
+  async (body) => pickCart(await cartService.addGuest(body))
 );
 
-export const updateCartItemQuantity = createAsyncThunk<Cart, { itemId: number; quantity: number }>(
-  "cart/updateQty",
-  async ({ itemId, quantity }) => {
-    const res = await cartService.quantity(itemId, { quantity });
-    return pickCart(res);
-  }
+export const updateCartItemQuantityGuest = createAsyncThunk<Cart, { itemId: number; quantity: number }>(
+  "cart/updateQtyGuest",
+  async ({ itemId, quantity }) => pickCart(await cartService.quantityGuest(itemId, { quantity }))
 );
 
-export const incrementCartItem = createAsyncThunk<Cart, number>(
-  "cart/increment",
-  async (itemId) => {
-    const res = await cartService.increment(itemId);
-    return pickCart(res);
-  }
+export const incrementCartItemGuest = createAsyncThunk<Cart, number>(
+  "cart/incrementGuest",
+  async (itemId) => pickCart(await cartService.incrementGuest(itemId))
 );
 
-export const decrementCartItem = createAsyncThunk<Cart, number>(
-  "cart/decrement",
-  async (itemId) => {
-    const res = await cartService.decrement(itemId);
-    return pickCart(res);
-  }
+export const decrementCartItemGuest = createAsyncThunk<Cart, number>(
+  "cart/decrementGuest",
+  async (itemId) => pickCart(await cartService.decrementGuest(itemId))
 );
 
-export const removeCartItem = createAsyncThunk<Cart, number>(
-  "cart/removeItem",
-  async (itemId) => {
-    const res = await cartService.removeItem(itemId);
-    return pickCart(res);
-  }
+export const removeCartItemGuest = createAsyncThunk<Cart, number>(
+  "cart/removeItemGuest",
+  async (itemId) => pickCart(await cartService.removeGuest(itemId))
 );
 
-export const clearCart = createAsyncThunk<Cart>(
-  "cart/clear",
-  // clear está en /p: tras limpiar, refresco el guest
-  async () => {
-    await cartService.clear();
-    return await cartService.getGuest();
-  }
+export const clearCartGuest = createAsyncThunk<Cart>(
+  "cart/clearGuest",
+  async () => pickCart(await (await cartService.clearGuest(), cartService.getGuest()))
 );
 
-// Logged-only
+/* ========== MUTACIONES LOGGED ========== */
+export const addCartItemLogged = createAsyncThunk<Cart,
+  { productId: number; variantId?: number; quantity: number }>(
+  "cart/addItemLogged",
+  async (body) => pickCart(await cartService.addLogged(body))
+);
+
+export const updateCartItemQuantityLogged = createAsyncThunk<Cart, { itemId: number; quantity: number }>(
+  "cart/updateQtyLogged",
+  async ({ itemId, quantity }) => pickCart(await cartService.quantityLogged(itemId, { quantity }))
+);
+
+export const incrementCartItemLogged = createAsyncThunk<Cart, number>(
+  "cart/incrementLogged",
+  async (itemId) => pickCart(await cartService.incrementLogged(itemId))
+);
+
+export const decrementCartItemLogged = createAsyncThunk<Cart, number>(
+  "cart/decrementLogged",
+  async (itemId) => pickCart(await cartService.decrementLogged(itemId))
+);
+
+export const removeCartItemLogged = createAsyncThunk<Cart, number>(
+  "cart/removeItemLogged",
+  async (itemId) => pickCart(await cartService.removeLogged(itemId))
+);
+
+export const clearCartLogged = createAsyncThunk<Cart>(
+  "cart/clearLogged",
+  async () => pickCart(await cartService.clearLogged())
+);
+
+/* ========== ATTACH (solo logged) ========== */
 export const attachCart = createAsyncThunk<Cart>(
   "cart/attach",
-  async () => {
-    const res = await cartService.attachCart();
-    return pickCart(res);
-  }
+  async () => pickCart(await cartService.attachCart())
 );
-
-/* ========================= SLICE ========================= */
 
 const slice = createSlice({
   name: "cart",
@@ -113,7 +112,7 @@ const slice = createSlice({
       s.error = a.error?.message || "Error";
     };
 
-    // GETs
+    // LECTURAS
     builder
       .addCase(fetchCartGuest.pending, pending)
       .addCase(fetchCartGuest.fulfilled, fulfilled)
@@ -123,35 +122,60 @@ const slice = createSlice({
       .addCase(fetchCartLogged.fulfilled, fulfilled)
       .addCase(fetchCartLogged.rejected, rejected);
 
-    // Mutaciones
+    // MUTACIONES GUEST
     builder
-      .addCase(addCartItem.pending, pending)
-      .addCase(addCartItem.fulfilled, (s, a) => {
-        fulfilled(s, a);
-        toast.success("Producto agregado al carrito 🛒");
-      })
-      .addCase(addCartItem.rejected, rejected)
+      .addCase(addCartItemGuest.pending, pending)
+      .addCase(addCartItemGuest.fulfilled, (s, a) => { fulfilled(s, a); toast.success("Producto agregado 🛒"); })
+      .addCase(addCartItemGuest.rejected, rejected)
 
-      .addCase(updateCartItemQuantity.pending, pending)
-      .addCase(updateCartItemQuantity.fulfilled, fulfilled)
-      .addCase(updateCartItemQuantity.rejected, rejected)
+      .addCase(updateCartItemQuantityGuest.pending, pending)
+      .addCase(updateCartItemQuantityGuest.fulfilled, fulfilled)
+      .addCase(updateCartItemQuantityGuest.rejected, rejected)
 
-      .addCase(incrementCartItem.pending, pending)
-      .addCase(incrementCartItem.fulfilled, fulfilled)
-      .addCase(incrementCartItem.rejected, rejected)
+      .addCase(incrementCartItemGuest.pending, pending)
+      .addCase(incrementCartItemGuest.fulfilled, fulfilled)
+      .addCase(incrementCartItemGuest.rejected, rejected)
 
-      .addCase(decrementCartItem.pending, pending)
-      .addCase(decrementCartItem.fulfilled, fulfilled)
-      .addCase(decrementCartItem.rejected, rejected)
+      .addCase(decrementCartItemGuest.pending, pending)
+      .addCase(decrementCartItemGuest.fulfilled, fulfilled)
+      .addCase(decrementCartItemGuest.rejected, rejected)
 
-      .addCase(removeCartItem.pending, pending)
-      .addCase(removeCartItem.fulfilled, fulfilled)
-      .addCase(removeCartItem.rejected, rejected)
+      .addCase(removeCartItemGuest.pending, pending)
+      .addCase(removeCartItemGuest.fulfilled, fulfilled)
+      .addCase(removeCartItemGuest.rejected, rejected)
 
-      .addCase(clearCart.pending, pending)
-      .addCase(clearCart.fulfilled, fulfilled)
-      .addCase(clearCart.rejected, rejected)
+      .addCase(clearCartGuest.pending, pending)
+      .addCase(clearCartGuest.fulfilled, fulfilled)
+      .addCase(clearCartGuest.rejected, rejected);
 
+    // MUTACIONES LOGGED
+    builder
+      .addCase(addCartItemLogged.pending, pending)
+      .addCase(addCartItemLogged.fulfilled, (s, a) => { fulfilled(s, a); toast.success("Producto agregado 🛒"); })
+      .addCase(addCartItemLogged.rejected, rejected)
+
+      .addCase(updateCartItemQuantityLogged.pending, pending)
+      .addCase(updateCartItemQuantityLogged.fulfilled, fulfilled)
+      .addCase(updateCartItemQuantityLogged.rejected, rejected)
+
+      .addCase(incrementCartItemLogged.pending, pending)
+      .addCase(incrementCartItemLogged.fulfilled, fulfilled)
+      .addCase(incrementCartItemLogged.rejected, rejected)
+
+      .addCase(decrementCartItemLogged.pending, pending)
+      .addCase(decrementCartItemLogged.fulfilled, fulfilled)
+      .addCase(decrementCartItemLogged.rejected, rejected)
+
+      .addCase(removeCartItemLogged.pending, pending)
+      .addCase(removeCartItemLogged.fulfilled, fulfilled)
+      .addCase(removeCartItemLogged.rejected, rejected)
+
+      .addCase(clearCartLogged.pending, pending)
+      .addCase(clearCartLogged.fulfilled, fulfilled)
+      .addCase(clearCartLogged.rejected, rejected);
+
+    // ATTACH
+    builder
       .addCase(attachCart.pending, pending)
       .addCase(attachCart.fulfilled, fulfilled)
       .addCase(attachCart.rejected, rejected);
@@ -161,8 +185,7 @@ const slice = createSlice({
 export const { reset: resetCart } = slice.actions;
 export default slice.reducer;
 
-/* ========================= SELECTORS ========================= */
-
+/* ========== SELECTORS ========== */
 export const selectCart = (s: RootState) => s.cartReducer.cart;
 export const selectCartItems = createSelector([selectCart], (c) => c?.items ?? []);
 export const selectTotalPrice = createSelector([selectCart], (c) => c?.totals?.grandTotal ?? 0);

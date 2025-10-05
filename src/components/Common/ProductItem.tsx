@@ -9,28 +9,32 @@ import { updateproductDetails } from "@/redux/features/product-details";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/redux/store";
 import Link from "next/link";
-
-// nuevo import desde tu slice actualizado
-import { addCartItem } from "@/redux/features/cart-slice";
+import { useCart } from "@/hooks/useCart"; // 👈
 
 const ProductItem = ({ item }: { item: Product }) => {
   const { openModal } = useModalContext();
   const dispatch = useDispatch<AppDispatch>();
+  const { addItem } = useCart(); // 👈
 
-  // Quick View
   const handleQuickViewUpdate = () => {
     dispatch(updateQuickView({ ...item }));
   };
 
-  // Nuevo: addCartItem usa productId, variantId opcional y quantity
-  const handleAddToCart = () => {
-    dispatch(
-      addCartItem({
-        productId: item.id,          // <-- aquí asegúrate que `Product` tiene `id`
-        // variantId: item?.variantId,  // opcional, si tu modelo lo usa
-        quantity: 1,
-      })
-    );
+  // Abre selector solo si hay más de una variante o no hay variante por defecto
+  const needsVariantPick =
+    item.variantCount > 1 || item.defaultVariantId == null;
+
+  const handleAddToCart = async () => {
+    if (needsVariantPick) {
+      dispatch(updateQuickView({ ...item }));
+      openModal();
+      return;
+    }
+    await addItem({
+      productId: item.id,
+      variantId: item.defaultVariantId, // se envía sólo si existe
+      quantity: 1,
+    });
   };
 
   const handleItemToWishList = () => {

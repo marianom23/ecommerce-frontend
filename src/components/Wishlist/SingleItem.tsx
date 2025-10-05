@@ -6,17 +6,17 @@ import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/redux/store";
 import type { Product } from "@/types/product";
 import { removeFromWishlist } from "@/redux/features/wishlist-slice";
-import { addCartItem } from "@/redux/features/cart-slice";
 import { useRouter } from "next/navigation";
 import { useModalContext } from "@/app/context/QuickViewModalContext";
 import { updateQuickView } from "@/redux/features/quickView-slice";
 import toast from "react-hot-toast";
+import { useCart } from "@/hooks/useCart";
 
 
 const SingleItem: React.FC<{ item: Product }> = ({ item }) => {
 
   const { openModal } = useModalContext();
-
+  const { addItem } = useCart();
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
 
@@ -35,13 +35,11 @@ const SingleItem: React.FC<{ item: Product }> = ({ item }) => {
       toast("Debes elegir una variante del producto", { icon: "👈" }); // opcional
       return;
     }
-    await dispatch(
-      addCartItem({
-        productId: item.id,
-        variantId: item.defaultVariantId!,
-        quantity: 1,
-      })
-    );
+    await addItem({
+      productId: item.id,
+      variantId: item.defaultVariantId!,
+      quantity: 1,
+    });
     // toast.success("Agregado al carrito"); // opcional
   };
 
