@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch } from "@/redux/store";
 import { selectCartItems, selectTotalPrice } from "@/redux/features/cart-slice";
+import { useSession } from "next-auth/react";
+import toast from "react-hot-toast";
 import SingleItem from "./SingleItem";
 import EmptyCart from "./EmptyCart";
 
@@ -19,6 +21,20 @@ const CartSidebarModal = () => {
   const dispatch = useDispatch<AppDispatch>();
   const cartItems = useSelector(selectCartItems);
   const totalPrice = useSelector(selectTotalPrice);
+  const { status } = useSession();
+  const isAuthenticated = status === "authenticated";
+
+  const handlePayClick = (e: React.MouseEvent) => {
+    if (!isAuthenticated) {
+      e.preventDefault();
+      toast("Debes iniciar sesión para proceder al pago", { 
+        icon: "🔒",
+        duration: 4000 
+      });
+    } else {
+      closeCartModal();
+    }
+  };
 
   useEffect(() => {
     // cerrar al click fuera
@@ -68,7 +84,15 @@ const CartSidebarModal = () => {
               <Link onClick={closeCartModal} href="/cart" className="w-full flex justify-center font-medium text-white bg-blue py-[13px] px-6 rounded-md ease-out duration-200 hover:bg-blue-dark">
                 Ver Carrito
               </Link>
-              <Link href="/checkout" className="w-full flex justify-center font-medium text-white bg-dark py-[13px] px-6 rounded-md ease-out duration-200 hover:bg-opacity-95">
+              <Link 
+                href="/checkout" 
+                onClick={handlePayClick}
+                className={`w-full flex justify-center font-medium py-[13px] px-6 rounded-md ease-out duration-200 ${
+                  !isAuthenticated 
+                    ? "text-gray-600 bg-gray-400 cursor-not-allowed border-2 border-gray-300" 
+                    : "text-white bg-dark hover:bg-opacity-95"
+                }`}
+              >
                 Pagar
               </Link>
             </div>

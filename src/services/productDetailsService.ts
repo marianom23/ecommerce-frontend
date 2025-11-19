@@ -75,6 +75,7 @@ export type NormalizedProduct = {
   priceRange: { min: number; max: number; minDiscounted: number; maxDiscounted: number };
   stockTotal: number;
   inStock: boolean;
+  fulfillmentType: 'PHYSICAL' | 'DIGITAL_ON_DEMAND' | 'DIGITAL_INSTANT';
 };
 
 /** ===== Fetchers ===== */
@@ -129,7 +130,8 @@ function normalize(p: ProductDetailsRaw): NormalizedProduct {
       variants,
       priceRange: { min, max, minDiscounted: minDisc, maxDiscounted: maxDisc },
       stockTotal,
-      inStock: stockTotal > 0,
+      inStock: (pv as any).fulfillmentType === 'DIGITAL_ON_DEMAND' ? true : stockTotal > 0,
+      fulfillmentType: (pv as any).fulfillmentType || 'PHYSICAL',
     };
   } else {
     const ps = p as APIProductSimple;
@@ -158,7 +160,8 @@ function normalize(p: ProductDetailsRaw): NormalizedProduct {
         maxDiscounted: discounted,
       },
       stockTotal: stock,
-      inStock: stock > 0,
+      inStock: (ps as any).fulfillmentType === 'DIGITAL_ON_DEMAND' ? true : stock > 0,
+      fulfillmentType: (ps as any).fulfillmentType || 'PHYSICAL',
     };
   }
 }

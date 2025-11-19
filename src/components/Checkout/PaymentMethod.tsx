@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import { orderService, type PaymentMethod as PM } from "@/services/orderService";
+import toast from "react-hot-toast";
 
 type Props = {
   orderId?: number | null;
@@ -12,7 +13,7 @@ const PaymentMethod: React.FC<Props> = ({ orderId, onApplied }) => {
   const [payment, setPayment] = useState<PM | null>(null);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const [okMsg, setOkMsg] = useState<string | null>(null);
+  // usamos toast para feedback en vez de banners persistentes
 
   // mapeo UI -> enum backend
   const mapUiToEnum = (key: "bank" /* | "cash" */ | "paypal"): PM => {
@@ -29,7 +30,6 @@ const PaymentMethod: React.FC<Props> = ({ orderId, onApplied }) => {
   async function selectPayment(key: "bank" /* | "cash" */ | "paypal") {
     const method = mapUiToEnum(key);
     setErr(null);
-    setOkMsg(null);
 
     setPayment(method);
     if (!orderId) return;
@@ -37,7 +37,7 @@ const PaymentMethod: React.FC<Props> = ({ orderId, onApplied }) => {
     setSaving(true);
     try {
       await orderService.patchPaymentMethod(orderId, { paymentMethod: method });
-      setOkMsg("Método de pago aplicado a la orden ✓");
+      toast.success("Método de pago aplicado a la orden ✓");
       onApplied?.(method);
     } catch (e: any) {
       setErr(
@@ -108,8 +108,8 @@ const PaymentMethod: React.FC<Props> = ({ orderId, onApplied }) => {
             </div>
             <div className="border-l border-gray-4 pl-2.5">
               <p>
-                {key === "bank" && "Direct bank transfer"}
-                {/* {key === "cash" && "Cash on delivery"} */}
+                {key === "bank" && "Transferencia bancaria"}
+                {/* {key === "cash" && "Pago contra entrega"} */}
                 {key === "paypal" && "Tarjeta (gateway)"}
               </p>
             </div>
@@ -122,7 +122,7 @@ const PaymentMethod: React.FC<Props> = ({ orderId, onApplied }) => {
   return (
     <div className="bg-white shadow-1 rounded-[10px] mt-7.5">
       <div className="border-b border-gray-3 py-5 px-4 sm:px-8.5">
-        <h3 className="font-medium text-xl text-dark">Payment Method</h3>
+        <h3 className="font-medium text-xl text-dark">Método de pago</h3>
       </div>
 
       <div className="p-4 sm:p-8.5">
@@ -131,11 +131,7 @@ const PaymentMethod: React.FC<Props> = ({ orderId, onApplied }) => {
             {err}
           </div>
         )}
-        {okMsg && (
-          <div className="bg-green-50 border border-green-200 text-green-700 rounded-md p-3 mb-3 text-sm">
-            {okMsg}
-          </div>
-        )}
+        {/* feedback via toast */}
         {saving && <p className="text-sm text-dark-5 mb-2">Guardando...</p>}
 
         <div className="flex flex-col gap-3">

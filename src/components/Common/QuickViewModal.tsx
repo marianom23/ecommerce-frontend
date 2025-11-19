@@ -22,7 +22,7 @@ const QuickViewModal = () => {
   const { openPreviewModal } = usePreviewSlider();
   const dispatch = useDispatch<AppDispatch>();
   const { addItem } = useCart(); // 👈
-  // Producto “light” (del listado) — trae price/discountedPrice/imgs
+  // Producto "light" (del listado) — trae price/discountedPrice/imgs
   const product = useAppSelector((state) => state.quickViewReducer.value as {
     id: number;
     title: string;
@@ -30,7 +30,9 @@ const QuickViewModal = () => {
     price: number;
     discountedPrice: number;
     imgs?: { thumbnails: string[]; previews: string[] };
+    fulfillmentType?: 'PHYSICAL' | 'DIGITAL_ON_DEMAND' | 'DIGITAL_INSTANT';
   } | null);
+
 
   // Estado local
   const [quantity, setQuantity] = useState(1);
@@ -226,9 +228,17 @@ const QuickViewModal = () => {
       ? undefined
       : details?.stockTotal;
 
-  const inStock = variantStock !== undefined
-    ? variantStock > 0
-    : details?.inStock ?? true;
+  // Para productos digitales, no mostrar "out of stock" si es DIGITAL_ON_DEMAND
+  // Priorizar el fulfillmentType del product (listado) sobre el details (API)
+  const fulfillmentType = (product as any)?.fulfillmentType || (details as any)?.fulfillmentType;
+  const isDigitalOnDemand = fulfillmentType === 'DIGITAL_ON_DEMAND';
+  
+  const inStock = isDigitalOnDemand 
+    ? true // Los productos DIGITAL_ON_DEMAND siempre están disponibles
+    : variantStock !== undefined
+      ? variantStock > 0
+      : details?.inStock ?? true;
+  
 
   return (
     <div
@@ -373,9 +383,11 @@ const QuickViewModal = () => {
                     </defs>
                   </svg>
                 <span className="font-medium text-dark">
-                  {inStock
-                    ? `In Stock${typeof variantStock === "number" ? ` (${variantStock})` : ""}`
-                    : "Out of Stock"}
+                  {isDigitalOnDemand
+                    ? "Disponible bajo demanda"
+                    : inStock
+                      ? `In Stock${typeof variantStock === "number" ? ` (${variantStock})` : ""}`
+                      : "Out of Stock"}
                 </span>
               </div>
 
@@ -398,7 +410,7 @@ const QuickViewModal = () => {
                         .map(([k, val]) => `${k}: ${val}`)
                         .join(" · ");
                       const label = attrLabel || `Variante #${v.id}`;
-                      const sfx = v.stock > 0 ? "" : " — (Sin stock)";
+                      const sfx = (v.stock > 0 || fulfillmentType === 'DIGITAL_ON_DEMAND') ? "" : " — (Sin stock)";
                       return (
                         <option key={v.id} value={v.id}>
                           {label} — {currency.format(v.discountedPrice)}{sfx}

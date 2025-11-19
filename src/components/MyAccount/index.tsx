@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import Link from "next/link";
-import Image from "next/image";
+import { useSession } from "next-auth/react";
 import Breadcrumb from "../Common/Breadcrumb";
 import AddressModal from "./AddressModal";
 import Orders from "../Orders";
@@ -38,6 +38,7 @@ const TabLink = ({
 
   export default function MyAccount({ current }: MyAccountProps) {
     const [addressModal, setAddressModal] = React.useState(false);
+    const { data: session } = useSession();
 
     return (
       <>
@@ -50,20 +51,11 @@ const TabLink = ({
               <div className="xl:max-w-[370px] w-full bg-white rounded-xl shadow-1">
                 <div className="flex xl:flex-col">
                   <div className="hidden lg:flex flex-wrap items-center gap-5 py-6 px-4 sm:px-7.5 xl:px-9 border-r xl:border-r-0 xl:border-b border-gray-3">
-                    <div className="max-w-[64px] w-full h-16 rounded-full overflow-hidden">
-                      <Image
-                        src="/images/users/user-04.jpg"
-                        alt="user"
-                        width={64}
-                        height={64}
-                      />
-                    </div>
-
                     <div>
                       <p className="font-medium text-dark mb-0.5">
-                        James Septimus
+                        {session?.user?.name || "Usuario"}
                       </p>
-                      <p className="text-custom-xs">Member Since Sep 2020</p>
+                      <p className="text-custom-xs">Miembro desde {new Date().getFullYear()}</p>
                     </div>
                   </div>
 
@@ -71,32 +63,32 @@ const TabLink = ({
                     <div className="flex flex-wrap xl:flex-nowrap xl:flex-col gap-4">
                       <TabLink href="/mi-cuenta" active={current === "dashboard"}>
                         <svg className="fill-current" width="22" height="22" viewBox="0 0 22 22" aria-hidden />
-                        Dashboard
+                        Panel
                       </TabLink>
 
                       <TabLink href="/mi-cuenta/orders" active={current === "orders"}>
                         <svg className="fill-current" width="22" height="22" viewBox="0 0 22 22" aria-hidden />
-                        Orders
+                        Pedidos
                       </TabLink>
 
                       <TabLink href="/mi-cuenta/downloads" active={current === "downloads"}>
                         <svg className="fill-current" width="22" height="22" viewBox="0 0 22 22" aria-hidden />
-                        Downloads
+                        Descargas
                       </TabLink>
 
                       <TabLink href="/mi-cuenta/addresses" active={current === "addresses"}>
                         <svg className="fill-current" width="22" height="22" viewBox="0 0 22 22" aria-hidden />
-                        Addresses
+                        Direcciones
                       </TabLink>
 
                       <TabLink href="/mi-cuenta/account-details" active={current === "account-details"}>
                         <svg className="fill-current" width="22" height="22" viewBox="0 0 22 22" aria-hidden />
-                        Account Details
+                        Detalles de Cuenta
                       </TabLink>
 
                       <TabLink href="/mi-cuenta/logout" active={current === "logout"}>
                         <svg className="fill-current" width="22" height="22" viewBox="0 0 22 22" aria-hidden />
-                        Logout
+                        Cerrar Sesión
                       </TabLink>
                     </div>
                   </div>
@@ -111,20 +103,20 @@ const TabLink = ({
 
               <div className={`xl:max-w-[770px] w-full bg-white rounded-xl shadow-1 py-9.5 px-4 sm:px-7.5 xl:px-10 ${current === "dashboard" ? "block" : "hidden"}`}>
                 <p className="text-dark">
-                  Hello Annie (not Annie?
+                  Hola {session?.user?.name || "Usuario"} (¿no eres {session?.user?.name || "Usuario"}?
                   <a
                     href="#"
                     className="text-red ease-out duration-200 hover:underline"
                   >
-                    Log Out
+                    Cerrar Sesión
                   </a>
                   )
                 </p>
 
                 <p className="text-custom-sm mt-4">
-                  From your account dashboard you can view your recent orders,
-                  manage your shipping and billing addresses, and edit your
-                  password and account details.
+                  Desde tu panel de cuenta puedes ver tus pedidos recientes,
+                  gestionar tus direcciones de envío y facturación, y editar tu
+                  contraseña y detalles de cuenta.
                 </p>
               </div>
               {/* <!-- dashboard tab content end -->
@@ -138,7 +130,7 @@ const TabLink = ({
 
             <!-- downloads tab content start --> */}
               <div className={`xl:max-w-[770px] w-full bg-white rounded-xl shadow-1 py-9.5 px-4 sm:px-7.5 xl:px-10 ${current === "downloads" ? "block" : "hidden"}`}>
-                <p>You don&apos;t have any download</p>
+                <p>No tienes ninguna descarga</p>
               </div>
               {/* <!-- downloads tab content end -->
 
@@ -147,7 +139,7 @@ const TabLink = ({
                 <div className="xl:max-w-[370px] w-full bg-white shadow-1 rounded-xl">
                   <div className="flex items-center justify-between py-5 px-4 sm:pl-7.5 sm:pr-6 border-b border-gray-3">
                     <p className="font-medium text-xl text-dark">
-                      Shipping Address
+                      Dirección de Envío
                     </p>
 
                     <button className="text-dark ease-out duration-200 hover:text-blue" onClick={() => setAddressModal(true)}>
@@ -193,7 +185,7 @@ const TabLink = ({
                             fill=""
                           />
                         </svg>
-                        Name: James Septimus
+                        Nombre: {session?.user?.name || "Usuario"}
                       </p>
 
                       <p className="flex items-center gap-2.5 text-custom-sm">
@@ -212,7 +204,7 @@ const TabLink = ({
                             fill=""
                           />
                         </svg>
-                        Email: jamse@example.com
+                        Email: {session?.user?.email || "usuario@ejemplo.com"}
                       </p>
 
                       <p className="flex items-center gap-2.5 text-custom-sm">
@@ -241,7 +233,7 @@ const TabLink = ({
                             fill=""
                           />
                         </svg>
-                        Phone: 1234 567890
+                        Teléfono: 1234 567890
                       </p>
 
                       <p className="flex gap-2.5 text-custom-sm">
@@ -267,7 +259,7 @@ const TabLink = ({
                             </clipPath>
                           </defs>
                         </svg>
-                        Address: 7398 Smoke Ranch RoadLas Vegas, Nevada 89128
+                        Dirección: 7398 Smoke Ranch RoadLas Vegas, Nevada 89128
                       </p>
                     </div>
                   </div>
@@ -276,7 +268,7 @@ const TabLink = ({
                 <div className="xl:max-w-[370px] w-full bg-white shadow-1 rounded-xl">
                   <div className="flex items-center justify-between py-5 px-4 sm:pl-7.5 sm:pr-6 border-b border-gray-3">
                     <p className="font-medium text-xl text-dark">
-                      Billing Address
+                      Dirección de Facturación
                     </p>
 
                     <button className="text-dark ease-out duration-200 hover:text-blue" onClick={() => setAddressModal(true)}>
@@ -322,7 +314,7 @@ const TabLink = ({
                             fill=""
                           />
                         </svg>
-                        Name: James Septimus
+                        Nombre: {session?.user?.name || "Usuario"}
                       </p>
 
                       <p className="flex items-center gap-2.5 text-custom-sm">
@@ -341,7 +333,7 @@ const TabLink = ({
                             fill=""
                           />
                         </svg>
-                        Email: jamse@example.com
+                        Email: {session?.user?.email || "usuario@ejemplo.com"}
                       </p>
 
                       <p className="flex items-center gap-2.5 text-custom-sm">
@@ -370,7 +362,7 @@ const TabLink = ({
                             fill=""
                           />
                         </svg>
-                        Phone: 1234 567890
+                        Teléfono: 1234 567890
                       </p>
 
                       <p className="flex gap-2.5 text-custom-sm">
@@ -396,7 +388,7 @@ const TabLink = ({
                             </clipPath>
                           </defs>
                         </svg>
-                        Address: 7398 Smoke Ranch RoadLas Vegas, Nevada 89128
+                        Dirección: 7398 Smoke Ranch RoadLas Vegas, Nevada 89128
                       </p>
                     </div>
                   </div>
@@ -411,7 +403,7 @@ const TabLink = ({
                     <div className="flex flex-col lg:flex-row gap-5 sm:gap-8 mb-5">
                       <div className="w-full">
                         <label htmlFor="firstName" className="block mb-2.5">
-                          First Name <span className="text-red">*</span>
+                          Nombre <span className="text-red">*</span>
                         </label>
 
                         <input
@@ -426,7 +418,7 @@ const TabLink = ({
 
                       <div className="w-full">
                         <label htmlFor="lastName" className="block mb-2.5">
-                          Last Name <span className="text-red">*</span>
+                          Apellido <span className="text-red">*</span>
                         </label>
 
                         <input
@@ -442,7 +434,7 @@ const TabLink = ({
 
                     <div className="mb-5">
                       <label htmlFor="countryName" className="block mb-2.5">
-                        Country/ Region <span className="text-red">*</span>
+                        País/ Región <span className="text-red">*</span>
                       </label>
 
                       <div className="relative">
@@ -476,23 +468,23 @@ const TabLink = ({
                       type="submit"
                       className="inline-flex font-medium text-white bg-blue py-3 px-7 rounded-md ease-out duration-200 hover:bg-blue-dark"
                     >
-                      Save Changes
+                      Guardar Cambios
                     </button>
                   </div>
 
                   <p className="text-custom-sm mt-5 mb-9">
-                    This will be how your name will be displayed in the account
-                    section and in reviews
+                    Así es como se mostrará tu nombre en la sección de cuenta
+                    y en las reseñas
                   </p>
 
                   <p className="font-medium text-xl sm:text-2xl text-dark mb-7">
-                    Password Change
+                    Cambio de Contraseña
                   </p>
 
                   <div className="bg-white shadow-1 rounded-xl p-4 sm:p-8.5">
                     <div className="mb-5">
                       <label htmlFor="oldPassword" className="block mb-2.5">
-                        Old Password
+                        Contraseña Actual
                       </label>
 
                       <input
@@ -506,7 +498,7 @@ const TabLink = ({
 
                     <div className="mb-5">
                       <label htmlFor="newPassword" className="block mb-2.5">
-                        New Password
+                        Nueva Contraseña
                       </label>
 
                       <input
@@ -523,7 +515,7 @@ const TabLink = ({
                         htmlFor="confirmNewPassword"
                         className="block mb-2.5"
                       >
-                        Confirm New Password
+                        Confirmar Nueva Contraseña
                       </label>
 
                       <input
@@ -539,7 +531,7 @@ const TabLink = ({
                       type="submit"
                       className="inline-flex font-medium text-white bg-blue py-3 px-7 rounded-md ease-out duration-200 hover:bg-blue-dark"
                     >
-                      Change Password
+                      Cambiar Contraseña
                     </button>
                   </div>
                 </form>

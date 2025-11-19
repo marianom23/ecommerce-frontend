@@ -12,6 +12,8 @@ import { useAppSelector } from "@/redux/store";
 import toast from "react-hot-toast";
 import Link from "next/link";
 import Image from "next/image";
+import { updateproductDetails } from "@/redux/features/product-details";
+import { generateProductUrl } from "@/utils/slug";
 
 const SingleGridItem = ({ item }: { item: Product }) => {
   const { openModal } = useModalContext();
@@ -49,6 +51,11 @@ const SingleGridItem = ({ item }: { item: Product }) => {
       const isIn = products.some((p) => p.id === item.id);
       toast(isIn ? "Añadido a tu wishlist" : "Quitado de tu wishlist");
     }
+  };
+
+  const handleProductDetails = () => {
+    // Store the product in Redux for the details page
+    dispatch(updateproductDetails({ ...item }));
   };
 
   const imgSrc =
@@ -172,7 +179,7 @@ const SingleGridItem = ({ item }: { item: Product }) => {
       </div>
 
       <h3 className="font-medium text-dark ease-out duration-200 hover:text-blue mb-1.5">
-        <Link href="/shop-details"> {item.title} </Link>
+        <Link href={generateProductUrl(item.id, item.title)} onClick={handleProductDetails}> {item.title} </Link>
       </h3>
 
       <span className="flex items-center gap-2 font-medium text-lg">

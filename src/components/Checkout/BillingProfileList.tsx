@@ -29,7 +29,7 @@ const BillingProfileList: React.FC<{
       {!loading && profiles.length > 0 && (
         <div className="space-y-3">
           {profiles.map((p) => (
-            <label key={p.id} className="flex items-start gap-3 p-3 border rounded-md cursor-pointer hover:border-blue/60">
+            <label key={p.id} className={`flex items-start gap-3 p-3 border rounded-md cursor-pointer hover:border-blue/60 ${selectedId === p.id ? "border-blue" : "border-gray-3"}`}>
               <input
                 type="radio"
                 name="billing-profile"

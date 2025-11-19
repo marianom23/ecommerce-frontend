@@ -6,97 +6,155 @@ import Newsletter from "../Common/Newsletter";
 import RecentlyViewdItems from "./RecentlyViewd";
 import { usePreviewSlider } from "@/app/context/PreviewSliderContext";
 import { useAppSelector } from "@/redux/store";
+import { useCart } from "@/hooks/useCart";
+import { productDetailsPublicService, type NormalizedProduct, type NormalizedVariant } from "@/services/productDetailsService";
+import { updateproductDetails } from "@/redux/features/product-details";
+import { useDispatch } from "react-redux";
+import { AppDispatch } from "@/redux/store";
+import toast from "react-hot-toast";
 
-const ShopDetails = () => {
-  const [activeColor, setActiveColor] = useState("blue");
+interface ShopDetailsProps {
+  productId?: string;
+}
+
+const ShopDetails = ({ productId }: ShopDetailsProps) => {
   const { openPreviewModal } = usePreviewSlider();
   const [previewImg, setPreviewImg] = useState(0);
-
-  const [storage, setStorage] = useState("gb128");
-  const [type, setType] = useState("active");
-  const [sim, setSim] = useState("dual");
   const [quantity, setQuantity] = useState(1);
-
   const [activeTab, setActiveTab] = useState("tabOne");
-
-  const storages = [
-    {
-      id: "gb128",
-      title: "128 GB",
-    },
-    {
-      id: "gb256",
-      title: "256 GB",
-    },
-    {
-      id: "gb512",
-      title: "521 GB",
-    },
-  ];
-
-  const types = [
-    {
-      id: "active",
-      title: "Active",
-    },
-
-    {
-      id: "inactive",
-      title: "Inactive",
-    },
-  ];
-
-  const sims = [
-    {
-      id: "dual",
-      title: "Dual",
-    },
-
-    {
-      id: "e-sim",
-      title: "E Sim",
-    },
-  ];
+  
+  // Dynamic variant system
+  const [productDetails, setProductDetails] = useState<NormalizedProduct | null>(null);
+  const [selectedVariantId, setSelectedVariantId] = useState<number | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  const dispatch = useDispatch<AppDispatch>();
+  const { addItem } = useCart();
 
   const tabs = [
     {
       id: "tabOne",
-      title: "Description",
+      title: "Descripción",
     },
     {
       id: "tabTwo",
-      title: "Additional Information",
+      title: "Información Adicional",
     },
     {
       id: "tabThree",
-      title: "Reviews",
+      title: "Reseñas",
     },
   ];
-
-  const colors = ["red", "blue", "orange", "pink", "purple"];
 
   const alreadyExist = localStorage.getItem("productDetails");
   const productFromStorage = useAppSelector(
     (state) => state.productDetailsReducer.value
   );
 
-  const product = alreadyExist ? JSON.parse(alreadyExist) : productFromStorage;
+  // Use productId from URL if available, otherwise use stored product
+  const product = productId 
+    ? { id: parseInt(productId, 10) } 
+    : (alreadyExist ? JSON.parse(alreadyExist) : productFromStorage);
 
+  // Fetch full product details with variants
   useEffect(() => {
-    localStorage.setItem("productDetails", JSON.stringify(product));
-  }, [product]);
+    if (!product?.id) return;
 
-  // pass the product here when you get the real data.
+    const fetchProductDetails = async () => {
+      setLoading(true);
+      setError(null);
+      
+      try {
+        const details = await productDetailsPublicService.getNormalized(product.id);
+        setProductDetails(details);
+        
+        // Set default variant if product has variants
+        if (details.hasVariants && details.variants.length > 0) {
+          const defaultVariant = details.variants.find(v => v.stock > 0) ?? details.variants[0];
+          setSelectedVariantId(defaultVariant?.id ?? null);
+        }
+        
+        // Update Redux store with full details
+        dispatch(updateproductDetails(details));
+      } catch (err) {
+        console.error('Error fetching product details:', err);
+        setError('Failed to load product details');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProductDetails();
+  }, [product?.id, dispatch]);
+
+  // Helper functions
+  const selectedVariant: NormalizedVariant | null = productDetails?.hasVariants 
+    ? productDetails.variants.find(v => v.id === selectedVariantId) ?? null
+    : null;
+
+  const currentImages = selectedVariant?.images?.length 
+    ? selectedVariant.images 
+    : productDetails?.images ?? product?.imgs?.previews ?? [];
+
+  const currentPrice = selectedVariant 
+    ? selectedVariant.discountedPrice 
+    : productDetails?.discountedPrice ?? product?.discountedPrice ?? 0;
+
+  const originalPrice = selectedVariant 
+    ? selectedVariant.price 
+    : productDetails?.price ?? product?.price ?? 0;
+
+  // Usar la misma lógica que el productDetailsService
+  const isInStock = productDetails?.inStock ?? true;
+
   const handlePreviewSlider = () => {
+    // Pass the full product details to the preview modal
+    dispatch(updateproductDetails(productDetails ?? product));
     openPreviewModal();
+  };
+
+  const handleAddToCart = async () => {
+    if (!productDetails?.id) return;
+
+    try {
+      await addItem({
+        productId: productDetails.id,
+        variantId: productDetails.hasVariants ? selectedVariantId : undefined,
+        quantity,
+      });
+      toast.success('Product added to cart!');
+    } catch (err) {
+      console.error('Error adding to cart:', err);
+      toast.error('Failed to add product to cart');
+    }
   };
 
   return (
     <>
-      <Breadcrumb title={"Shop Details"} pages={["shop details"]} />
+      <Breadcrumb title={"Detalle del Producto"} pages={["detalle del producto"]} />
 
-      {product.title === "" ? (
-        "Please add product"
+      {loading ? (
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue mx-auto mb-4"></div>
+            <p>Cargando detalles del producto...</p>
+          </div>
+        </div>
+      ) : error ? (
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center text-red-600">
+            <p>{error}</p>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="mt-4 px-4 py-2 bg-blue text-white rounded hover:bg-blue-dark"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      ) : !productDetails && !product ? (
+        "Por favor selecciona un producto"
       ) : (
         <>
           <section className="overflow-hidden relative pb-20 pt-5 lg:pt-20 xl:pt-28">
@@ -128,7 +186,7 @@ const ShopDetails = () => {
                       </button>
 
                       <Image
-                        src={product.imgs?.previews[previewImg]}
+                        src={currentImages[previewImg] || "/placeholder.png"}
                         alt="products-details"
                         width={400}
                         height={400}
@@ -138,7 +196,7 @@ const ShopDetails = () => {
 
                   {/* ?  &apos;border-blue &apos; :  &apos;border-transparent&apos; */}
                   <div className="flex flex-wrap sm:flex-nowrap gap-4.5 mt-6">
-                    {product.imgs?.thumbnails.map((item, key) => (
+                    {currentImages.map((item, key) => (
                       <button
                         onClick={() => setPreviewImg(key)}
                         key={key}
@@ -163,12 +221,14 @@ const ShopDetails = () => {
                 <div className="max-w-[539px] w-full">
                   <div className="flex items-center justify-between mb-3">
                     <h2 className="font-semibold text-xl sm:text-2xl xl:text-custom-3 text-dark">
-                      {product.title}
+                      {productDetails?.title || product?.title}
                     </h2>
 
-                    <div className="inline-flex font-medium text-custom-sm text-white bg-blue rounded py-0.5 px-2.5">
-                      30% OFF
-                    </div>
+                    {currentPrice < originalPrice && (
+                      <div className="inline-flex font-medium text-custom-sm text-white bg-blue rounded py-0.5 px-2.5">
+                        {Math.round(((originalPrice - currentPrice) / originalPrice) * 100)}% OFF
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex flex-wrap items-center gap-5.5 mb-4.5">
@@ -281,7 +341,7 @@ const ShopDetails = () => {
                         </svg>
                       </div>
 
-                      <span> (5 customer reviews) </span>
+                      <span> (5 reseñas de clientes) </span>
                     </div>
 
                     <div className="flex items-center gap-1.5">
@@ -295,11 +355,11 @@ const ShopDetails = () => {
                         <g clipPath="url(#clip0_375_9221)">
                           <path
                             d="M10 0.5625C4.78125 0.5625 0.5625 4.78125 0.5625 10C0.5625 15.2188 4.78125 19.4688 10 19.4688C15.2188 19.4688 19.4688 15.2188 19.4688 10C19.4688 4.78125 15.2188 0.5625 10 0.5625ZM10 18.0625C5.5625 18.0625 1.96875 14.4375 1.96875 10C1.96875 5.5625 5.5625 1.96875 10 1.96875C14.4375 1.96875 18.0625 5.59375 18.0625 10.0312C18.0625 14.4375 14.4375 18.0625 10 18.0625Z"
-                            fill="#22AD5C"
+                            fill={isInStock ? "#22AD5C" : "#FF6B6B"}
                           />
                           <path
                             d="M12.6875 7.09374L8.9688 10.7187L7.2813 9.06249C7.00005 8.78124 6.56255 8.81249 6.2813 9.06249C6.00005 9.34374 6.0313 9.78124 6.2813 10.0625L8.2813 12C8.4688 12.1875 8.7188 12.2812 8.9688 12.2812C9.2188 12.2812 9.4688 12.1875 9.6563 12L13.6875 8.12499C13.9688 7.84374 13.9688 7.40624 13.6875 7.12499C13.4063 6.84374 12.9688 6.84374 12.6875 7.09374Z"
-                            fill="#22AD5C"
+                            fill={isInStock ? "#22AD5C" : "#FF6B6B"}
                           />
                         </g>
                         <defs>
@@ -309,18 +369,27 @@ const ShopDetails = () => {
                         </defs>
                       </svg>
 
-                      <span className="text-green"> In Stock </span>
+                      <span className={isInStock ? "text-green" : "text-red"}>
+                        {productDetails?.fulfillmentType === 'DIGITAL_ON_DEMAND'
+                          ? "Disponible (Digital)" 
+                          : isInStock 
+                            ? "En Stock" 
+                            : "Sin Stock"
+                        }
+                      </span>
                     </div>
                   </div>
 
                   <h3 className="font-medium text-custom-1 mb-4.5">
                     <span className="text-sm sm:text-base text-dark">
-                      Price: ${product.price}
+                      Precio: ${currentPrice.toFixed(2)}
                     </span>
-                    <span className="line-through">
-                      {" "}
-                      ${product.discountedPrice}{" "}
-                    </span>
+                    {currentPrice < originalPrice && (
+                      <span className="line-through">
+                        {" "}
+                        ${originalPrice.toFixed(2)}{" "}
+                      </span>
+                    )}
                   </h3>
 
                   <ul className="flex flex-col gap-2">
@@ -343,7 +412,7 @@ const ShopDetails = () => {
                           fill="#3C50E0"
                         />
                       </svg>
-                      Free delivery available
+                      Envío gratuito disponible
                     </li>
 
                     <li className="flex items-center gap-2.5">
@@ -365,253 +434,101 @@ const ShopDetails = () => {
                           fill="#3C50E0"
                         />
                       </svg>
-                      Sales 30% Off Use Code: PROMO30
+                      Oferta 30% de descuento. Usa el código: PROMO30
                     </li>
                   </ul>
 
                   <form onSubmit={(e) => e.preventDefault()}>
                     <div className="flex flex-col gap-4.5 border-y border-gray-3 mt-7.5 mb-9 py-9">
-                      {/* <!-- details item --> */}
-                      <div className="flex items-center gap-4">
-                        <div className="min-w-[65px]">
-                          <h4 className="font-medium text-dark">Color:</h4>
-                        </div>
-
-                        <div className="flex items-center gap-2.5">
-                          {colors.map((color, key) => (
-                            <label
-                              key={key}
-                              htmlFor={color}
-                              className="cursor-pointer select-none flex items-center"
-                            >
-                              <div className="relative">
-                                <input
-                                  type="radio"
-                                  name="color"
-                                  id={color}
-                                  className="sr-only"
-                                  onChange={() => setActiveColor(color)}
-                                />
-                                <div
-                                  className={`flex items-center justify-center w-5.5 h-5.5 rounded-full ${
-                                    activeColor === color && "border"
-                                  }`}
-                                  style={{ borderColor: `${color}` }}
-                                >
-                                  <span
-                                    className="block w-3 h-3 rounded-full"
-                                    style={{ backgroundColor: `${color}` }}
-                                  ></span>
-                                </div>
-                              </div>
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* <!-- details item --> */}
-                      <div className="flex items-center gap-4">
-                        <div className="min-w-[65px]">
-                          <h4 className="font-medium text-dark">Storage:</h4>
-                        </div>
-
+                      {/* Dynamic Variant Selector */}
+                      {productDetails?.hasVariants && productDetails.variants.length > 0 && (
                         <div className="flex items-center gap-4">
-                          {storages.map((item, key) => (
-                            <label
-                              key={key}
-                              htmlFor={item.id}
-                              className="flex cursor-pointer select-none items-center"
-                            >
-                              <div className="relative">
-                                <input
-                                  type="checkbox"
-                                  name="storage"
-                                  id={item.id}
-                                  className="sr-only"
-                                  onChange={() => setStorage(item.id)}
-                                />
-
-                                {/*  */}
-                                <div
-                                  className={`mr-2 flex h-4 w-4 items-center justify-center rounded border ${
-                                    storage === item.id
-                                      ? "border-blue bg-blue"
-                                      : "border-gray-4"
-                                  } `}
+                          <div className="min-w-[65px]">
+                            <h4 className="font-medium text-dark">Variantes:</h4>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-4">
+                            {productDetails.variants.map((variant) => {
+                              const isSelected = selectedVariantId === variant.id;
+                              const isOutOfStock = productDetails?.fulfillmentType !== 'DIGITAL_ON_DEMAND' && !productDetails.inStock;
+                              
+                              return (
+                                <label
+                                  key={variant.id}
+                                  htmlFor={`variant-${variant.id}`}
+                                  className={`flex cursor-pointer select-none items-center p-2 rounded border ${
+                                    isSelected 
+                                      ? "border-blue bg-blue/10" 
+                                      : "border-gray-3 hover:border-gray-4"
+                                  } ${isOutOfStock ? "opacity-50 cursor-not-allowed" : ""}`}
                                 >
-                                  <span
-                                    className={
-                                      storage === item.id
-                                        ? "opacity-100"
-                                        : "opacity-0"
-                                    }
-                                  >
-                                    <svg
-                                      width="24"
-                                      height="24"
-                                      viewBox="0 0 24 24"
-                                      fill="none"
-                                      xmlns="http://www.w3.org/2000/svg"
+                                  <div className="relative">
+                                    <input
+                                      type="radio"
+                                      name="variant"
+                                      id={`variant-${variant.id}`}
+                                      className="sr-only"
+                                      checked={isSelected}
+                                      onChange={() => setSelectedVariantId(variant.id)}
+                                      disabled={isOutOfStock}
+                                    />
+                                    <div
+                                      className={`mr-2 flex h-4 w-4 items-center justify-center rounded border ${
+                                        isSelected
+                                          ? "border-blue bg-blue"
+                                          : "border-gray-4"
+                                      }`}
                                     >
-                                      <rect
-                                        x="4"
-                                        y="4.00006"
-                                        width="16"
-                                        height="16"
-                                        rx="4"
-                                        fill="#3C50E0"
-                                      />
-                                      <path
-                                        fillRule="evenodd"
-                                        clipRule="evenodd"
-                                        d="M16.3103 9.25104C16.471 9.41178 16.5612 9.62978 16.5612 9.85707C16.5612 10.0844 16.471 10.3024 16.3103 10.4631L12.0243 14.7491C11.8635 14.9098 11.6455 15.0001 11.4182 15.0001C11.191 15.0001 10.973 14.9098 10.8122 14.7491L8.24062 12.1775C8.08448 12.0158 7.99808 11.7993 8.00003 11.5745C8.00199 11.3498 8.09214 11.1348 8.25107 10.9759C8.41 10.8169 8.62499 10.7268 8.84975 10.7248C9.0745 10.7229 9.29103 10.8093 9.4527 10.9654L11.4182 12.931L15.0982 9.25104C15.2589 9.09034 15.4769 9.00006 15.7042 9.00006C15.9315 9.00006 16.1495 9.09034 16.3103 9.25104Z"
-                                        fill="white"
-                                      />
-                                    </svg>
-                                  </span>
-                                </div>
-                              </div>
-                              {item.title}
-                            </label>
-                          ))}
+                                      <span
+                                        className={
+                                          isSelected
+                                            ? "opacity-100"
+                                            : "opacity-0"
+                                        }
+                                      >
+                                        <svg
+                                          width="12"
+                                          height="12"
+                                          viewBox="0 0 24 24"
+                                          fill="none"
+                                          xmlns="http://www.w3.org/2000/svg"
+                                        >
+                                          <rect
+                                            x="4"
+                                            y="4.00006"
+                                            width="16"
+                                            height="16"
+                                            rx="4"
+                                            fill="#3C50E0"
+                                          />
+                                          <path
+                                            fillRule="evenodd"
+                                            clipRule="evenodd"
+                                            d="M16.3103 9.25104C16.471 9.41178 16.5612 9.62978 16.5612 9.85707C16.5612 10.0844 16.471 10.3024 16.3103 10.4631L12.0243 14.7491C11.8635 14.9098 11.6455 15.0001 11.4182 15.0001C11.191 15.0001 10.973 14.9098 10.8122 14.7491L8.24062 12.1775C8.08448 12.0158 7.99808 11.7993 8.00003 11.5745C8.00199 11.3498 8.09214 11.1348 8.25107 10.9759C8.41 10.8169 8.62499 10.7268 8.84975 10.7248C9.0745 10.7229 9.29103 10.8093 9.4527 10.9654L11.4182 12.931L15.0982 9.25104C15.2589 9.09034 15.4769 9.00006 15.7042 9.00006C15.9315 9.00006 16.1495 9.09034 16.3103 9.25104Z"
+                                            fill="white"
+                                          />
+                                        </svg>
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <div className="flex flex-col">
+                                    <span className="text-sm font-medium">
+                                      {Object.entries(variant.attrs).map(([key, value]) => `${key}: ${value}`).join(", ") || `Variant ${variant.id}`}
+                                    </span>
+                                    <span className="text-xs text-gray-5">
+                                      ${variant.discountedPrice.toFixed(2)}
+                                      {variant.discountedPrice < variant.price && (
+                                        <span className="line-through ml-1">${variant.price.toFixed(2)}</span>
+                                      )}
+                                      {isOutOfStock && <span className="text-red ml-1">(Sin Stock)</span>}
+                                      {productDetails?.fulfillmentType === 'DIGITAL_ON_DEMAND' && <span className="text-green ml-1">(Digital)</span>}
+                                    </span>
+                                  </div>
+                                </label>
+                              );
+                            })}
+                          </div>
                         </div>
-                      </div>
-
-                      {/* // <!-- details item --> */}
-                      <div className="flex items-center gap-4">
-                        <div className="min-w-[65px]">
-                          <h4 className="font-medium text-dark">Type:</h4>
-                        </div>
-
-                        <div className="flex items-center gap-4">
-                          {types.map((item, key) => (
-                            <label
-                              key={key}
-                              htmlFor={item.id}
-                              className="flex cursor-pointer select-none items-center"
-                            >
-                              <div className="relative">
-                                <input
-                                  type="checkbox"
-                                  name="storage"
-                                  id={item.id}
-                                  className="sr-only"
-                                  onChange={() => setType(item.id)}
-                                />
-
-                                {/*  */}
-                                <div
-                                  className={`mr-2 flex h-4 w-4 items-center justify-center rounded border ${
-                                    type === item.id
-                                      ? "border-blue bg-blue"
-                                      : "border-gray-4"
-                                  } `}
-                                >
-                                  <span
-                                    className={
-                                      type === item.id
-                                        ? "opacity-100"
-                                        : "opacity-0"
-                                    }
-                                  >
-                                    <svg
-                                      width="24"
-                                      height="24"
-                                      viewBox="0 0 24 24"
-                                      fill="none"
-                                      xmlns="http://www.w3.org/2000/svg"
-                                    >
-                                      <rect
-                                        x="4"
-                                        y="4.00006"
-                                        width="16"
-                                        height="16"
-                                        rx="4"
-                                        fill="#3C50E0"
-                                      />
-                                      <path
-                                        fillRule="evenodd"
-                                        clipRule="evenodd"
-                                        d="M16.3103 9.25104C16.471 9.41178 16.5612 9.62978 16.5612 9.85707C16.5612 10.0844 16.471 10.3024 16.3103 10.4631L12.0243 14.7491C11.8635 14.9098 11.6455 15.0001 11.4182 15.0001C11.191 15.0001 10.973 14.9098 10.8122 14.7491L8.24062 12.1775C8.08448 12.0158 7.99808 11.7993 8.00003 11.5745C8.00199 11.3498 8.09214 11.1348 8.25107 10.9759C8.41 10.8169 8.62499 10.7268 8.84975 10.7248C9.0745 10.7229 9.29103 10.8093 9.4527 10.9654L11.4182 12.931L15.0982 9.25104C15.2589 9.09034 15.4769 9.00006 15.7042 9.00006C15.9315 9.00006 16.1495 9.09034 16.3103 9.25104Z"
-                                        fill="white"
-                                      />
-                                    </svg>
-                                  </span>
-                                </div>
-                              </div>
-                              {item.title}
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* // <!-- details item --> */}
-                      <div className="flex items-center gap-4">
-                        <div className="min-w-[65px]">
-                          <h4 className="font-medium text-dark">Sim:</h4>
-                        </div>
-
-                        <div className="flex items-center gap-4">
-                          {sims.map((item, key) => (
-                            <label
-                              key={key}
-                              htmlFor={item.id}
-                              className="flex cursor-pointer select-none items-center"
-                            >
-                              <div className="relative">
-                                <input
-                                  type="checkbox"
-                                  name="storage"
-                                  id={item.id}
-                                  className="sr-only"
-                                  onChange={() => setSim(item.id)}
-                                />
-
-                                {/*  */}
-                                <div
-                                  className={`mr-2 flex h-4 w-4 items-center justify-center rounded border ${
-                                    sim === item.id
-                                      ? "border-blue bg-blue"
-                                      : "border-gray-4"
-                                  } `}
-                                >
-                                  <span
-                                    className={
-                                      sim === item.id
-                                        ? "opacity-100"
-                                        : "opacity-0"
-                                    }
-                                  >
-                                    <svg
-                                      width="24"
-                                      height="24"
-                                      viewBox="0 0 24 24"
-                                      fill="none"
-                                      xmlns="http://www.w3.org/2000/svg"
-                                    >
-                                      <rect
-                                        x="4"
-                                        y="4.00006"
-                                        width="16"
-                                        height="16"
-                                        rx="4"
-                                        fill="#3C50E0"
-                                      />
-                                      <path
-                                        fillRule="evenodd"
-                                        clipRule="evenodd"
-                                        d="M16.3103 9.25104C16.471 9.41178 16.5612 9.62978 16.5612 9.85707C16.5612 10.0844 16.471 10.3024 16.3103 10.4631L12.0243 14.7491C11.8635 14.9098 11.6455 15.0001 11.4182 15.0001C11.191 15.0001 10.973 14.9098 10.8122 14.7491L8.24062 12.1775C8.08448 12.0158 7.99808 11.7993 8.00003 11.5745C8.00199 11.3498 8.09214 11.1348 8.25107 10.9759C8.41 10.8169 8.62499 10.7268 8.84975 10.7248C9.0745 10.7229 9.29103 10.8093 9.4527 10.9654L11.4182 12.931L15.0982 9.25104C15.2589 9.09034 15.4769 9.00006 15.7042 9.00006C15.9315 9.00006 16.1495 9.09034 16.3103 9.25104Z"
-                                        fill="white"
-                                      />
-                                    </svg>
-                                  </span>
-                                </div>
-                              </div>
-                              {item.title}
-                            </label>
-                          ))}
-                        </div>
-                      </div>
+                      )}
                     </div>
 
                     <div className="flex flex-wrap items-center gap-4.5">
@@ -643,7 +560,10 @@ const ShopDetails = () => {
                         </span>
 
                         <button
-                          onClick={() => setQuantity(quantity + 1)}
+                          onClick={() => {
+                            const max = selectedVariant?.stock ?? 9999;
+                            setQuantity(q => Math.min(q + 1, max));
+                          }}
                           aria-label="button for add product"
                           className="flex items-center justify-center w-12 h-12 ease-out duration-200 hover:text-blue"
                         >
@@ -667,12 +587,18 @@ const ShopDetails = () => {
                         </button>
                       </div>
 
-                      <a
-                        href="#"
-                        className="inline-flex font-medium text-white bg-blue py-3 px-7 rounded-md ease-out duration-200 hover:bg-blue-dark"
+                      <button
+                        onClick={handleAddToCart}
+                        disabled={!isInStock || quantity === 0}
+                        className="inline-flex font-medium text-white bg-blue py-3 px-7 rounded-md ease-out duration-200 hover:bg-blue-dark disabled:opacity-60 disabled:cursor-not-allowed"
                       >
-                        Purchase Now
-                      </a>
+                        {productDetails?.fulfillmentType === 'DIGITAL_ON_DEMAND'
+                          ? "Agregar al Carrito (Digital)" 
+                          : isInStock 
+                            ? "Agregar al Carrito" 
+                            : "Sin Stock"
+                        }
+                      </button>
 
                       <a
                         href="#"
@@ -731,45 +657,49 @@ const ShopDetails = () => {
                 >
                   <div className="max-w-[670px] w-full">
                     <h2 className="font-medium text-2xl text-dark mb-7">
-                      Specifications:
+                      Especificaciones:
                     </h2>
 
-                    <p className="mb-6">
-                      Lorem Ipsum is simply dummy text of the printing and
-                      typesetting industry. Lorem Ipsum has been the
-                      industry&apos;s standard dummy text ever since the 1500s,
-                      when an unknown printer took a galley of type and
-                      scrambled it to make a type specimen book.
-                    </p>
-                    <p className="mb-6">
-                      It has survived not only five centuries, but also the leap
-                      into electronic typesetting, remaining essentially
-                      unchanged. It was popularised in the 1960s.
-                    </p>
-                    <p>
-                      with the release of Letraset sheets containing Lorem Ipsum
-                      passages, and more recently with desktop publishing
-                      software like Aldus PageMaker including versions.
-                    </p>
+                    {productDetails?.description ? (
+                      <div className="whitespace-pre-line">
+                        {productDetails.description}
+                      </div>
+                    ) : (
+                      <p className="text-gray-5 italic">
+                        No hay descripción disponible para este producto.
+                      </p>
+                    )}
                   </div>
 
                   <div className="max-w-[447px] w-full">
                     <h2 className="font-medium text-2xl text-dark mb-7">
-                      Care & Maintenance:
+                      Cuidado y Mantenimiento:
                     </h2>
 
-                    <p className="mb-6">
-                      Lorem Ipsum is simply dummy text of the printing and
-                      typesetting industry. Lorem Ipsum has been the
-                      industry&apos;s standard dummy text ever since the 1500s,
-                      when an unknown printer took a galley of type and
-                      scrambled it to make a type specimen book.
-                    </p>
-                    <p>
-                      It has survived not only five centuries, but also the leap
-                      into electronic typesetting, remaining essentially
-                      unchanged. It was popularised in the 1960s.
-                    </p>
+                    <div className="space-y-4">
+                      <div>
+                        <h3 className="font-medium text-dark mb-2">Marca:</h3>
+                        <p className="text-gray-6">{productDetails?.brand || 'No especificada'}</p>
+                      </div>
+                      <div>
+                        <h3 className="font-medium text-dark mb-2">Categoría:</h3>
+                        <p className="text-gray-6">{productDetails?.category || 'No especificada'}</p>
+                      </div>
+                      <div>
+                        <h3 className="font-medium text-dark mb-2">SKU:</h3>
+                        <p className="text-gray-6">{productDetails?.sku || 'No especificado'}</p>
+                      </div>
+                      {productDetails?.fulfillmentType && (
+                        <div>
+                          <h3 className="font-medium text-dark mb-2">Tipo de entrega:</h3>
+                          <p className="text-gray-6">
+                            {productDetails.fulfillmentType === 'PHYSICAL' && 'Producto físico'}
+                            {productDetails.fulfillmentType === 'DIGITAL_ON_DEMAND' && 'Digital bajo demanda'}
+                            {productDetails.fulfillmentType === 'DIGITAL_INSTANT' && 'Digital instantáneo'}
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -782,138 +712,93 @@ const ShopDetails = () => {
                     activeTab === "tabTwo" ? "block" : "hidden"
                   }`}
                 >
-                  {/* <!-- info item --> */}
+                  {/* Información del producto desde el backend */}
                   <div className="rounded-md even:bg-gray-1 flex py-4 px-4 sm:px-5">
                     <div className="max-w-[450px] min-w-[140px] w-full">
-                      <p className="text-sm sm:text-base text-dark">Brand</p>
-                    </div>
-                    <div className="w-full">
-                      <p className="text-sm sm:text-base text-dark">Apple</p>
-                    </div>
-                  </div>
-
-                  {/* <!-- info item --> */}
-                  <div className="rounded-md even:bg-gray-1 flex py-4 px-4 sm:px-5">
-                    <div className="max-w-[450px] min-w-[140px] w-full">
-                      <p className="text-sm sm:text-base text-dark">Model</p>
+                      <p className="text-sm sm:text-base text-dark">Marca</p>
                     </div>
                     <div className="w-full">
                       <p className="text-sm sm:text-base text-dark">
-                        iPhone 14 Plus
+                        {productDetails?.brand || 'No especificada'}
                       </p>
                     </div>
                   </div>
 
-                  {/* <!-- info item --> */}
                   <div className="rounded-md even:bg-gray-1 flex py-4 px-4 sm:px-5">
                     <div className="max-w-[450px] min-w-[140px] w-full">
-                      <p className="text-sm sm:text-base text-dark">
-                        Display Size
-                      </p>
+                      <p className="text-sm sm:text-base text-dark">Categoría</p>
                     </div>
                     <div className="w-full">
                       <p className="text-sm sm:text-base text-dark">
-                        6.7 inches
+                        {productDetails?.category || 'No especificada'}
                       </p>
                     </div>
                   </div>
 
-                  {/* <!-- info item --> */}
                   <div className="rounded-md even:bg-gray-1 flex py-4 px-4 sm:px-5">
                     <div className="max-w-[450px] min-w-[140px] w-full">
-                      <p className="text-sm sm:text-base text-dark">
-                        Display Type
-                      </p>
+                      <p className="text-sm sm:text-base text-dark">SKU</p>
                     </div>
                     <div className="w-full">
                       <p className="text-sm sm:text-base text-dark">
-                        Super Retina XDR OLED, HDR10, Dolby Vision, 800 nits
-                        (HBM), 1200 nits (peak)
+                        {productDetails?.sku || 'No especificado'}
                       </p>
                     </div>
                   </div>
 
-                  {/* <!-- info item --> */}
                   <div className="rounded-md even:bg-gray-1 flex py-4 px-4 sm:px-5">
                     <div className="max-w-[450px] min-w-[140px] w-full">
-                      <p className="text-sm sm:text-base text-dark">
-                        Display Resolution
-                      </p>
+                      <p className="text-sm sm:text-base text-dark">Stock Total</p>
                     </div>
                     <div className="w-full">
                       <p className="text-sm sm:text-base text-dark">
-                        1284 x 2778 pixels, 19.5:9 ratio
+                        {productDetails?.fulfillmentType === 'DIGITAL_ON_DEMAND'
+                          ? "Ilimitado (Digital)" 
+                          : `${productDetails?.stockTotal || 0} unidades`
+                        }
                       </p>
                     </div>
                   </div>
 
-                  {/* <!-- info item --> */}
                   <div className="rounded-md even:bg-gray-1 flex py-4 px-4 sm:px-5">
                     <div className="max-w-[450px] min-w-[140px] w-full">
-                      <p className="text-sm sm:text-base text-dark">Chipset</p>
+                      <p className="text-sm sm:text-base text-dark">Tipo de Entrega</p>
                     </div>
                     <div className="w-full">
                       <p className="text-sm sm:text-base text-dark">
-                        Apple A15 Bionic (5 nm)
+                        {productDetails?.fulfillmentType === 'PHYSICAL' && 'Producto físico'}
+                        {productDetails?.fulfillmentType === 'DIGITAL_ON_DEMAND' && 'Digital bajo demanda'}
+                        {productDetails?.fulfillmentType === 'DIGITAL_INSTANT' && 'Digital instantáneo'}
+                        {!productDetails?.fulfillmentType && 'No especificado'}
                       </p>
                     </div>
                   </div>
 
-                  {/* <!-- info item --> */}
-                  <div className="rounded-md even:bg-gray-1 flex py-4 px-4 sm:px-5">
-                    <div className="max-w-[450px] min-w-[140px] w-full">
-                      <p className="text-sm sm:text-base text-dark">Memory</p>
+                  {productDetails?.hasVariants && (
+                    <div className="rounded-md even:bg-gray-1 flex py-4 px-4 sm:px-5">
+                      <div className="max-w-[450px] min-w-[140px] w-full">
+                        <p className="text-sm sm:text-base text-dark">Variantes Disponibles</p>
+                      </div>
+                      <div className="w-full">
+                        <p className="text-sm sm:text-base text-dark">
+                          {productDetails.variants.length} variantes
+                        </p>
+                      </div>
                     </div>
-                    <div className="w-full">
-                      <p className="text-sm sm:text-base text-dark">
-                        128GB 6GB RAM | 256GB 6GB RAM | 512GB 6GB RAM
-                      </p>
-                    </div>
-                  </div>
+                  )}
 
-                  {/* <!-- info item --> */}
-                  <div className="rounded-md even:bg-gray-1 flex py-4 px-4 sm:px-5">
-                    <div className="max-w-[450px] min-w-[140px] w-full">
-                      <p className="text-sm sm:text-base text-dark">
-                        Main Camera
-                      </p>
+                  {productDetails?.priceRange && (
+                    <div className="rounded-md even:bg-gray-1 flex py-4 px-4 sm:px-5">
+                      <div className="max-w-[450px] min-w-[140px] w-full">
+                        <p className="text-sm sm:text-base text-dark">Rango de Precios</p>
+                      </div>
+                      <div className="w-full">
+                        <p className="text-sm sm:text-base text-dark">
+                          ${productDetails.priceRange.minDiscounted.toFixed(2)} - ${productDetails.priceRange.maxDiscounted.toFixed(2)}
+                        </p>
+                      </div>
                     </div>
-                    <div className="w-full">
-                      <p className="text-sm sm:text-base text-dark">
-                        12MP + 12MP | 4K@24/25/30/60fps, stereo sound rec.
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* <!-- info item --> */}
-                  <div className="rounded-md even:bg-gray-1 flex py-4 px-4 sm:px-5">
-                    <div className="max-w-[450px] min-w-[140px] w-full">
-                      <p className="text-sm sm:text-base text-dark">
-                        Selfie Camera
-                      </p>
-                    </div>
-                    <div className="w-full">
-                      <p className="text-sm sm:text-base text-dark">
-                        12 MP | 4K@24/25/30/60fps, 1080p@25/30/60/120fps,
-                        gyro-EIS
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* <!-- info item --> */}
-                  <div className="rounded-md even:bg-gray-1 flex py-4 px-4 sm:px-5">
-                    <div className="max-w-[450px] min-w-[140px] w-full">
-                      <p className="text-sm sm:text-base text-dark">
-                        Battery Info
-                      </p>
-                    </div>
-                    <div className="w-full">
-                      <p className="text-sm sm:text-base text-dark">
-                        Li-Ion 4323 mAh, non-removable | 15W wireless (MagSafe),
-                        7.5W wireless (Qi)
-                      </p>
-                    </div>
-                  </div>
+                  )}
                 </div>
               </div>
               {/* <!-- tab content two end --> */}

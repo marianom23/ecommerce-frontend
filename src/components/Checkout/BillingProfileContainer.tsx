@@ -8,6 +8,7 @@ import {
 import BillingProfileList from "./BillingProfileList";
 import BillingProfileForm from "./BillingProfileForm";
 import { orderService } from "@/services/orderService"; // ⬅️ import
+import toast from "react-hot-toast";
 
 const BillingProfileContainer: React.FC<{
   orderId: number | null;             // ⬅️ nuevo prop
@@ -20,11 +21,9 @@ const BillingProfileContainer: React.FC<{
   const [mode, setMode] = useState<"list" | "form">("list");
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  const [okMsg, setOkMsg] = useState<string | null>(null);
 
   async function load() {
     setErr(null);
-    setOkMsg(null);
     setLoading(true);
     try {
       const res = await billingProfileService.listMine();
@@ -32,6 +31,10 @@ const BillingProfileContainer: React.FC<{
       const first = res[0] ?? null;
       setSelectedId(first?.id ?? null);
       onSelected?.(first);
+      // Auto-aplicar el primer perfil a la orden si existe
+      if (first && orderId) {
+        await applyToOrder(first, false); // No mostrar toast en auto-selección
+      }
       setMode(res.length ? "list" : "form");
     } finally {
       setLoading(false);
@@ -39,15 +42,15 @@ const BillingProfileContainer: React.FC<{
   }
 
   // ⬇️ Aplica el perfil elegido a la orden con PATCH /api/orders/{id}/billing-profile
-  async function applyToOrder(bp: BillingProfileResponse) {
+  async function applyToOrder(bp: BillingProfileResponse, showToast: boolean = true) {
     if (!orderId) return; // si no hay orderId, no parcheamos
     setErr(null);
-    setOkMsg(null);
     setSaving(true);
     try {
       await orderService.patchBillingProfile(orderId, { billingProfileId: bp.id });
-      console.log("aggeadsad");
-      setOkMsg("Perfil de facturación aplicado a la orden ✓");
+      if (showToast) {
+        toast.success("Perfil de facturación aplicado a la orden ✓");
+      }
       onSelected?.(bp);
     } catch (e: any) {
       setErr(e?.response?.data?.message || e?.message || "No se pudo aplicar el perfil a la orden.");
@@ -70,7 +73,6 @@ const BillingProfileContainer: React.FC<{
   return (
     <div className="mt-7.5">
       {err && <div className="bg-red-50 border border-red-200 text-red-700 rounded-md p-3 mb-3 text-sm">{err}</div>}
-      {okMsg && <div className="bg-green-50 border border-green-200 text-green-700 rounded-md p-3 mb-3 text-sm">{okMsg}</div>}
 
       {mode === "list" && (
         <BillingProfileList
@@ -93,12 +95,14 @@ const BillingProfileContainer: React.FC<{
             // recargamos, seleccionamos y aplicamos a la orden
             await load();
             setSelectedId(created.id);
-            await applyToOrder(created);       // ⬅️ también al crear
+            await applyToOrder(created, true);       // ⬅️ también al crear, con toast
             setMode("list");
           }}
           onCancel={() => setMode(profiles.length ? "list" : "form")}
         />
       )}
+
+      {/* confirmación via toast; no mostramos banner */}
     </div>
   );
 };

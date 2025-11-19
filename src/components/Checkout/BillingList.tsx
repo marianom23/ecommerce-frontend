@@ -19,6 +19,10 @@ const BillingList: React.FC<{
         </button>
       </div>
 
+      {!loading && addresses.length > 0 && (
+        <p className="text-sm text-dark-5 mb-3">Seleccioná una dirección de facturación.</p>
+      )}
+
       {loading && <p className="text-sm text-dark-5">Cargando...</p>}
 
       {!loading && !addresses.length && (
@@ -28,7 +32,10 @@ const BillingList: React.FC<{
       {!loading && addresses.length > 0 && (
         <div className="space-y-3">
           {addresses.map((a) => (
-            <label key={a.id} className="flex items-start gap-3 p-3 border rounded-md cursor-pointer hover:border-blue/60">
+            <label
+              key={a.id}
+              className={`flex items-start gap-3 p-3 border rounded-md cursor-pointer hover:border-blue/60 ${selectedId === a.id ? "border-blue" : "border-gray-3"}`}
+            >
               <input
                 type="radio"
                 name="billing-addr"

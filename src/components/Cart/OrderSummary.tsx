@@ -4,6 +4,8 @@ import { useSelector } from "react-redux";
 import { useRouter } from "next/navigation";
 import { selectCartItems, selectTotalPrice } from "@/redux/features/cart-slice";
 import { orderService } from "@/services/orderService"; // ← el service que te pasé antes
+import { useSession } from "next-auth/react";
+import toast from "react-hot-toast";
 
 const formatter = new Intl.NumberFormat("es-AR", {
   style: "currency",
@@ -16,8 +18,17 @@ const OrderSummary = () => {
   const totalPrice = useSelector(selectTotalPrice);
   const router = useRouter();
   const [isLoading, setIsLoading] = React.useState(false);
+  const { status } = useSession();
+  const isAuthenticated = status === "authenticated";
 
   const handleProceedToCheckout = async () => {
+    if (!isAuthenticated) {
+      toast("Debes iniciar sesión para proceder al pago", {
+        icon: "🔒",
+        duration: 4000,
+      });
+      return;
+    }
     if (!cartItems || cartItems.length === 0) {
       alert("Tu carrito está vacío.");
       return;
@@ -94,7 +105,11 @@ const OrderSummary = () => {
           <button
             onClick={handleProceedToCheckout}
             disabled={isLoading || cartItems.length === 0}
-            className="w-full mt-7.5 inline-flex justify-center font-medium text-white bg-blue py-3 px-6 rounded-md ease-out duration-200 hover:bg-blue-dark disabled:opacity-60 disabled:cursor-not-allowed"
+            className={`w-full mt-7.5 inline-flex justify-center font-medium py-3 px-6 rounded-md ease-out duration-200 ${
+              !isAuthenticated
+                ? "text-gray-600 bg-gray-400 cursor-not-allowed border-2 border-gray-300"
+                : "text-white bg-blue hover:bg-blue-dark"
+            } disabled:opacity-60 disabled:cursor-not-allowed`}
           >
             {isLoading ? "Creando orden..." : "Proceder al pago"}
           </button>

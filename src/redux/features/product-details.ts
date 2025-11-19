@@ -15,7 +15,8 @@ const initialState = {
     id: 0,
     imgs: { thumbnails: [], previews: [] },
     variantCount: 0,
-    defaultVariantId: 0
+    defaultVariantId: 0,
+    fulfillmentType: "PHYSICAL" as const
   },
 } as InitialState;
 

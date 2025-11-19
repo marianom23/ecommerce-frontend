@@ -3,12 +3,12 @@ import ShopDetails from "@/components/ShopDetails";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Shop Details Page | NextCommerce Nextjs E-commerce template",
-  description: "This is Shop Details Page for NextCommerce Template",
+  title: "Detalle del Producto | NextCommerce",
+  description: "Página de detalle del producto para NextCommerce Template",
   // other metadata
 };
 
-const ShopDetailsPage = () => {
+const DetalleProductoPage = () => {
   return (
     <main>
       <ShopDetails />
@@ -16,4 +16,5 @@ const ShopDetailsPage = () => {
   );
 };
 
-export default ShopDetailsPage;
+export default DetalleProductoPage;
+

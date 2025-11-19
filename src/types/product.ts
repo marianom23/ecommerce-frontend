@@ -1,3 +1,5 @@
+export type FulfillmentType = 'PHYSICAL' | 'DIGITAL_ON_DEMAND' | 'DIGITAL_INSTANT';
+
 export type Product = {
   title: string;
   reviews: number;
@@ -10,4 +12,5 @@ export type Product = {
   };
   variantCount: number;
   defaultVariantId: number | null;
+  fulfillmentType: FulfillmentType;
 };
