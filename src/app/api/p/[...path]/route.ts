@@ -48,14 +48,29 @@ async function forward(req: NextRequest, path: string[]) {
 
   try {
     const r = await fetch(target, init);
-    const resp = new NextResponse(r.body, { status: r.status });
+    
+    // Leer el body como arrayBuffer para evitar problemas de decodificación
+    const body = await r.arrayBuffer();
+    
+    // Crear la respuesta con el body decodificado
+    const resp = new NextResponse(body, { status: r.status });
+    
+    // Copiar headers, pero excluir los de codificación que ya fueron procesados por fetch
     r.headers.forEach((v, k) => {
-      if (k.toLowerCase() === "set-cookie") {
+      const lowerKey = k.toLowerCase();
+      
+      // No copiar headers de codificación (fetch ya los procesó)
+      if (lowerKey === "content-encoding" || lowerKey === "content-length") {
+        return;
+      }
+      
+      if (lowerKey === "set-cookie") {
         v.split(/,(?=[^;]+=[^;]+)/g).forEach(c => resp.headers.append("set-cookie", c));
       } else {
         resp.headers.set(k, v);
       }
     });
+    
     resp.headers.set("x-proxy-target", target); // para debug en Network
     return resp;
   } catch (e: any) {
