@@ -2,11 +2,12 @@ import React from "react";
 import ShopDetails from "@/components/ShopDetails";
 import { Metadata } from "next";
 
-interface Props {
-  params: {
+type DetalleProductoPageProps = {
+  params?: Promise<{
     id: string;
-  };
-}
+  }>;
+  searchParams?: Promise<Record<string, unknown>>;
+};
 
 export const metadata: Metadata = {
   title: "Detalle del Producto | NextCommerce",
@@ -14,9 +15,10 @@ export const metadata: Metadata = {
   // other metadata
 };
 
-const DetalleProductoPage = async ({ params }: Props) => {
-  const { id } = await params;
-  
+const DetalleProductoPage = async ({ params }: DetalleProductoPageProps) => {
+  const resolvedParams = (await params) ?? { id: "" };
+  const { id } = resolvedParams;
+
   return (
     <main>
       <ShopDetails productId={id} />

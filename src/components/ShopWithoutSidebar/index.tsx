@@ -74,7 +74,7 @@ const ShopWithoutSidebar = () => {
     return () => {
       cancelled = true;
     };
-  }, [page, pageSize, sortParam]);
+  }, [page, pageSize, sortParam, selectedOption]);
 
   const showingFrom = useMemo(
     () => (products.length ? (page - 1) * pageSize + 1 : 0),
