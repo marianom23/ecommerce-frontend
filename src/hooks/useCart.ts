@@ -1,8 +1,8 @@
 // hooks/useCart.ts
 "use client";
 
-import { useSession } from "next-auth/react";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
+import { useAuth } from "@/hooks/useAuth";
 import {
   // lecturas
   fetchCartGuest,
@@ -33,14 +33,14 @@ import {
 
 export function useCart() {
   const dispatch = useAppDispatch();
-  const { status } = useSession(); // "authenticated" | "unauthenticated" | "loading"
+  const { isAuthenticated } = useAuth();
 
   const cart = useAppSelector(selectCart);
   const items = useAppSelector(selectCartItems);
   const totalItems = useAppSelector(selectItemsCount);
   const totalPrice = useAppSelector(selectTotalPrice);
 
-  const isLogged = status === "authenticated";
+  const isLogged = isAuthenticated;
 
   return {
     cart,

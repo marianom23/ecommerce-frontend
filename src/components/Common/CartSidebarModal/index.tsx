@@ -5,10 +5,10 @@ import Link from "next/link";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch } from "@/redux/store";
 import { selectCartItems, selectTotalPrice } from "@/redux/features/cart-slice";
-import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
 import SingleItem from "./SingleItem";
 import EmptyCart from "./EmptyCart";
+import { useAuth } from "@/hooks/useAuth"; 
 
 const formatter = new Intl.NumberFormat("es-AR", {
   style: "currency",
@@ -21,15 +21,21 @@ const CartSidebarModal = () => {
   const dispatch = useDispatch<AppDispatch>();
   const cartItems = useSelector(selectCartItems);
   const totalPrice = useSelector(selectTotalPrice);
-  const { status } = useSession();
-  const isAuthenticated = status === "authenticated";
+
+  const { isAuthenticated, loading } = useAuth();
 
   const handlePayClick = (e: React.MouseEvent) => {
+    // mientras está chequeando /b/me, mejor no hacer nada raro
+    if (loading) {
+      e.preventDefault();
+      return;
+    }
+
     if (!isAuthenticated) {
       e.preventDefault();
       toast("Debes iniciar sesión para proceder al pago", { 
         icon: "🔒",
-        duration: 4000 
+        duration: 4000,
       });
     } else {
       closeCartModal();

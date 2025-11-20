@@ -7,22 +7,36 @@ type Options = {
   params?: Record<string, any>;
 };
 
-export type ServiceResult<T> = { message: string | null; data: T; status: string };
+export type ServiceResult<T> = {
+  message: string | null;
+  data: T;
+  status: string;
+};
 
 export type PaginatedResponse<T> = {
-  items: T[]; total: number; page: number; pageSize: number;
-  totalPages: number; hasNext: boolean; hasPrevious: boolean;
-  sort: string | null; query: string | null;
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrevious: boolean;
+  sort: string | null;
+  query: string | null;
 };
 
 function isServiceResult<T>(x: any): x is ServiceResult<T> {
   return !!x && typeof x === "object" && "data" in x && "status" in x;
 }
 
+// 👇 Base del backend (dev: 8080, prod: lo que definas)
+const BACKEND_BASE_URL =
+  process.env.NEXT_PUBLIC_BACKEND_BASE_URL ?? "http://localhost:8080";
+
 export const instance = axios.create({
-  baseURL: "/api",
+  baseURL: `${BACKEND_BASE_URL}/api`, // 👉 ahora pega directo al backend Spring
   timeout: 10000,
-  withCredentials: true,
+  withCredentials: true,              // importante para mandar auth_token
 });
 
 // ✅ Dejar pasar el error original (con response/status/data)

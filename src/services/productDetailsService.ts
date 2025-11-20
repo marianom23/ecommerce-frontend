@@ -2,8 +2,8 @@
 import { api } from "@/lib/api";
 
 /** ===== Bases ===== */
-const basePublic = "/p/products"; // pasa por app/api/p/[...path]/route.ts (público)
-const baseAdmin  = "/b/products"; // pasa por app/api/b/[...path]/route.ts (con Bearer)
+const basePublic = "/products"; // pasa por app/api/p/[...path]/route.ts (público)
+const baseAdmin  = "/products"; // pasa por app/api/b/[...path]/route.ts (con Bearer)
 
 /** ===== Tipos mínimos del endpoint /products/:id/details ===== */
 type ImageSet = { thumbnails: string[]; previews: string[] };

@@ -5,7 +5,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import Breadcrumb from "@/components/Common/Breadcrumb";
-import { signIn } from "next-auth/react";
+import { authService } from "@/services/authService";
 
 const sanitizeNext = (raw: string | null): string => {
   if (!raw) return "/";
@@ -32,32 +32,55 @@ const Signin = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-
+  
     if (!formData.email || !formData.password) {
       setError("Please enter your email and password.");
       return;
     }
-
+  
     setLoading(true);
     try {
-      await signIn("credentials", {
-        redirect: true,
-        callbackUrl: next, // 👈 vamos directo al destino
+      const data = await authService.login({
         email: formData.email.trim().toLowerCase(),
-        password: formData.password,
+        password: formData.password
       });
-      // no llega acá (redirect=true)
+  
+      // acá guardás token según cómo funciona tu backend
+      localStorage.setItem("token", data.token!);
+  
+      window.location.href = next; // redirige
     } catch (err: any) {
-      setError(err?.message || "Could not sign in. Please try again.");
+      setError(err?.response?.data?.message || "Error al iniciar sesión");
+    } finally {
       setLoading(false);
     }
   };
+  
 
   const handleSocial = (provider: "google" | "azure-ad") => {
     setError("");
     setLoading(true);
-    signIn(provider, { callbackUrl: next }); // 👈 también respeta `next`
+  
+    const backendBase =
+      process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
+  
+    // registrationId de Spring Security:
+    //  - si en application.yml pusiste "google": registrationId = "google"
+    //  - para Azure puede ser "azure", "azure-ad", etc. Debe coincidir.
+    const registrationId = provider === "google" ? "google" : "azure-ad";
+  
+    // opcional: adónde quieres volver en el frontend después de login
+    const nextParam = next || "/";
+  
+    // Yo paso `next` al backend para que el success handler lo respete
+    const url =
+      `${backendBase}/oauth2/authorization/${registrationId}` +
+      `?next=${encodeURIComponent(nextParam)}`;
+  
+    window.location.href = url;
   };
+  
+  
 
   return (
     <>

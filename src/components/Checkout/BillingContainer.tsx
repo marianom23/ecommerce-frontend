@@ -1,48 +1,69 @@
 "use client";
+
 import React, { useEffect, useState } from "react";
-import { useSession, signIn } from "next-auth/react";
-import { AddressResponse, addressService } from "@/services/addressService";
+import { addressService, AddressResponse } from "@/services/addressService";
 import BillingForm from "./BillingForm";
 import BillingList from "./BillingList";
 import toast from "react-hot-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { useRouter } from "next/navigation";
 
 type Props = {
-  onSelected?: (addr: AddressResponse | null) => void; // para que Checkout sepa cuál eligió
+  onSelected?: (addr: AddressResponse | null) => void;
 };
 
 const BillingContainer: React.FC<Props> = ({ onSelected }) => {
-  const { status } = useSession();
-  const [loading, setLoading] = useState(false);
+  const { isAuthenticated, loading } = useAuth();
+  const router = useRouter();
+
+  const [loadingList, setLoadingList] = useState(false);
   const [list, setList] = useState<AddressResponse[]>([]);
-  const [mode, setMode] = useState<"list" | "form">("list"); // qué muestro
+  const [mode, setMode] = useState<"list" | "form">("list");
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
+  /* =============== CARGAR LISTA =============== */
   async function load() {
-    setLoading(true);
+    setLoadingList(true);
     try {
       const res = await addressService.list("BILLING");
       setList(res);
+
       const first = res[0] ?? null;
       setSelectedId(first?.id ?? null);
       onSelected?.(first);
-      // si no hay direcciones ⇒ mostrar form; si hay ⇒ lista
+
       setMode(res.length ? "list" : "form");
+    } catch (err) {
+      toast.error("No se pudieron cargar las direcciones de facturación.");
     } finally {
-      setLoading(false);
+      setLoadingList(false);
     }
   }
 
-  useEffect(() => { if (status === "authenticated") load(); }, [status]);
+  /* =============== EFECTO DE AUTENTICACIÓN =============== */
+  useEffect(() => {
+    if (loading) return; // Todavía consultando /b/me
 
-  if (status !== "authenticated") {
+    if (isAuthenticated) {
+      load();
+    }
+  }, [isAuthenticated, loading]);
+
+  /* =============== SI NO ESTÁ AUTENTICADO =============== */
+  if (!isAuthenticated && !loading) {
     return (
       <div className="mt-0">
-        <h2 className="font-medium text-dark text-xl sm:text-2xl mb-5.5">Billing details</h2>
+        <h2 className="font-medium text-dark text-xl sm:text-2xl mb-5.5">
+          Billing details
+        </h2>
         <div className="bg-white shadow-1 rounded-[10px] p-4 sm:p-8.5">
-          <p className="text-dark mb-4">Iniciá sesión para cargar tu dirección de facturación.</p>
+          <p className="text-dark mb-4">
+            Iniciá sesión para cargar tu dirección de facturación.
+          </p>
+
           <button
             type="button"
-            onClick={() => signIn(undefined, { callbackUrl: "/checkout" })}
+            onClick={() => router.push("/login?next=/checkout")}
             className="inline-flex items-center justify-center font-medium text-white bg-blue px-4 py-2 rounded-md hover:bg-blue-dark"
           >
             Iniciar sesión

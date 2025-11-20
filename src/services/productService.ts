@@ -9,8 +9,8 @@ export type ListParams = { page?: number; limit?: number; sort?: string; q?:  st
 export type CreateProductDto = { name: string; description?: string; price: number; sku?: string; brandId?: number; categoryId?: number; };
 export type UpdateProductDto = Partial<CreateProductDto>;
 
-const basePublic = "/p/products";
-const baseAdmin  = "/b/products";
+const basePublic = "/products";
+const baseAdmin  = "/products";
 
 export const productService = {
   list(params: ListParams) {

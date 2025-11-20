@@ -3,19 +3,19 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { authService } from "@/services/authService"
+import { logoutClient } from "@/lib/logoutClient";
 import CustomSelect, { type SelectOption } from "./CustomSelect";
 import { productService } from "@/services/productService";
 import { menuData } from "./menuData";
 import Dropdown from "./Dropdown";
 import type { CategoryFacet } from "@/types/facets";
-import { useSession, signOut } from "next-auth/react";
+import { useAuth } from "@/hooks/useAuth";
 import { useSelector } from "react-redux";
 import { selectTotalPrice, selectItemsCount } from "@/redux/features/cart-slice";
 import { useCartModalContext } from "@/app/context/CartSidebarModalContext";
 
 const Header = () => {
-  const { data: session, status } = useSession();
+  const { user, isAuthenticated } = useAuth();
   const router = useRouter();
   const [brandFacets, setBrandFacets] = useState<CategoryFacet[]>([]);
   const [brandsLoading, setBrandsLoading] = useState(false);
@@ -168,7 +168,7 @@ const Header = () => {
           </div>
 
           {/* <!-- header top right --> */}
-          <div className={`flex w-full lg:w-auto items-center ${ status === "authenticated" ? "gap-4.5" : "gap-7.5" } transition-all duration-200`}
+          <div className={`flex w-full lg:w-auto items-center ${ isAuthenticated ? "gap-4.5" : "gap-7.5" } transition-all duration-200`}
           >
             <div className="hidden xl:flex items-center gap-3.5 flex-shrink-0">
               {/* soporte */}
@@ -212,7 +212,7 @@ const Header = () => {
             {/* cuenta + carrito */}
             <div className="flex w-full lg:w-auto justify-between items-center gap-5">
               <div className="flex items-center gap-5">
-                {status === "authenticated" ? (
+                {isAuthenticated ? (
                   <div className="flex items-center gap-2.5">
                     <Link
                       href="/mi-cuenta"
@@ -243,13 +243,13 @@ const Header = () => {
                       <div>
                         <span className="block text-2xs text-dark-4 uppercase">Mi Cuenta</span>
                         <p className="font-medium text-custom-sm text-dark">
-                          {session.user?.firstName}
+                          {user?.firstName ?? user?.name ?? user?.email ?? "Usuario"}
                         </p>                      
                       </div>
                     </Link>
 
                     <button
-                      onClick={() => authService.logout("/")}
+                      onClick={() => logoutClient("/")}
                       aria-label="Logout"
                       className="inline-flex items-center gap-1.5 rounded-full border border-gray-3 px-3 py-1.5 text-2xs font-medium text-dark hover:border-blue hover:bg-blue/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue/50"
                     >

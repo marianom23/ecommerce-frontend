@@ -1,11 +1,12 @@
 "use client";
+
 import React from "react";
 import { useSelector } from "react-redux";
 import { useRouter } from "next/navigation";
 import { selectCartItems, selectTotalPrice } from "@/redux/features/cart-slice";
-import { orderService } from "@/services/orderService"; // ← el service que te pasé antes
-import { useSession } from "next-auth/react";
+import { orderService } from "@/services/orderService";
 import toast from "react-hot-toast";
+import { useAuth } from "@/hooks/useAuth"; // 👈 tu nuevo hook
 
 const formatter = new Intl.NumberFormat("es-AR", {
   style: "currency",
@@ -18,10 +19,12 @@ const OrderSummary = () => {
   const totalPrice = useSelector(selectTotalPrice);
   const router = useRouter();
   const [isLoading, setIsLoading] = React.useState(false);
-  const { status } = useSession();
-  const isAuthenticated = status === "authenticated";
+
+  const { user, loading, isAuthenticated } = useAuth();
 
   const handleProceedToCheckout = async () => {
+    if (loading) return; // Aún verificando auth
+
     if (!isAuthenticated) {
       toast("Debes iniciar sesión para proceder al pago", {
         icon: "🔒",
@@ -29,22 +32,25 @@ const OrderSummary = () => {
       });
       return;
     }
+
     if (!cartItems || cartItems.length === 0) {
       alert("Tu carrito está vacío.");
       return;
     }
+
     try {
       setIsLoading(true);
-      // Crea la orden SIN body (backend toma los items del carrito del usuario logueado)
+
+      // Backend genera la orden usando la cookie AUTH_TOKEN
       const res = await orderService.create();
       const order = res;
+
       if (!order?.id) {
         throw new Error("No se recibió el ID de la orden.");
       }
-      // Redirigís al checkout pasando orderId (ahí pedís shipping, billing, payment, etc.)
+
       router.push(`/checkout?orderId=${order.id}`);
     } catch (err: any) {
-      // Mensaje simple; si usás un toast, reemplazá por tu notificación
       const msg =
         err?.response?.data?.message ||
         err?.message ||

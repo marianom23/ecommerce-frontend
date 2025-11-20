@@ -1,20 +1,23 @@
 "use client";
+
 import { useEffect } from "react";
-import { useSession } from "next-auth/react";
 import { useAppDispatch } from "@/redux/hooks";
 import { fetchCartGuest, fetchCartLogged } from "@/redux/features/cart-slice";
+import { useAuth } from "@/hooks/useAuth"; // 👈 tu nuevo hook
 
 export default function CartBootstrapper() {
-  const { status } = useSession();
   const dispatch = useAppDispatch();
+  const { isAuthenticated, loading } = useAuth();
 
   useEffect(() => {
-    if (status === "authenticated") {
-      void dispatch(fetchCartLogged());  // -> /b/cart/me
-    } else if (status === "unauthenticated") {
-      void dispatch(fetchCartGuest());   // -> /p/cart/me
+    if (loading) return; // Todavía consultando /b/me
+
+    if (isAuthenticated) {
+      void dispatch(fetchCartLogged());   // /b/cart/me
+    } else {
+      void dispatch(fetchCartGuest());    // /p/cart/me
     }
-  }, [status, dispatch]);
+  }, [isAuthenticated, loading, dispatch]);
 
   return null;
 }

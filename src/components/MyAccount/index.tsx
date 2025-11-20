@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import Link from "next/link";
-import { useSession } from "next-auth/react";
+import { useAuth } from "@/hooks/useAuth";
 import Breadcrumb from "../Common/Breadcrumb";
 import AddressModal from "./AddressModal";
 import Orders from "../Orders";
@@ -36,9 +36,9 @@ const TabLink = ({
   </Link>
 );
 
-  export default function MyAccount({ current }: MyAccountProps) {
+export default function MyAccount({ current }: MyAccountProps) {
     const [addressModal, setAddressModal] = React.useState(false);
-    const { data: session } = useSession();
+    const { user } = useAuth();
 
     return (
       <>
@@ -53,7 +53,7 @@ const TabLink = ({
                   <div className="hidden lg:flex flex-wrap items-center gap-5 py-6 px-4 sm:px-7.5 xl:px-9 border-r xl:border-r-0 xl:border-b border-gray-3">
                     <div>
                       <p className="font-medium text-dark mb-0.5">
-                        {session?.user?.name || "Usuario"}
+                        {user?.firstName ? `${user.firstName} ${user.lastName ?? ""}`.trim() : user?.name || user?.email || "Usuario"}
                       </p>
                       <p className="text-custom-xs">Miembro desde {new Date().getFullYear()}</p>
                     </div>
@@ -103,7 +103,7 @@ const TabLink = ({
 
               <div className={`xl:max-w-[770px] w-full bg-white rounded-xl shadow-1 py-9.5 px-4 sm:px-7.5 xl:px-10 ${current === "dashboard" ? "block" : "hidden"}`}>
                 <p className="text-dark">
-                  Hola {session?.user?.name || "Usuario"} (¿no eres {session?.user?.name || "Usuario"}?
+                  Hola {user?.firstName ? user.firstName : user?.name || "Usuario"} (¿no eres {user?.firstName ? user.firstName : user?.name || "Usuario"}?
                   <a
                     href="#"
                     className="text-red ease-out duration-200 hover:underline"
@@ -185,7 +185,7 @@ const TabLink = ({
                             fill=""
                           />
                         </svg>
-                        Nombre: {session?.user?.name || "Usuario"}
+                        Nombre: {user?.firstName ? `${user.firstName} ${user.lastName ?? ""}`.trim() : user?.name || user?.email || "Usuario"}
                       </p>
 
                       <p className="flex items-center gap-2.5 text-custom-sm">
@@ -204,7 +204,7 @@ const TabLink = ({
                             fill=""
                           />
                         </svg>
-                        Email: {session?.user?.email || "usuario@ejemplo.com"}
+                        Email: {user?.email || "usuario@ejemplo.com"}
                       </p>
 
                       <p className="flex items-center gap-2.5 text-custom-sm">
@@ -314,7 +314,7 @@ const TabLink = ({
                             fill=""
                           />
                         </svg>
-                        Nombre: {session?.user?.name || "Usuario"}
+                        Nombre: {user?.firstName ? `${user.firstName} ${user.lastName ?? ""}`.trim() : user?.name || user?.email || "Usuario"}
                       </p>
 
                       <p className="flex items-center gap-2.5 text-custom-sm">
@@ -333,7 +333,7 @@ const TabLink = ({
                             fill=""
                           />
                         </svg>
-                        Email: {session?.user?.email || "usuario@ejemplo.com"}
+                        Email: {user?.email || "usuario@ejemplo.com"}
                       </p>
 
                       <p className="flex items-center gap-2.5 text-custom-sm">

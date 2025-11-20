@@ -2,7 +2,7 @@
 import { api } from "@/lib/api";
 import type { Wishlist } from "@/types/wishlist";
 
-const baseLogged = "/b/wishlist";
+const baseLogged = "/wishlist";
 
 export const wishlistService = {
   get() {

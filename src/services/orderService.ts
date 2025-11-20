@@ -2,7 +2,7 @@
 import { api } from "@/lib/api";
 
 /** ===== Base ===== */
-const base = "/b/orders";
+const base = "/orders";
 
 /** ===== Tipos (enums/DTOs) ===== */
 export type OrderStatus =

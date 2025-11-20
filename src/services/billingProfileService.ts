@@ -1,7 +1,7 @@
 // lib/services/billingProfileService.ts
 import { api } from "@/lib/api";
 
-const base = "/b/billing-profiles";
+const base = "/billing-profiles";
 
 /** ===== Tipos ===== */
 export type DocumentType = "CUIT" | "CUIL" | "DNI" | "PAS";

@@ -1,7 +1,7 @@
 "use client";
+
 import React, { useState } from "react";
 import Breadcrumb from "../Common/Breadcrumb";
-import { useSession } from "next-auth/react";
 import Shipping from "./ShippingContainer";
 import ShippingMethod from "./ShippingMethod";
 import PaymentMethod from "./PaymentMethod";
@@ -14,6 +14,7 @@ import { BillingProfileResponse } from "@/services/billingProfileService";
 import { useSearchParams, useRouter } from "next/navigation";
 import { orderService, type PaymentMethod as PM } from "@/services/orderService";
 import toast from "react-hot-toast";
+import { useAuth } from "@/hooks/useAuth"; 
 
 const Checkout = () => {
   const searchParams = useSearchParams();
@@ -29,8 +30,11 @@ const Checkout = () => {
   const [err, setErr] = useState<string | null>(null);
   const [paymentMethodSelected, setPaymentMethodSelected] = useState<PM | null>(null);
 
-  const { status } = useSession();
-  const canSubmit = status === "authenticated";
+  // 👇 AHORA USAMOS TU SISTEMA DE AUTH
+  const { isAuthenticated, loading } = useAuth();
+
+  // Equivalente a lo que antes hacías con NextAuth
+  const canSubmit = isAuthenticated;
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();

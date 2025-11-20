@@ -1,7 +1,7 @@
 // lib/services/addressService.ts
 import { api } from "@/lib/api";
 
-const base = "/b/addresses"; // solo admin (authed)
+const base = "/addresses"; // solo admin (authed)
 
 /** ===== Tipos ===== */
 export type AddressType = "SHIPPING" | "BILLING";

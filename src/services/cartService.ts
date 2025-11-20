@@ -2,8 +2,8 @@
 import { api } from "@/lib/api";
 import type { Cart, AddItemDto, UpdateItemDto } from "@/types/cart";
 
-const baseGuest = "/p/cart";   // guest (usa cookie cart_session)
-const baseLogged = "/b/cart";  // logged (inyecta Authorization vía /api/b proxy)
+const baseGuest = "/cart";   // guest (usa cookie cart_session)
+const baseLogged = "/cart";  // logged (inyecta Authorization vía /api/b proxy)
 
 export const cartService = {
   /* ========== LECTURAS ========== */
