@@ -31,7 +31,7 @@ function isServiceResult<T>(x: any): x is ServiceResult<T> {
 
 // 👇 Base del backend (dev: 8080, prod: lo que definas)
 const BACKEND_BASE_URL =
-  process.env.NEXT_PUBLIC_BACKEND_BASE_URL ?? "http://localhost:8080";
+  process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8080";
 
 export const instance = axios.create({
   baseURL: `${BACKEND_BASE_URL}/api`, // 👉 ahora pega directo al backend Spring

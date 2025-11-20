@@ -63,6 +63,8 @@ const Signin = () => {
   
     const backendBase =
       process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
+
+    console.log(backendBase);
   
     // registrationId de Spring Security:
     //  - si en application.yml pusiste "google": registrationId = "google"
