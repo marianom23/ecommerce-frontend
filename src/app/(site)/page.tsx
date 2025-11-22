@@ -1,11 +1,6 @@
-import Home from "@/components/Home";
-import { Metadata } from "next";
+"use client";
 
-export const metadata: Metadata = {
-  title: "NextCommerce | Nextjs E-commerce template",
-  description: "This is Home for NextCommerce Template",
-  // other metadata
-};
+import Home from "@/components/Home";
 
 export default function HomePage() {
   return (

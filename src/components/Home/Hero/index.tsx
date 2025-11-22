@@ -3,7 +3,11 @@ import HeroCarousel from "./HeroCarousel";
 import HeroFeature from "./HeroFeature";
 import Image from "next/image";
 
-const Hero = () => {
+const Hero = ({ banners }: { banners: import("@/types/banner").Banner[] }) => {
+  const mainBanners = banners.filter((b) => b.placement === "HOME_HERO_MAIN");
+  const sideTop = banners.find((b) => b.placement === "HOME_HERO_SIDE_TOP");
+  const sideBottom = banners.find((b) => b.placement === "HOME_HERO_SIDE_BOTTOM");
+
   return (
     <section className="overflow-hidden pb-10 lg:pb-12.5 xl:pb-15 pt-57.5 sm:pt-45 lg:pt-30 xl:pt-51.5 bg-[#E5EAF4]">
       <div className="max-w-[1170px] w-full mx-auto px-4 sm:px-8 xl:px-0">
@@ -19,78 +23,85 @@ const Hero = () => {
                 height={520}
               />
 
-              <HeroCarousel />
+              <HeroCarousel banners={mainBanners} />
             </div>
           </div>
 
           <div className="xl:max-w-[393px] w-full">
-            <div className="flex flex-col sm:flex-row xl:flex-col gap-5">
-              <div className="w-full relative rounded-[10px] bg-white p-4 sm:p-7.5">
-                <div className="flex items-center gap-14">
-                  <div>
-                    <h2 className="max-w-[153px] font-semibold text-dark text-xl mb-20">
-                      <a href="#"> iPhone 14 Plus & 14 Pro Max </a>
-                    </h2>
+            <div className="flex flex-col sm:flex-row xl:flex-col gap-5 h-full">
+              {sideTop && (
+                <div className="w-full relative rounded-[10px] bg-white p-4 sm:p-7.5 flex-1">
+                  <div className="flex items-start justify-between h-full">
+                    <div className="flex flex-col justify-between h-full">
+                      <h2 className="max-w-[153px] font-semibold text-dark text-xl mb-4">
+                        <a href={sideTop.ctaUrl || "#"}> {sideTop.title} </a>
+                      </h2>
 
-                    <div>
-                      <p className="font-medium text-dark-4 text-custom-sm mb-1.5">
-                        limited time offer
-                      </p>
-                      <span className="flex items-center gap-3">
-                        <span className="font-medium text-heading-5 text-red">
-                          $699
+                      <div>
+                        <p className="font-medium text-dark-4 text-custom-sm mb-1.5">
+                          {sideTop.subtitle}
+                        </p>
+                        <span className="flex items-center gap-3">
+                          <span className="font-medium text-heading-5 text-red">
+                            ${sideTop.price}
+                          </span>
+                          {sideTop.oldPrice && (
+                            <span className="font-medium text-2xl text-dark-4 line-through">
+                              ${sideTop.oldPrice}
+                            </span>
+                          )}
                         </span>
-                        <span className="font-medium text-2xl text-dark-4 line-through">
-                          $999
-                        </span>
-                      </span>
+                      </div>
+                    </div>
+
+                    <div className="flex-shrink-0">
+                      <Image
+                        src={sideTop.imageUrl}
+                        alt={sideTop.title}
+                        width={123}
+                        height={161}
+                      />
                     </div>
                   </div>
-
-                  <div>
-                    <Image
-                      src="/images/hero/hero-02.png"
-                      alt="mobile image"
-                      width={123}
-                      height={161}
-                    />
-                  </div>
                 </div>
-              </div>
-              <div className="w-full relative rounded-[10px] bg-white p-4 sm:p-7.5">
-                <div className="flex items-center gap-14">
-                  <div>
-                    <h2 className="max-w-[153px] font-semibold text-dark text-xl mb-20">
-                      <a href="#"> Wireless Headphone </a>
-                    </h2>
+              )}
 
-                    <div>
-                      <p className="font-medium text-dark-4 text-custom-sm mb-1.5">
-                        limited time offer
-                      </p>
-                      <span className="flex items-center gap-3">
-                        <span className="font-medium text-heading-5 text-red">
-                          $699
+              {sideBottom && (
+                <div className="w-full relative rounded-[10px] bg-white p-4 sm:p-7.5 flex-1">
+                  <div className="flex items-start justify-between h-full">
+                    <div className="flex flex-col justify-between h-full">
+                      <h2 className="max-w-[153px] font-semibold text-dark text-xl mb-4">
+                        <a href={sideBottom.ctaUrl || "#"}> {sideBottom.title} </a>
+                      </h2>
+
+                      <div>
+                        <p className="font-medium text-dark-4 text-custom-sm mb-1.5">
+                          {sideBottom.subtitle}
+                        </p>
+                        <span className="flex items-center gap-3">
+                          <span className="font-medium text-heading-5 text-red">
+                            ${sideBottom.price}
+                          </span>
+                          {sideBottom.oldPrice && (
+                            <span className="font-medium text-2xl text-dark-4 line-through">
+                              ${sideBottom.oldPrice}
+                            </span>
+                          )}
                         </span>
-                        <span className="font-medium text-2xl text-dark-4 line-through">
-                          $999
-                        </span>
-                      </span>
+                      </div>
+                    </div>
+
+                    <div className="flex-shrink-0">
+                      <Image
+                        src={sideBottom.imageUrl}
+                        alt={sideBottom.title}
+                        width={123}
+                        height={161}
+                      />
                     </div>
                   </div>
-
-                  <div>
-                    <Image
-                      src="/images/hero/hero-01.png"
-                      alt="mobile image"
-                      width={123}
-                      height={161}
-                    />
-                  </div>
                 </div>
-              </div>
-
-              
+              )}
             </div>
           </div>
         </div>
