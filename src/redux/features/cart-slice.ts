@@ -17,24 +17,39 @@ const initialState: CartState = { cart: null, loading: false, error: null };
 const pickCart = (res: any): Cart => (res?.data ?? res) as Cart;
 
 /* ========== LECTURAS ========== */
-export const fetchCartGuest  = createAsyncThunk<Cart>("cart/fetchGuest",  async () => await cartService.getGuest());
+export const fetchCartGuest = createAsyncThunk<Cart>("cart/fetchGuest", async () => await cartService.getGuest());
 export const fetchCartLogged = createAsyncThunk<Cart>("cart/fetchLogged", async () => await cartService.getLogged());
 
 /* ========== MUTACIONES GUEST ========== */
 export const addCartItemGuest = createAsyncThunk<Cart,
-  { productId: number; variantId?: number; quantity: number }>(
-  "cart/addItemGuest",
-  async (body) => pickCart(await cartService.addGuest(body))
-);
+  { productId: number; variantId?: number; quantity: number },
+  { rejectValue: string }>(
+    "cart/addItemGuest",
+    async (body, { rejectWithValue }) => {
+      try {
+        return pickCart(await cartService.addGuest(body));
+      } catch (error: any) {
+        const message = error?.response?.data?.message || error?.message || "Error al agregar al carrito";
+        return rejectWithValue(message);
+      }
+    }
+  );
 
 export const updateCartItemQuantityGuest = createAsyncThunk<Cart, { itemId: number; quantity: number }>(
   "cart/updateQtyGuest",
   async ({ itemId, quantity }) => pickCart(await cartService.quantityGuest(itemId, { quantity }))
 );
 
-export const incrementCartItemGuest = createAsyncThunk<Cart, number>(
+export const incrementCartItemGuest = createAsyncThunk<Cart, number, { rejectValue: string }>(
   "cart/incrementGuest",
-  async (itemId) => pickCart(await cartService.incrementGuest(itemId))
+  async (itemId, { rejectWithValue }) => {
+    try {
+      return pickCart(await cartService.incrementGuest(itemId));
+    } catch (error: any) {
+      const message = error?.response?.data?.message || error?.message || "Error al incrementar cantidad";
+      return rejectWithValue(message);
+    }
+  }
 );
 
 export const decrementCartItemGuest = createAsyncThunk<Cart, number>(
@@ -54,19 +69,34 @@ export const clearCartGuest = createAsyncThunk<Cart>(
 
 /* ========== MUTACIONES LOGGED ========== */
 export const addCartItemLogged = createAsyncThunk<Cart,
-  { productId: number; variantId?: number; quantity: number }>(
-  "cart/addItemLogged",
-  async (body) => pickCart(await cartService.addLogged(body))
-);
+  { productId: number; variantId?: number; quantity: number },
+  { rejectValue: string }>(
+    "cart/addItemLogged",
+    async (body, { rejectWithValue }) => {
+      try {
+        return pickCart(await cartService.addLogged(body));
+      } catch (error: any) {
+        const message = error?.response?.data?.message || error?.message || "Error al agregar al carrito";
+        return rejectWithValue(message);
+      }
+    }
+  );
 
 export const updateCartItemQuantityLogged = createAsyncThunk<Cart, { itemId: number; quantity: number }>(
   "cart/updateQtyLogged",
   async ({ itemId, quantity }) => pickCart(await cartService.quantityLogged(itemId, { quantity }))
 );
 
-export const incrementCartItemLogged = createAsyncThunk<Cart, number>(
+export const incrementCartItemLogged = createAsyncThunk<Cart, number, { rejectValue: string }>(
   "cart/incrementLogged",
-  async (itemId) => pickCart(await cartService.incrementLogged(itemId))
+  async (itemId, { rejectWithValue }) => {
+    try {
+      return pickCart(await cartService.incrementLogged(itemId));
+    } catch (error: any) {
+      const message = error?.response?.data?.message || error?.message || "Error al incrementar cantidad";
+      return rejectWithValue(message);
+    }
+  }
 );
 
 export const decrementCartItemLogged = createAsyncThunk<Cart, number>(
@@ -112,6 +142,14 @@ const slice = createSlice({
       s.error = a.error?.message || "Error";
     };
 
+    const rejectedWithStockError = (s: CartState, a: any) => {
+      s.loading = false;
+      // Cuando usamos rejectWithValue, el mensaje está en action.payload
+      const errorMsg = a.payload || a.error?.message || "Error al modificar el carrito";
+      s.error = errorMsg;
+      toast.error(errorMsg);
+    };
+
     // LECTURAS
     builder
       .addCase(fetchCartGuest.pending, pending)
@@ -126,7 +164,7 @@ const slice = createSlice({
     builder
       .addCase(addCartItemGuest.pending, pending)
       .addCase(addCartItemGuest.fulfilled, (s, a) => { fulfilled(s, a); toast.success("Producto agregado 🛒"); })
-      .addCase(addCartItemGuest.rejected, rejected)
+      .addCase(addCartItemGuest.rejected, rejectedWithStockError)
 
       .addCase(updateCartItemQuantityGuest.pending, pending)
       .addCase(updateCartItemQuantityGuest.fulfilled, fulfilled)
@@ -134,7 +172,7 @@ const slice = createSlice({
 
       .addCase(incrementCartItemGuest.pending, pending)
       .addCase(incrementCartItemGuest.fulfilled, fulfilled)
-      .addCase(incrementCartItemGuest.rejected, rejected)
+      .addCase(incrementCartItemGuest.rejected, rejectedWithStockError)
 
       .addCase(decrementCartItemGuest.pending, pending)
       .addCase(decrementCartItemGuest.fulfilled, fulfilled)
@@ -152,7 +190,7 @@ const slice = createSlice({
     builder
       .addCase(addCartItemLogged.pending, pending)
       .addCase(addCartItemLogged.fulfilled, (s, a) => { fulfilled(s, a); toast.success("Producto agregado 🛒"); })
-      .addCase(addCartItemLogged.rejected, rejected)
+      .addCase(addCartItemLogged.rejected, rejectedWithStockError)
 
       .addCase(updateCartItemQuantityLogged.pending, pending)
       .addCase(updateCartItemQuantityLogged.fulfilled, fulfilled)
@@ -160,7 +198,7 @@ const slice = createSlice({
 
       .addCase(incrementCartItemLogged.pending, pending)
       .addCase(incrementCartItemLogged.fulfilled, fulfilled)
-      .addCase(incrementCartItemLogged.rejected, rejected)
+      .addCase(incrementCartItemLogged.rejected, rejectedWithStockError)
 
       .addCase(decrementCartItemLogged.pending, pending)
       .addCase(decrementCartItemLogged.fulfilled, fulfilled)

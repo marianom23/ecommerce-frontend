@@ -123,10 +123,8 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
         variantId: productDetails.hasVariants ? selectedVariantId : undefined,
         quantity,
       });
-      toast.success('Product added to cart!');
     } catch (err) {
       console.error('Error adding to cart:', err);
-      toast.error('Failed to add product to cart');
     }
   };
 
