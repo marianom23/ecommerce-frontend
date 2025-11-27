@@ -53,4 +53,10 @@ export const reviewService = {
     async deleteReview(reviewId: number): Promise<void> {
         await api.del(`${BASE_URL}/${reviewId}`);
     },
+
+    // Obtener mejores reviews (para home)
+    async getBestReviews(): Promise<ReviewResponse[]> {
+        const reviews = await api.get<ReviewResponse[]>(`${BASE_URL}/best`);
+        return reviews || [];
+    },
 };

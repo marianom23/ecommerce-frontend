@@ -1,16 +1,34 @@
 "use client";
-import { Swiper, SwiperSlide } from "swiper/react";
-import { useCallback, useRef } from "react";
-import testimonialsData from "./testimonialsData";
+import { useCallback, useRef, useEffect, useState } from "react";
 import Image from "next/image";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { reviewService } from "@/services/reviewService";
+import { ReviewResponse } from "@/types/review";
+import SingleItem from "./SingleItem";
 
 // Import Swiper styles
 import "swiper/css/navigation";
 import "swiper/css";
-import SingleItem from "./SingleItem";
 
 const Testimonials = () => {
   const sliderRef = useRef(null);
+  const [reviews, setReviews] = useState<ReviewResponse[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchReviews = async () => {
+      try {
+        const data = await reviewService.getBestReviews();
+        setReviews(data);
+      } catch (error) {
+        console.error("Error fetching best reviews:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchReviews();
+  }, []);
 
   const handlePrev = useCallback(() => {
     if (!sliderRef.current) return;
@@ -21,6 +39,9 @@ const Testimonials = () => {
     if (!sliderRef.current) return;
     sliderRef.current.swiper.slideNext();
   }, []);
+
+  if (loading) return null; // o un skeleton
+  if (reviews.length === 0) return null;
 
   return (
     <section className="overflow-hidden pb-16.5">
@@ -45,7 +66,7 @@ const Testimonials = () => {
               </div>
 
               <div className="flex items-center gap-3">
-                <div onClick={handlePrev} className="swiper-button-prev">
+                <div onClick={handlePrev} className="swiper-button-prev cursor-pointer">
                   <svg
                     className="fill-current"
                     width="24"
@@ -63,7 +84,7 @@ const Testimonials = () => {
                   </svg>
                 </div>
 
-                <div onClick={handleNext} className="swiper-button-next">
+                <div onClick={handleNext} className="swiper-button-next cursor-pointer">
                   <svg
                     className="fill-current"
                     width="24"
@@ -96,15 +117,15 @@ const Testimonials = () => {
                   slidesPerView: 2,
                   // spaceBetween: 4,
                 },
-                // when window width is >= 768px
+                // when window width is >= 1200px
                 1200: {
                   slidesPerView: 3,
                 },
               }}
             >
-              {testimonialsData.map((item, key) => (
-                <SwiperSlide key={key}>
-                  <SingleItem testimonial={item} />
+              {reviews.map((review) => (
+                <SwiperSlide key={review.id} className="h-auto">
+                  <SingleItem review={review} />
                 </SwiperSlide>
               ))}
             </Swiper>
