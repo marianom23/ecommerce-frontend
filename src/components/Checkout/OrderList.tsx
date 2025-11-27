@@ -119,13 +119,13 @@ const OrderList: React.FC<{
   return (
     <div className={`bg-white shadow-1 rounded-[10px] ${className ?? ""}`}>
       <div className="border-b border-gray-3 py-5 px-4 sm:px-8.5">
-        <h3 className="font-medium text-xl text-dark">Your Order</h3>
+        <h3 className="font-medium text-xl text-dark">Tu Orden</h3>
       </div>
 
       <div className="pt-2.5 pb-8.5 px-4 sm:px-8.5">
         {/* Header */}
         <div className="flex items-center justify-between py-5 border-b border-gray-3">
-          <h4 className="font-medium text-dark">Product</h4>
+          <h4 className="font-medium text-dark">Producto</h4>
           <h4 className="font-medium text-dark text-right">Subtotal</h4>
         </div>
 
@@ -164,7 +164,7 @@ const OrderList: React.FC<{
             {discount > 0 && (
               <div className="flex items-center justify-between py-5 border-b border-gray-3">
                 <p className="text-dark">
-                  Discount{cart?.couponCode ? ` (${cart.couponCode})` : ""}
+                  Descuento{cart?.couponCode ? ` (${cart.couponCode})` : ""}
                 </p>
                 <p className="text-dark text-right">- {formatMoney(discount, currency)}</p>
               </div>
@@ -172,14 +172,14 @@ const OrderList: React.FC<{
 
             {/* Shipping */}
             <div className="flex items-center justify-between py-5 border-b border-gray-3">
-              <p className="text-dark">Shipping Fee</p>
+              <p className="text-dark">Costo de Envío</p>
               <p className="text-dark text-right">{formatMoney(shipping, currency)}</p>
             </div>
 
             {/* Taxes */}
             {tax > 0 && (
               <div className="flex items-center justify-between py-5 border-b border-gray-3">
-                <p className="text-dark">Taxes</p>
+                <p className="text-dark">Impuestos</p>
                 <p className="text-dark text-right">{formatMoney(tax, currency)}</p>
               </div>
             )}

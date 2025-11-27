@@ -247,6 +247,51 @@ const QuickViewModal = () => {
       ? variantStock > 0
       : details?.inStock ?? true;
 
+  // Lógica de precio con transferencia (Consistente con ShopDetails)
+  let variantPriceWithTransfer: number | undefined;
+
+  // 1. Precio base con transferencia del producto/detalles
+  const basePriceWithTransfer = details?.priceWithTransfer ?? product?.priceWithTransfer;
+
+  // 2. Precio de referencia para ratio (usando priceRange si price es null)
+  const basePriceRef = details?.price
+    ?? product?.price
+    ?? details?.priceRange?.min
+    ?? 0;
+
+  // Calcular ratio globalmente para usarlo en el dropdown también
+  const transferRatio = (basePriceWithTransfer && basePriceRef > 0)
+    ? basePriceWithTransfer / basePriceRef
+    : 0;
+
+  if (selectedVariant) {
+    // A) Si la variante tiene su propio precio transfer explícito
+    if (selectedVariant.priceWithTransfer) {
+      variantPriceWithTransfer = selectedVariant.priceWithTransfer;
+    }
+    // B) Si no, calcularlo usando el ratio del producto padre
+    else if (transferRatio > 0) {
+      variantPriceWithTransfer = selectedVariant.discountedPrice * transferRatio;
+    }
+  }
+
+  // Cálculo de precios para el badge de oferta
+  let badgeOriginalPrice = product?.price ?? 0;
+  let badgeFinalPrice = product?.discountedPrice ?? 0;
+
+  if (selectedVariant) {
+    badgeOriginalPrice = selectedVariant.price;
+    badgeFinalPrice = selectedVariant.discountedPrice;
+  } else if (details && !details.hasVariants) {
+    badgeOriginalPrice = details.price ?? 0;
+    badgeFinalPrice = details.discountedPrice ?? 0;
+  }
+
+  const showDiscountBadge = badgeFinalPrice < badgeOriginalPrice;
+  const discountPercentage = showDiscountBadge
+    ? Math.round(((badgeOriginalPrice - badgeFinalPrice) / badgeOriginalPrice) * 100)
+    : 0;
+
 
   return (
     <div
@@ -339,9 +384,11 @@ const QuickViewModal = () => {
 
             {/* ===== INFO ===== */}
             <div className="max-w-[445px] w-full">
-              <span className="inline-block text-custom-xs font-medium text-white py-1 px-3 bg-green mb-6.5">
-                SALE 20% OFF
-              </span>
+              {showDiscountBadge && (
+                <span className="inline-block text-custom-xs font-medium text-white py-1 px-3 bg-green mb-6.5">
+                  OFERTA {discountPercentage}% OFF
+                </span>
+              )}
 
               {/* Descripción */}
               {description && (
@@ -392,8 +439,8 @@ const QuickViewModal = () => {
                   {isDigitalOnDemand
                     ? "Disponible bajo demanda"
                     : inStock
-                      ? `In Stock${typeof variantStock === "number" ? ` (${variantStock})` : ""}`
-                      : "Out of Stock"}
+                      ? `En Stock${typeof variantStock === "number" ? ` (${variantStock})` : ""}`
+                      : "Sin Stock"}
                 </span>
               </div>
 
@@ -417,9 +464,11 @@ const QuickViewModal = () => {
                         .join(" · ");
                       const label = attrLabel || `Variante #${v.id}`;
                       const sfx = (v.stock > 0 || fulfillmentType === 'DIGITAL_ON_DEMAND') ? "" : " — (Sin stock)";
+                      const transferPrice = transferRatio > 0 ? v.discountedPrice * transferRatio : null;
+                      const transferLabel = transferPrice ? ` | Transf: ${currency.format(transferPrice)}` : "";
                       return (
                         <option key={v.id} value={v.id}>
-                          {label} — {currency.format(v.discountedPrice)}{sfx}
+                          {label} — {currency.format(v.discountedPrice)}{transferLabel}{sfx}
                         </option>
                       );
                     })}
@@ -430,21 +479,17 @@ const QuickViewModal = () => {
               {/* Precio */}
               <div className="flex flex-wrap justify-between gap-5 mt-4 mb-7.5">
                 <div>
-                  <h4 className="font-semibold text-lg text-dark mb-3.5">Price</h4>
+                  <h4 className="font-semibold text-lg text-dark mb-3.5">Precio</h4>
 
                   {/* Con variante seleccionada: mostrar precio de la variante */}
                   {details?.hasVariants ? (
                     selectedVariant ? (
-                      <span className="flex items-center gap-2">
-                        <span className="font-semibold text-dark text-xl xl:text-heading-4">
-                          {currency.format(selectedVariant.discountedPrice)}
-                        </span>
-                        {selectedVariant.discountedPrice !== selectedVariant.price && (
-                          <span className="font-medium text-dark-4 text-lg xl:text-2xl line-through">
-                            {currency.format(selectedVariant.price)}
-                          </span>
-                        )}
-                      </span>
+                      <PriceDisplay
+                        price={selectedVariant.price}
+                        discountedPrice={selectedVariant.discountedPrice}
+                        priceWithTransfer={variantPriceWithTransfer}
+                        size="xl"
+                      />
                     ) : (
                       // Si no hay variante (raro), mostrar rango
                       <span className="font-semibold text-dark text-xl xl:text-heading-4">
@@ -456,7 +501,7 @@ const QuickViewModal = () => {
                     <PriceDisplay
                       price={details.price!}
                       discountedPrice={details.discountedPrice ?? details.price!}
-                      priceWithTransfer={details.priceWithTransfer}
+                      priceWithTransfer={basePriceWithTransfer}
                       size="xl"
                     />
                   ) : (
@@ -464,7 +509,7 @@ const QuickViewModal = () => {
                     <PriceDisplay
                       price={product?.price ?? 0}
                       discountedPrice={product?.discountedPrice ?? product?.price ?? 0}
-                      priceWithTransfer={product?.priceWithTransfer}
+                      priceWithTransfer={basePriceWithTransfer}
                       size="xl"
                     />
                   )}
@@ -472,7 +517,7 @@ const QuickViewModal = () => {
 
                 {/* Cantidad */}
                 <div>
-                  <h4 className="font-semibold text-lg text-dark mb-3.5">Quantity</h4>
+                  <h4 className="font-semibold text-lg text-dark mb-3.5">Cantidad</h4>
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => setQuantity(q => Math.max(1, q - 1))}
@@ -583,7 +628,7 @@ const QuickViewModal = () => {
                       fill=""
                     />
                   </svg>
-                  {isInWishlist ? "En Wishlist" : "Add to Wishlist"}
+                  {isInWishlist ? "En Lista de Deseos" : "Agregar a Lista de Deseos"}
                 </button>
               </div>
             </div>

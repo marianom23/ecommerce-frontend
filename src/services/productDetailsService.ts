@@ -13,6 +13,7 @@ type APIVariant = {
   sku: string;
   price: number;
   discountedPrice?: number | null;
+  priceWithTransfer?: number | null;
   stock: number;
   attributes: Record<string, string>;
   imgs?: Partial<ImageSet>;
@@ -57,6 +58,7 @@ export type NormalizedVariant = {
   attrs: Record<string, string>;
   price: number;
   discountedPrice: number;
+  priceWithTransfer?: number; // Nuevo campo
   stock: number;
   images: string[];
 };
@@ -107,6 +109,7 @@ function normalize(p: ProductDetailsRaw): NormalizedProduct {
         attrs: v.attributes ?? {},
         price,
         discountedPrice: discounted,
+        priceWithTransfer: v.priceWithTransfer ?? undefined, // Mapear nuevo campo
         stock: v.stock ?? 0,
         images,
       };

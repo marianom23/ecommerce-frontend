@@ -266,11 +266,11 @@ const Footer = () => {
 
           <div className="w-full sm:w-auto">
             <h2 className="mb-7.5 text-custom-1 font-medium text-dark lg:text-right">
-              Download App
+              Descarga la App
             </h2>
 
             <p className="lg:text-right text-custom-sm mb-4">
-              Save $3 With App & New User only
+              Ahorra $3 con la App y solo para Nuevos Usuarios
             </p>
 
             <ul className="flex flex-col lg:items-end gap-3">
@@ -295,7 +295,7 @@ const Footer = () => {
 
                   <div>
                     <span className="block text-custom-xs">
-                      Download on the
+                      Consíguelo en el
                     </span>
                     <p className="font-medium">App Store</p>
                   </div>
@@ -322,7 +322,7 @@ const Footer = () => {
                   </svg>
 
                   <div>
-                    <span className="block text-custom-xs"> Get in On </span>
+                    <span className="block text-custom-xs"> Disponible en </span>
                     <p className="font-medium">Google Play</p>
                   </div>
                 </a>

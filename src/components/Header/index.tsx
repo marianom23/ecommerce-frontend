@@ -35,20 +35,20 @@ const Header = () => {
   const handleOpenCartModal = () => openCartModal();
 
   const computedMenu = useMemo(() => {
-  return menuData.map((item) => {
-    if (item.title === "Marcas") {
-      return {
-        ...item,
-        // submenu con mismas props que el resto y SIN cantidad
-        submenu: (brandFacets ?? []).map((b) => ({
-          title: b.name,
-          path: `/productos?brandIds=${b.id}`,
-        })),
-      };
-    }
-    return item;
-  });
-}, [brandFacets]);
+    return menuData.map((item) => {
+      if (item.title === "Marcas") {
+        return {
+          ...item,
+          // submenu con mismas props que el resto y SIN cantidad
+          submenu: (brandFacets ?? []).map((b) => ({
+            title: b.name,
+            path: `/productos?brandIds=${b.id}`,
+          })),
+        };
+      }
+      return item;
+    });
+  }, [brandFacets]);
 
   // Sticky menu
   useEffect(() => {
@@ -95,15 +95,14 @@ const Header = () => {
     >
       <div className="max-w-[1170px] mx-auto px-4 sm:px-7.5 xl:px-0">
         {/* header top */}
-                <div
-          className={`flex flex-col lg:flex-row gap-5 items-end lg:items-center xl:justify-between ease-out duration-200 ${
-            stickyMenu ? "py-4" : "py-6"
-          }`}
+        <div
+          className={`flex flex-col lg:flex-row gap-5 items-end lg:items-center xl:justify-between ease-out duration-200 ${stickyMenu ? "py-4" : "py-6"
+            }`}
         >
           {/* left */}
           <div className="xl:w-auto flex-col sm:flex-row w-full flex sm:justify-between sm:items-center gap-5 sm:gap-10">
-            <Link className="flex-shrink-0" href="/">
-              <Image src="/images/logo/logo.svg" alt="Logo" width={219} height={36} />
+            <Link className="flex-shrink-0 -mt-1" href="/">
+              <Image src="/images/logo/logo.svg" alt="Logo" width={170} height={36} />
             </Link>
 
             {/* buscador */}
@@ -168,7 +167,7 @@ const Header = () => {
           </div>
 
           {/* <!-- header top right --> */}
-          <div className={`flex w-full lg:w-auto items-center ${ isAuthenticated ? "gap-4.5" : "gap-7.5" } transition-all duration-200`}
+          <div className={`flex w-full lg:w-auto items-center ${isAuthenticated ? "gap-4.5" : "gap-7.5"} transition-all duration-200`}
           >
             <div className="hidden xl:flex items-center gap-3.5 flex-shrink-0">
               {/* soporte */}
@@ -198,7 +197,7 @@ const Header = () => {
               </svg>
               <div>
                 <span className="block text-2xs text-dark-4 uppercase">
-                  24/7 SUPPORT
+                  SOPORTE 24/7
                 </span>
                 <p className="font-medium text-custom-sm text-dark">
                   (+54) 261 2184782
@@ -244,7 +243,7 @@ const Header = () => {
                         <span className="block text-2xs text-dark-4 uppercase">Mi Cuenta</span>
                         <p className="font-medium text-custom-sm text-dark">
                           {user?.firstName ?? user?.name ?? user?.email ?? "Usuario"}
-                        </p>                      
+                        </p>
                       </div>
                     </Link>
 
@@ -254,8 +253,8 @@ const Header = () => {
                       className="inline-flex items-center gap-1.5 rounded-full border border-gray-3 px-3 py-1.5 text-2xs font-medium text-dark hover:border-blue hover:bg-blue/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue/50"
                     >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="opacity-80" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 3v8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                        <path d="M6.4 6.4a7 7 0 1 0 11.2 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                        <path d="M12 3v8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                        <path d="M6.4 6.4a7 7 0 1 0 11.2 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                       </svg>
                     </button>
                   </div>
@@ -285,7 +284,7 @@ const Header = () => {
                     <div>
                       <span className="block text-2xs text-dark-4 uppercase">
                         Mi Cuenta
-                      </span>                      
+                      </span>
                       <p className="font-medium text-custom-sm text-dark">Ingresar</p>
                     </div>
                   </Link>
@@ -294,7 +293,7 @@ const Header = () => {
                 <button
                   onClick={handleOpenCartModal}
                   className="flex items-center gap-2.5"
-                >                  
+                >
                   <span className="inline-block relative">
                     {/* icono carrito */}
                     <svg
@@ -350,32 +349,27 @@ const Header = () => {
                 <span className="block relative cursor-pointer w-5.5 h-5.5">
                   <span className="du-block absolute right-0 w-full h-full">
                     <span
-                      className={`block relative top-0 left-0 bg-dark rounded-sm w-0 h-0.5 my-1 ease-in-out duration-200 delay-[0] ${
-                        !navigationOpen && "!w-full delay-300"
-                      }`}
+                      className={`block relative top-0 left-0 bg-dark rounded-sm w-0 h-0.5 my-1 ease-in-out duration-200 delay-[0] ${!navigationOpen && "!w-full delay-300"
+                        }`}
                     ></span>
                     <span
-                      className={`block relative top-0 left-0 bg-dark rounded-sm w-0 h-0.5 my-1 ease-in-out duration-200 delay-150 ${
-                        !navigationOpen && "!w-full delay-400"
-                      }`}
+                      className={`block relative top-0 left-0 bg-dark rounded-sm w-0 h-0.5 my-1 ease-in-out duration-200 delay-150 ${!navigationOpen && "!w-full delay-400"
+                        }`}
                     ></span>
                     <span
-                      className={`block relative top-0 left-0 bg-dark rounded-sm w-0 h-0.5 my-1 ease-in-out duration-200 delay-200 ${
-                        !navigationOpen && "!w-full delay-500"
-                      }`}
+                      className={`block relative top-0 left-0 bg-dark rounded-sm w-0 h-0.5 my-1 ease-in-out duration-200 delay-200 ${!navigationOpen && "!w-full delay-500"
+                        }`}
                     ></span>
                   </span>
 
                   <span className="block absolute right-0 w-full h-full rotate-45">
                     <span
-                      className={`block bg-dark rounded-sm ease-in-out duration-200 delay-300 absolute left-2.5 top-0 w-0.5 h-full ${
-                        !navigationOpen && "!h-0 delay-[0] "
-                      }`}
+                      className={`block bg-dark rounded-sm ease-in-out duration-200 delay-300 absolute left-2.5 top-0 w-0.5 h-full ${!navigationOpen && "!h-0 delay-[0] "
+                        }`}
                     ></span>
                     <span
-                      className={`block bg-dark rounded-sm ease-in-out duration-200 delay-400 absolute left-0 top-2.5 w-full h-0.5 ${
-                        !navigationOpen && "!h-0 dealy-200"
-                      }`}
+                      className={`block bg-dark rounded-sm ease-in-out duration-200 delay-400 absolute left-0 top-2.5 w-full h-0.5 ${!navigationOpen && "!h-0 dealy-200"
+                        }`}
                     ></span>
                   </span>
                 </span>
@@ -391,32 +385,30 @@ const Header = () => {
           <div className="flex items-center justify-between">
             {/* Main Nav */}
             <div
-              className={`w-[288px] absolute right-4 top-full xl:static xl:w-auto h-0 xl:h-auto invisible xl:visible xl:flex items-center justify-between ${
-                navigationOpen && `!visible bg-white shadow-lg border border-gray-3 !h-auto max-h-[400px] overflow-y-scroll rounded-md p-5`
-              }`}
+              className={`w-[288px] absolute right-4 top-full xl:static xl:w-auto h-0 xl:h-auto invisible xl:visible xl:flex items-center justify-between ${navigationOpen && `!visible bg-white shadow-lg border border-gray-3 !h-auto max-h-[400px] overflow-y-scroll rounded-md p-5`
+                }`}
             >
               <nav>
                 <ul className="flex xl:items-center flex-col xl:flex-row gap-5 xl:gap-6">
-                {computedMenu.map((menuItem, i) =>
-                  menuItem.submenu ? (
-                    <Dropdown key={i} menuItem={menuItem} stickyMenu={stickyMenu} />
-                  ) : (
-                    <li
-                      key={i}
-                      className="group relative before:w-0 before:h-[3px] before:bg-blue before:absolute before:left-0 before:top-0 before:rounded-b-[3px] before:ease-out before:duration-200 hover:before:w-full "
-                    >
-                      <Link
-                        href={menuItem.path}
-                        className={`hover:text-blue text-custom-sm font-medium text-dark flex ${
-                          stickyMenu ? "xl:py-4" : "xl:py-6"
-                        }`}
+                  {computedMenu.map((menuItem, i) =>
+                    menuItem.submenu ? (
+                      <Dropdown key={i} menuItem={menuItem} stickyMenu={stickyMenu} />
+                    ) : (
+                      <li
+                        key={i}
+                        className="group relative before:w-0 before:h-[3px] before:bg-blue before:absolute before:left-0 before:top-0 before:rounded-b-[3px] before:ease-out before:duration-200 hover:before:w-full "
                       >
-                        {menuItem.title}
-                      </Link>
-                    </li>
-                  )
-                )}
-              </ul>
+                        <Link
+                          href={menuItem.path}
+                          className={`hover:text-blue text-custom-sm font-medium text-dark flex ${stickyMenu ? "xl:py-4" : "xl:py-6"
+                            }`}
+                        >
+                          {menuItem.title}
+                        </Link>
+                      </li>
+                    )
+                  )}
+                </ul>
               </nav>
             </div>
 
@@ -442,7 +434,7 @@ const Header = () => {
                         fill=""
                       />
                     </svg>
-                    Recently Viewed
+                    Visto Recientemente
                   </a> */}
                 </li>
                 <li className="py-4">
@@ -460,7 +452,7 @@ const Header = () => {
                         fill=""
                       />
                     </svg>
-                    Wishlist
+                    Lista de Deseos
                   </Link>
                 </li>
               </ul>

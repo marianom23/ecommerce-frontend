@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { selectCartItems, selectTotalPrice } from "@/redux/features/cart-slice";
 import { orderService } from "@/services/orderService";
 import toast from "react-hot-toast";
-import { useAuth } from "@/hooks/useAuth"; // 👈 tu nuevo hook
+import { useAuth } from "@/hooks/useAuth";
 
 const formatter = new Intl.NumberFormat("es-AR", {
   style: "currency",
@@ -23,7 +23,7 @@ const OrderSummary = () => {
   const { user, loading, isAuthenticated } = useAuth();
 
   const handleProceedToCheckout = async () => {
-    if (loading) return; // Aún verificando auth
+    if (loading) return;
 
     if (!isAuthenticated) {
       toast("Debes iniciar sesión para proceder al pago", {
@@ -41,7 +41,6 @@ const OrderSummary = () => {
     try {
       setIsLoading(true);
 
-      // Backend genera la orden usando la cookie AUTH_TOKEN
       const res = await orderService.create();
       const order = res;
 
@@ -97,27 +96,32 @@ const OrderSummary = () => {
             </div>
           ))}
 
+          <div className="flex items-center justify-between pt-5 border-b border-gray-3 pb-5">
+            <p className="font-medium text-dark">Costo de Envío</p>
+            <p className="text-dark">Gratis</p>
+          </div>
+
+          <div className="flex items-center justify-between pt-5 border-b border-gray-3 pb-5">
+            <p className="font-medium text-dark">Descuento</p>
+            <p className="text-dark">$0</p>
+          </div>
+
           <div className="flex items-center justify-between pt-5">
-            <div>
-              <p className="font-medium text-lg text-dark">Total</p>
-            </div>
-            <div>
-              <p className="font-medium text-lg text-dark text-right">
-                {formatter.format(totalPrice)}
-              </p>
-            </div>
+            <p className="font-medium text-xl text-dark">Total</p>
+            <p className="font-medium text-xl text-dark text-right">
+              {formatter.format(totalPrice)}
+            </p>
           </div>
 
           <button
             onClick={handleProceedToCheckout}
             disabled={isLoading || cartItems.length === 0}
-            className={`w-full mt-7.5 inline-flex justify-center font-medium py-3 px-6 rounded-md ease-out duration-200 ${
-              !isAuthenticated
+            className={`w-full mt-7.5 inline-flex justify-center font-medium py-3 px-6 rounded-md ease-out duration-200 ${!isAuthenticated
                 ? "text-gray-600 bg-gray-400 cursor-not-allowed border-2 border-gray-300"
                 : "text-white bg-blue hover:bg-blue-dark"
-            } disabled:opacity-60 disabled:cursor-not-allowed`}
+              } disabled:opacity-60 disabled:cursor-not-allowed`}
           >
-            {isLoading ? "Creando orden..." : "Proceder al pago"}
+            {isLoading ? "Creando orden..." : "Proceder al Pago"}
           </button>
         </div>
       </div>

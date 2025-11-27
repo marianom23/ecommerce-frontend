@@ -163,9 +163,43 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
     ? selectedVariant.price
     : productDetails?.price ?? product?.price ?? 0;
 
-  const currentPriceWithTransfer = selectedVariant
-    ? undefined
-    : productDetails?.priceWithTransfer ?? product?.priceWithTransfer;
+  // Lógica de precio con transferencia:
+  // Usar estrictamente datos del backend.
+
+  let currentPriceWithTransfer: number | undefined;
+
+  // 1. Intentar obtener el precio transfer base del objeto de detalles
+  const basePriceWithTransfer = productDetails?.priceWithTransfer ?? product?.priceWithTransfer;
+
+  // 2. Obtener un precio de referencia para calcular el ratio (si es necesario)
+  // Si es producto variable, 'price' puede ser null, usamos el rango de precios.
+  const basePriceRef = productDetails?.price
+    ?? product?.price
+    ?? productDetails?.priceRange?.min
+    ?? 0;
+
+  if (selectedVariant) {
+    // A) Si la variante tiene su propio precio transfer explícito, usarlo (Ideal)
+    if (selectedVariant.priceWithTransfer) {
+      currentPriceWithTransfer = selectedVariant.priceWithTransfer;
+    }
+    // B) Si no, calcularlo usando el ratio del producto padre (Fallback dinámico)
+    else if (basePriceWithTransfer && basePriceRef > 0) {
+      const ratio = basePriceWithTransfer / basePriceRef;
+      currentPriceWithTransfer = selectedVariant.discountedPrice * ratio;
+    }
+  } else {
+    // C) Sin variante seleccionada: usar el precio base directo
+    currentPriceWithTransfer = basePriceWithTransfer;
+  }
+
+  // Debug para verificar que está tomando los datos reales
+  console.log('🔍 Transfer Price Logic:', {
+    basePriceWithTransfer,
+    basePriceRef,
+    variantTransfer: selectedVariant?.priceWithTransfer,
+    calculated: currentPriceWithTransfer
+  });
 
   // Usar la misma lógica que el productDetailsService
   const isInStock = productDetails?.inStock ?? true;

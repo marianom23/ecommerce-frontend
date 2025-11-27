@@ -3,8 +3,8 @@ import { Metadata } from "next";
 import React from "react";
 
 export const metadata: Metadata = {
-  title: "NextCommerce | Nextjs E-commerce template",
-  description: "This is Home for NextCommerce Template",
+  title: "HorneroTech | Tienda de tecnología de confianza",
+  description: "Tu tienda de tecnología de confianza",
 };
 
 export default function RootLayout({

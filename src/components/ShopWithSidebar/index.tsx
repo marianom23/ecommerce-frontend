@@ -63,12 +63,12 @@ const ShopWithSidebar: React.FC = () => {
 
   // Derivados seguros desde la URL
   const urlCategoryId = useMemo(() => parseNum(params.categoryId), [params.categoryId]);
-  const urlMinPrice   = useMemo(() => parseNum(params.minPrice),   [params.minPrice]);
-  const urlMaxPrice   = useMemo(() => parseNum(params.maxPrice),   [params.maxPrice]);
-  const urlInStock    = useMemo(() => parseBool(params.inStockOnly), [params.inStockOnly]);
-  const urlSort       = useMemo(() => (typeof params.sort === "string" ? params.sort : "0"), [params.sort]);
-  const urlQ          = useMemo(() => (typeof params.q === "string" ? params.q : undefined), [params.q]);
-  const urlBrandIds   = useMemo(() => parseCsvNums(params.brandIds), [params.brandIds]);
+  const urlMinPrice = useMemo(() => parseNum(params.minPrice), [params.minPrice]);
+  const urlMaxPrice = useMemo(() => parseNum(params.maxPrice), [params.maxPrice]);
+  const urlInStock = useMemo(() => parseBool(params.inStockOnly), [params.inStockOnly]);
+  const urlSort = useMemo(() => (typeof params.sort === "string" ? params.sort : "0"), [params.sort]);
+  const urlQ = useMemo(() => (typeof params.q === "string" ? params.q : undefined), [params.q]);
+  const urlBrandIds = useMemo(() => parseCsvNums(params.brandIds), [params.brandIds]);
 
 
   /******************
@@ -87,9 +87,9 @@ const ShopWithSidebar: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const options = [
-    { label: "Latest Products", value: "0" },
-    { label: "Best Selling", value: "1" },
-    { label: "Old Products", value: "2" },
+    { label: "Más Recientes", value: "0" },
+    { label: "Más Vendidos", value: "1" },
+    { label: "Más Antiguos", value: "2" },
   ];
   const [selectedOption, setSelectedOption] = useState<string>(urlSort);
 
@@ -119,7 +119,7 @@ const ShopWithSidebar: React.FC = () => {
         minPrice,
         maxPrice,
         inStockOnly,
-        q: urlQ, 
+        q: urlQ,
         brandIds: brandIds?.join(","),
       },
       { replace: true }
@@ -134,7 +134,7 @@ const ShopWithSidebar: React.FC = () => {
       case "0": return "latest";
       case "1": return "bestSelling";
       case "2": return "id";
-      default:  return "latest";
+      default: return "latest";
     }
   }, [selectedOption]);
 
@@ -287,8 +287,8 @@ const ShopWithSidebar: React.FC = () => {
    * Datos mock estáticos (otros filtros visuales)
    ******************/
   const genders = [
-    { name: "Men", products: 10 },
-    { name: "Women", products: 23 },
+    { name: "Hombres", products: 10 },
+    { name: "Mujeres", products: 23 },
     { name: "Unisex", products: 8 },
   ];
 
@@ -301,16 +301,14 @@ const ShopWithSidebar: React.FC = () => {
           <div className="flex gap-7.5">
             {/* Sidebar Start */}
             <div
-              className={`sidebar-content fixed xl:z-1 z-9999 left-0 top-0 xl:translate-x-0 xl:static max-w-[310px] xl:max-w-[270px] w-full ease-out duration-200 ${
-                productSidebar ? "translate-x-0 bg-white p-5 h-screen overflow-y-auto" : "-translate-x-full"
-              }`}
+              className={`sidebar-content fixed xl:z-1 z-9999 left-0 top-0 xl:translate-x-0 xl:static max-w-[310px] xl:max-w-[270px] w-full ease-out duration-200 ${productSidebar ? "translate-x-0 bg-white p-5 h-screen overflow-y-auto" : "-translate-x-full"
+                }`}
             >
               <button
                 onClick={() => setProductSidebar(!productSidebar)}
                 aria-label="button for product sidebar toggle"
-                className={`xl:hidden absolute -right-12.5 sm:-right-8 flex items-center justify-center w-8 h-8 rounded-md bg-white shadow-1 ${
-                  stickyMenu ? "lg:top-20 sm:top-34.5 top-35" : "lg:top-24 sm:top-39 top-37"
-                }`}
+                className={`xl:hidden absolute -right-12.5 sm:-right-8 flex items-center justify-center w-8 h-8 rounded-md bg-white shadow-1 ${stickyMenu ? "lg:top-20 sm:top-34.5 top-35" : "lg:top-24 sm:top-39 top-37"
+                  }`}
               >
                 <svg className="fill-current" width="24" height="24" viewBox="0 0 24 24" fill="none"
                   xmlns="http://www.w3.org/2000/svg">
@@ -413,11 +411,10 @@ const ShopWithSidebar: React.FC = () => {
                     <button
                       onClick={() => setProductStyle("grid")}
                       aria-label="button for product grid tab"
-                      className={`${
-                        productStyle === "grid"
+                      className={`${productStyle === "grid"
                           ? "bg-blue border-blue text-white"
                           : "text-dark bg-gray-1 border-gray-3"
-                      } flex items-center justify-center w-10.5 h-9 rounded-[5px] border ease-out duration-200 hover:bg-blue hover:border-blue hover:text-white`}
+                        } flex items-center justify-center w-10.5 h-9 rounded-[5px] border ease-out duration-200 hover:bg-blue hover:border-blue hover:text-white`}
                     >
                       {/* grid icon */}
                       <svg
@@ -458,11 +455,10 @@ const ShopWithSidebar: React.FC = () => {
                     <button
                       onClick={() => setProductStyle("list")}
                       aria-label="button for product list tab"
-                      className={`${
-                        productStyle === "list"
+                      className={`${productStyle === "list"
                           ? "bg-blue border-blue text-white"
                           : "text-dark bg-gray-1 border-gray-3"
-                      } flex items-center justify-center w-10.5 h-9 rounded-[5px] border ease-out duration-200 hover:bg-blue hover:border-blue hover:text-white`}
+                        } flex items-center justify-center w-10.5 h-9 rounded-[5px] border ease-out duration-200 hover:bg-blue hover:border-blue hover:text-white`}
                     >
                       {/* list icon */}
                       <svg
@@ -493,15 +489,14 @@ const ShopWithSidebar: React.FC = () => {
 
               {/* Products Grid/List */}
               <div
-                className={`${
-                  productStyle === "grid"
+                className={`${productStyle === "grid"
                     ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-7.5 gap-y-9"
                     : "flex flex-col gap-7.5"
-                }`}
+                  }`}
               >
                 {loading && (
                   <div className="col-span-full text-center py-10 text-gray-500">
-                    Loading products...
+                    Cargando productos...
                   </div>
                 )}
                 {error && !loading && (
@@ -511,7 +506,7 @@ const ShopWithSidebar: React.FC = () => {
                 )}
                 {!loading && !error && products.length === 0 && (
                   <div className="col-span-full text-center py-10 text-gray-500">
-                    No products found.
+                    No se encontraron productos.
                   </div>
                 )}
                 {!loading &&
@@ -564,11 +559,10 @@ const ShopWithSidebar: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => goToPage(item as number)}
-                            className={`flex py-1.5 px-3.5 duration-200 rounded-[3px] ${
-                              page === item
+                            className={`flex py-1.5 px-3.5 duration-200 rounded-[3px] ${page === item
                                 ? "bg-blue text-white hover:text-white hover:bg-blue"
                                 : "hover:text-white hover:bg-blue"
-                            }`}
+                              }`}
                           >
                             {item}
                           </button>
