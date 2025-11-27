@@ -15,11 +15,14 @@ import {
   type NormalizedProduct,
   type NormalizedVariant,
 } from "@/services/productDetailsService";
+import { PriceDisplay } from "@/components/Common/PriceDisplay";
+import { useAuth } from "@/hooks/useAuth";
 
 const currency = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" });
 
 
 const QuickViewModal = () => {
+  const { isAuthenticated } = useAuth();
   const { isModalOpen, closeModal } = useModalContext();
   const { openPreviewModal } = usePreviewSlider();
   const dispatch = useDispatch<AppDispatch>();
@@ -34,6 +37,7 @@ const QuickViewModal = () => {
     discountedPrice: number;
     imgs?: { thumbnails: string[]; previews: string[] };
     fulfillmentType?: 'PHYSICAL' | 'DIGITAL_ON_DEMAND' | 'DIGITAL_INSTANT';
+    priceWithTransfer?: number;
   } | null);
 
 
@@ -449,28 +453,20 @@ const QuickViewModal = () => {
                     )
                   ) : details ? (
                     // Sin variantes: usar price del detalle
-                    <span className="flex items-center gap-2">
-                      <span className="font-semibold text-dark text-xl xl:text-heading-4">
-                        {currency.format(details.discountedPrice ?? details.price!)}
-                      </span>
-                      {(details.discountedPrice ?? details.price) !== details.price && (
-                        <span className="font-medium text-dark-4 text-lg xl:text-2xl line-through">
-                          {currency.format(details.price!)}
-                        </span>
-                      )}
-                    </span>
+                    <PriceDisplay
+                      price={details.price!}
+                      discountedPrice={details.discountedPrice ?? details.price!}
+                      priceWithTransfer={details.priceWithTransfer}
+                      size="xl"
+                    />
                   ) : (
                     // Fallback del “light”
-                    <span className="flex items-center gap-2">
-                      <span className="font-semibold text-dark text-xl xl:text-heading-4">
-                        {currency.format(product?.discountedPrice ?? product?.price ?? 0)}
-                      </span>
-                      {product && product.discountedPrice !== product.price && (
-                        <span className="font-medium text-dark-4 text-lg xl:text-2xl line-through">
-                          {currency.format(product.price)}
-                        </span>
-                      )}
-                    </span>
+                    <PriceDisplay
+                      price={product?.price ?? 0}
+                      discountedPrice={product?.discountedPrice ?? product?.price ?? 0}
+                      priceWithTransfer={product?.priceWithTransfer}
+                      size="xl"
+                    />
                   )}
                 </div>
 
@@ -548,11 +544,15 @@ const QuickViewModal = () => {
                   onClick={handleAddToCart}
                   className="inline-flex font-medium text-white bg-blue py-3 px-7 rounded-md ease-out duration-200 hover:bg-blue-dark disabled:opacity-60"
                 >
-                  Add to Cart
+                  {inStock ? "Agregar" : "Sin Stock"}
                 </button>
 
                 <button
                   onClick={async () => {
+                    if (!isAuthenticated) {
+                      toast.error("Debes iniciar sesión para usar la wishlist");
+                      return;
+                    }
                     if (product) {
                       const res = await dispatch(toggleWishlist(product as any));
                       const products = res.payload as any[] | undefined;
@@ -563,8 +563,8 @@ const QuickViewModal = () => {
                     }
                   }}
                   className={`inline-flex items-center gap-2 font-medium py-3 px-6 rounded-md ease-out duration-200 ${isInWishlist
-                      ? "bg-blue text-white hover:bg-blue-dark"
-                      : "bg-dark text-white hover:bg-opacity-95"
+                    ? "bg-blue text-white hover:bg-blue-dark"
+                    : "bg-dark text-white hover:bg-opacity-95"
                     }`}
                 >
                   {/* heart icon */}

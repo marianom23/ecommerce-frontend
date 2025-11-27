@@ -15,8 +15,11 @@ import Image from "next/image";
 import { updateproductDetails } from "@/redux/features/product-details";
 import { generateProductUrl } from "@/utils/slug";
 import { StarRating } from "@/components/Common/StarRating";
+import { PriceDisplay } from "@/components/Common/PriceDisplay";
+import { useAuth } from "@/hooks/useAuth";
 
 const SingleGridItem = ({ item }: { item: Product }) => {
+  const { isAuthenticated } = useAuth();
   const { openModal } = useModalContext();
   const dispatch = useDispatch<AppDispatch>();
   const wishlistItems = useAppSelector((s) => s.wishlistReducer.items);
@@ -46,6 +49,10 @@ const SingleGridItem = ({ item }: { item: Product }) => {
   };
 
   const handleItemToWishList = async () => {
+    if (!isAuthenticated) {
+      toast.error("Debes iniciar sesión para usar la wishlist");
+      return;
+    }
     const res = await dispatch(toggleWishlist(item));
     const products = res.payload as Product[] | undefined;
     if (products) {
@@ -112,7 +119,7 @@ const SingleGridItem = ({ item }: { item: Product }) => {
             onClick={handleAddToCart}
             className="inline-flex font-medium text-custom-sm py-[7px] px-5 rounded-[5px] bg-blue text-white ease-out duration-200 hover:bg-blue-dark"
           >
-            Add to cart
+            Agregar
           </button>
 
           <button
@@ -148,10 +155,12 @@ const SingleGridItem = ({ item }: { item: Product }) => {
         <Link href={generateProductUrl(item.id, item.title)} onClick={handleProductDetails}> {item.title} </Link>
       </h3>
 
-      <span className="flex items-center gap-2 font-medium text-lg">
-        <span className="text-dark">${item.discountedPrice}</span>
-        <span className="text-dark-4 line-through">${item.price}</span>
-      </span>
+      <PriceDisplay
+        price={item.price}
+        discountedPrice={item.discountedPrice}
+        priceWithTransfer={item.priceWithTransfer}
+        size="lg"
+      />
     </div>
   );
 };

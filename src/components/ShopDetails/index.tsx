@@ -19,6 +19,7 @@ import { ReviewsList } from "./ReviewsList";
 import { ReviewForm } from "./ReviewForm";
 import { useAuth } from "@/hooks/useAuth";
 import { StarRating } from "@/components/Common/StarRating";
+import { PriceDisplay } from "@/components/Common/PriceDisplay";
 
 interface ShopDetailsProps {
   productId?: string;
@@ -161,6 +162,10 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
   const originalPrice = selectedVariant
     ? selectedVariant.price
     : productDetails?.price ?? product?.price ?? 0;
+
+  const currentPriceWithTransfer = selectedVariant
+    ? undefined
+    : productDetails?.priceWithTransfer ?? product?.priceWithTransfer;
 
   // Usar la misma lógica que el productDetailsService
   const isInStock = productDetails?.inStock ?? true;
@@ -381,17 +386,14 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
                     </div>
                   </div>
 
-                  <h3 className="font-medium text-custom-1 mb-4.5">
-                    <span className="text-sm sm:text-base text-dark">
-                      Precio: ${currentPrice.toFixed(2)}
-                    </span>
-                    {currentPrice < originalPrice && (
-                      <span className="line-through">
-                        {" "}
-                        ${originalPrice.toFixed(2)}{" "}
-                      </span>
-                    )}
-                  </h3>
+                  <div className="mb-4.5">
+                    <PriceDisplay
+                      price={originalPrice}
+                      discountedPrice={currentPrice}
+                      priceWithTransfer={currentPriceWithTransfer}
+                      size="xl"
+                    />
+                  </div>
 
                   <ul className="flex flex-col gap-2">
                     <li className="flex items-center gap-2.5">
@@ -592,9 +594,9 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
                         className="inline-flex font-medium text-white bg-blue py-3 px-7 rounded-md ease-out duration-200 hover:bg-blue-dark disabled:opacity-60 disabled:cursor-not-allowed"
                       >
                         {productDetails?.fulfillmentType === 'DIGITAL_ON_DEMAND'
-                          ? "Agregar al Carrito (Digital)"
+                          ? "Agregar (Digital)"
                           : isInStock
-                            ? "Agregar al Carrito"
+                            ? "Agregar"
                             : "Sin Stock"
                         }
                       </button>
@@ -602,6 +604,10 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
                       <button
                         type="button"
                         onClick={async () => {
+                          if (!isAuthenticated) {
+                            toast.error("Debes iniciar sesión para usar la wishlist");
+                            return;
+                          }
                           if (productDetails) {
                             const res = await dispatch(toggleWishlist(productDetails as any));
                             const products = res.payload as any[] | undefined;

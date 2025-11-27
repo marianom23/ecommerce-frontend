@@ -25,7 +25,7 @@ const SingleItem: React.FC<{ item: Product }> = ({ item }) => {
   };
 
   const shouldOpenVariantPicker = (p: Product) =>
-  p.variantCount === 0 || p.variantCount > 1 || p.defaultVariantId == null;
+    p.variantCount === 0 || p.variantCount > 1 || p.defaultVariantId == null;
 
   const handleAddToCart = async () => {
     if (shouldOpenVariantPicker(item)) {
@@ -132,7 +132,7 @@ const SingleItem: React.FC<{ item: Product }> = ({ item }) => {
           onClick={() => handleAddToCart()}
           className="inline-flex text-dark hover:text-white bg-gray-1 border border-gray-3 py-2.5 px-6 rounded-md ease-out duration-200 hover:bg-blue hover:border-gray-3"
         >
-          Add to Cart
+          Agregar
         </button>
       </div>
     </div>

@@ -14,4 +14,5 @@ export type Product = {
   variantCount: number;
   defaultVariantId: number | null;
   fulfillmentType: FulfillmentType;
+  priceWithTransfer?: number;
 };

@@ -13,9 +13,11 @@ import toast from "react-hot-toast";
 import { StarRating } from "@/components/Common/StarRating";
 import { generateProductUrl } from "@/utils/slug";
 import { updateproductDetails } from "@/redux/features/product-details";
+import { PriceDisplay } from "@/components/Common/PriceDisplay";
+import { useAuth } from "@/hooks/useAuth";
 
 const SingleItem = ({ item }: { item: Product }) => {
-
+  const { isAuthenticated } = useAuth();
   const { addItem } = useCart();
 
   const { openModal } = useModalContext();
@@ -48,6 +50,10 @@ const SingleItem = ({ item }: { item: Product }) => {
   };
 
   const handleItemToWishList = async () => {
+    if (!isAuthenticated) {
+      toast.error("Debes iniciar sesión para usar la wishlist");
+      return;
+    }
     const res = await dispatch(toggleWishlist(item));
     const products = res.payload as Product[] | undefined;
     if (products) {
@@ -70,10 +76,13 @@ const SingleItem = ({ item }: { item: Product }) => {
             </Link>
           </h3>
 
-          <span className="flex items-center justify-center gap-2 font-medium text-lg">
-            <span className="text-dark">${item.discountedPrice}</span>
-            <span className="text-dark-4 line-through">${item.price}</span>
-          </span>
+          <PriceDisplay
+            price={item.price}
+            discountedPrice={item.discountedPrice}
+            priceWithTransfer={item.priceWithTransfer}
+            size="lg"
+            className="items-center"
+          />
         </div>
 
         <div className="flex justify-center items-center">

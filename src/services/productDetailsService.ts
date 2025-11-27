@@ -28,6 +28,7 @@ type APIProductBase = {
   sku: string;
   brand: string;
   category: string;
+  priceWithTransfer?: number;
 };
 
 type APIProductWithVariants = APIProductBase & {
@@ -79,6 +80,7 @@ export type NormalizedProduct = {
   stockTotal: number;
   inStock: boolean;
   fulfillmentType: 'PHYSICAL' | 'DIGITAL_ON_DEMAND' | 'DIGITAL_INSTANT';
+  priceWithTransfer?: number;
 };
 
 /** ===== Fetchers ===== */
@@ -137,6 +139,7 @@ function normalize(p: ProductDetailsRaw): NormalizedProduct {
       stockTotal,
       inStock: (pv as any).fulfillmentType === 'DIGITAL_ON_DEMAND' ? true : stockTotal > 0,
       fulfillmentType: (pv as any).fulfillmentType || 'PHYSICAL',
+      priceWithTransfer: pv.priceWithTransfer,
     };
   } else {
     const ps = p as APIProductSimple;
@@ -169,6 +172,7 @@ function normalize(p: ProductDetailsRaw): NormalizedProduct {
       stockTotal: stock,
       inStock: (ps as any).fulfillmentType === 'DIGITAL_ON_DEMAND' ? true : stock > 0,
       fulfillmentType: (ps as any).fulfillmentType || 'PHYSICAL',
+      priceWithTransfer: ps.priceWithTransfer,
     };
   }
 }
