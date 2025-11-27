@@ -14,7 +14,7 @@ import { BillingProfileResponse } from "@/services/billingProfileService";
 import { useSearchParams, useRouter } from "next/navigation";
 import { orderService, type PaymentMethod as PM } from "@/services/orderService";
 import toast from "react-hot-toast";
-import { useAuth } from "@/hooks/useAuth"; 
+import { useAuth } from "@/hooks/useAuth";
 
 const Checkout = () => {
   const searchParams = useSearchParams();
@@ -29,6 +29,7 @@ const Checkout = () => {
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [paymentMethodSelected, setPaymentMethodSelected] = useState<PM | null>(null);
+  const [reloadOrderKey, setReloadOrderKey] = useState(0);
 
   // 👇 AHORA USAMOS TU SISTEMA DE AUTH
   const { isAuthenticated, loading } = useAuth();
@@ -84,8 +85,8 @@ const Checkout = () => {
     } catch (e: any) {
       setErr(
         e?.response?.data?.message ||
-          e?.message ||
-          "No se pudo confirmar la orden."
+        e?.message ||
+        "No se pudo confirmar la orden."
       );
     } finally {
       setSaving(false);
@@ -132,12 +133,19 @@ const Checkout = () => {
 
               {/* right */}
               <div className="max-w-[455px] w-full">
-                <OrderList />
+                <OrderList orderId={orderId} reloadKey={reloadOrderKey} />
                 <ShippingMethod />
                 <Coupon />
 
                 {/* Parchea método de pago al seleccionar */}
-                <PaymentMethod orderId={orderId} onApplied={setPaymentMethodSelected} />
+                {/* Parchea método de pago al seleccionar */}
+                <PaymentMethod
+                  orderId={orderId}
+                  onApplied={(method) => {
+                    setPaymentMethodSelected(method);
+                    setReloadOrderKey((prev) => prev + 1);
+                  }}
+                />
 
                 {err && (
                   <p className="text-red-600 text-sm mt-3">{err}</p>
@@ -155,11 +163,10 @@ const Checkout = () => {
                     <button
                       type="submit"
                       disabled={saving || !canSubmit}
-                      className={`w-full flex justify-center font-medium py-3 px-6 rounded-md mt-7.5 ${
-                        !isReady || saving || !canSubmit
+                      className={`w-full flex justify-center font-medium py-3 px-6 rounded-md mt-7.5 ${!isReady || saving || !canSubmit
                           ? "text-gray-600 bg-gray-400 cursor-not-allowed border-2 border-gray-300"
                           : "text-white bg-blue hover:bg-blue-dark"
-                      }`}
+                        }`}
                     >
                       {saving ? "Procesando..." : "Confirmar y pagar"}
                     </button>

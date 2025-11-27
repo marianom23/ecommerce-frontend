@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { cartService } from "@/services/cartService";
+import { orderService } from "@/services/orderService";
 
 type CartItem = {
   id: number;
@@ -43,7 +44,8 @@ const OrderList: React.FC<{
   reloadKey?: number | string;
   /** Callback opcional por si arriba querés enterarte del cart fresco */
   onLoaded?: (cart: Cart) => void;
-}> = ({ className, reloadKey, onLoaded }) => {
+  orderId?: number | null;
+}> = ({ className, reloadKey, onLoaded, orderId }) => {
   const [loading, setLoading] = useState(false);
   const [cart, setCart] = useState<Cart | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -52,7 +54,33 @@ const OrderList: React.FC<{
     setLoading(true);
     setErr(null);
     try {
-      const data = await cartService.getLogged();
+      let data: any;
+      if (orderId) {
+        // Fetch order details
+        const order = await orderService.getOne(orderId);
+        data = {
+          items: order.items.map((i) => ({
+            id: i.productId, // mapping productId to id for display
+            productId: i.productId,
+            name: i.productName,
+            sku: i.sku,
+            quantity: i.quantity,
+            unitPrice: i.unitPrice,
+            lineTotal: i.lineTotal,
+          })),
+          currency: "ARS", // Order response might not have currency, default to ARS
+          subtotal: order.subTotal,
+          discountTotal: order.discountTotal,
+          shippingFee: order.shippingCost,
+          taxTotal: order.taxAmount,
+          total: order.totalAmount,
+          couponCode: null, // Order might not have coupon code explicitly in summary
+        };
+      } else {
+        // Fetch cart details
+        data = await cartService.getLogged();
+      }
+
       // Acomodamos por si tu API no trae todos los campos:
       const normalized: Cart = {
         items: (data as any)?.items ?? [],
