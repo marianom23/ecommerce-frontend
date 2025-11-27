@@ -66,8 +66,8 @@ const SingleGridItem = ({ item }: { item: Product }) => {
 
   // 👇 CLASES DINÁMICAS ajustadas para asegurar el relleno
   const wishlistButtonClasses = `
-    flex items-center justify-center w-9 h-9 rounded-[5px] shadow-1 ease-out duration-200 bg-white 
-    ${isInWishlist ? "text-blue" : "text-dark hover:text-blue"}
+    flex items-center justify-center w-9 h-9 rounded-[5px] shadow-1 ease-out duration-200
+    ${isInWishlist ? "bg-blue text-white" : "bg-white text-dark hover:text-blue"}
   `;
 
   return (

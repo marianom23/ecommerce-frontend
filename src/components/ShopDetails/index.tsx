@@ -9,6 +9,7 @@ import { useAppSelector } from "@/redux/store";
 import { useCart } from "@/hooks/useCart";
 import { productDetailsPublicService, type NormalizedProduct, type NormalizedVariant } from "@/services/productDetailsService";
 import { updateproductDetails } from "@/redux/features/product-details";
+import { toggleWishlist } from "@/redux/features/wishlist-slice";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/redux/store";
 import toast from "react-hot-toast";
@@ -28,10 +29,17 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
   const [previewImg, setPreviewImg] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState("tabOne");
-  const { user, isAuthenticated } = useAuth();
-  const currentUserId = user?.id;
+
   // Dynamic variant system
   const [productDetails, setProductDetails] = useState<NormalizedProduct | null>(null);
+
+  // Wishlist state
+  const wishlistItems = useAppSelector((s) => s.wishlistReducer.items);
+  const isInWishlist = productDetails ? wishlistItems.some((p) => p.id === productDetails.id) : false;
+
+  const { user, isAuthenticated } = useAuth();
+  const currentUserId = user?.id;
+
   const [selectedVariantId, setSelectedVariantId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -591,9 +599,22 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
                         }
                       </button>
 
-                      <a
-                        href="#"
-                        className="flex items-center justify-center w-12 h-12 rounded-md border border-gray-3 ease-out duration-200 hover:text-white hover:bg-dark hover:border-transparent"
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (productDetails) {
+                            const res = await dispatch(toggleWishlist(productDetails as any));
+                            const products = res.payload as any[] | undefined;
+                            if (products) {
+                              const isIn = products.some((p) => p.id === productDetails.id);
+                              toast(isIn ? "Añadido a tu wishlist" : "Quitado de tu wishlist");
+                            }
+                          }
+                        }}
+                        className={`flex items-center justify-center w-12 h-12 rounded-md border ease-out duration-200 ${isInWishlist
+                          ? "bg-blue border-blue text-white hover:bg-blue-dark"
+                          : "bg-white border-gray-3 text-dark hover:text-white hover:bg-dark hover:border-transparent"
+                          }`}
                       >
                         <svg
                           className="fill-current"
@@ -610,7 +631,7 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
                             fill=""
                           />
                         </svg>
-                      </a>
+                      </button>
                     </div>
                   </form>
                 </div>

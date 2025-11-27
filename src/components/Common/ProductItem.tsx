@@ -4,18 +4,21 @@ import Image from "next/image";
 import { Product } from "@/types/product";
 import { useModalContext } from "@/app/context/QuickViewModalContext";
 import { updateQuickView } from "@/redux/features/quickView-slice";
-import { addItemToWishlist } from "@/redux/features/wishlist-slice";
+import { toggleWishlist } from "@/redux/features/wishlist-slice";
+import toast from "react-hot-toast";
 import { updateproductDetails } from "@/redux/features/product-details";
 import { generateProductUrl } from "@/utils/slug";
 import { StarRating } from "@/components/Common/StarRating";
 import { useDispatch } from "react-redux";
-import { AppDispatch } from "@/redux/store";
+import { AppDispatch, useAppSelector } from "@/redux/store";
 import Link from "next/link";
 import { useCart } from "@/hooks/useCart"; // 👈
 
 const ProductItem = ({ item }: { item: Product }) => {
   const { openModal } = useModalContext();
   const dispatch = useDispatch<AppDispatch>();
+  const wishlistItems = useAppSelector((s) => s.wishlistReducer.items);
+  const isInWishlist = wishlistItems.some((p) => p.id === item.id);
   const { addItem } = useCart(); // 👈
 
   const handleQuickViewUpdate = () => {
@@ -39,12 +42,13 @@ const ProductItem = ({ item }: { item: Product }) => {
     });
   };
 
-  const handleItemToWishList = () => {
-    dispatch(
-      addItemToWishlist({
-        ...item,
-      })
-    );
+  const handleItemToWishList = async () => {
+    const res = await dispatch(toggleWishlist(item));
+    const products = res.payload as Product[] | undefined;
+    if (products) {
+      const isIn = products.some((p) => p.id === item.id);
+      toast(isIn ? "Añadido a tu wishlist" : "Quitado de tu wishlist");
+    }
   };
 
   const handleProductDetails = () => {
@@ -100,7 +104,8 @@ const ProductItem = ({ item }: { item: Product }) => {
             onClick={() => handleItemToWishList()}
             aria-label="button for favorite select"
             id="favOne"
-            className="flex items-center justify-center w-9 h-9 rounded-[5px] shadow-1 ease-out duration-200 text-dark bg-white hover:text-blue"
+            className={`flex items-center justify-center w-9 h-9 rounded-[5px] shadow-1 ease-out duration-200 ${isInWishlist ? "bg-blue text-white" : "bg-white text-dark hover:text-blue"
+              }`}
           >
             <svg
               className="fill-current"

@@ -8,6 +8,8 @@ import { useDispatch } from "react-redux";
 import Image from "next/image";
 import { usePreviewSlider } from "@/app/context/PreviewSliderContext";
 import { updateproductDetails } from "@/redux/features/product-details";
+import { toggleWishlist } from "@/redux/features/wishlist-slice";
+import toast from "react-hot-toast";
 import {
   productDetailsPublicService,
   type NormalizedProduct,
@@ -46,6 +48,10 @@ const QuickViewModal = () => {
   const [selectedVariantId, setSelectedVariantId] = useState<number | null>(null);
 
   const [showFullDesc, setShowFullDesc] = useState(false);
+
+  // Wishlist state
+  const wishlistItems = useAppSelector((s) => s.wishlistReducer.items);
+  const isInWishlist = product ? wishlistItems.some((p) => p.id === product.id) : false;
 
   const description = details?.description ?? ""; // el "light" no suele traer description
   const shownDesc = useMemo(() => {
@@ -545,7 +551,22 @@ const QuickViewModal = () => {
                   Add to Cart
                 </button>
 
-                <button className="inline-flex items-center gap-2 font-medium text-white bg-dark py-3 px-6 rounded-md ease-out duration-200 hover:bg-opacity-95 ">
+                <button
+                  onClick={async () => {
+                    if (product) {
+                      const res = await dispatch(toggleWishlist(product as any));
+                      const products = res.payload as any[] | undefined;
+                      if (products) {
+                        const isIn = products.some((p) => p.id === product.id);
+                        toast(isIn ? "Añadido a tu wishlist" : "Quitado de tu wishlist");
+                      }
+                    }
+                  }}
+                  className={`inline-flex items-center gap-2 font-medium py-3 px-6 rounded-md ease-out duration-200 ${isInWishlist
+                      ? "bg-blue text-white hover:bg-blue-dark"
+                      : "bg-dark text-white hover:bg-opacity-95"
+                    }`}
+                >
                   {/* heart icon */}
                   <svg
                     className="fill-current"
@@ -562,7 +583,7 @@ const QuickViewModal = () => {
                       fill=""
                     />
                   </svg>
-                  Add to Wishlist
+                  {isInWishlist ? "En Wishlist" : "Add to Wishlist"}
                 </button>
               </div>
             </div>
