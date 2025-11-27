@@ -68,6 +68,7 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
       try {
         const details = await productDetailsPublicService.getNormalized(product.id);
         setProductDetails(details);
+
         
         // Set default variant if product has variants
         if (details.hasVariants && details.variants.length > 0) {

@@ -3,7 +3,7 @@ import { api } from "@/lib/api";
 
 /** ===== Bases ===== */
 const basePublic = "/products"; // pasa por app/api/p/[...path]/route.ts (público)
-const baseAdmin  = "/products"; // pasa por app/api/b/[...path]/route.ts (con Bearer)
+const baseAdmin = "/products"; // pasa por app/api/b/[...path]/route.ts (con Bearer)
 
 /** ===== Tipos mínimos del endpoint /products/:id/details ===== */
 type ImageSet = { thumbnails: string[]; previews: string[] };
@@ -21,7 +21,8 @@ type APIVariant = {
 type APIProductBase = {
   id: number;
   title: string;
-  reviews: number;
+  averageRating: number | null;
+  totalReviews: number;
   imgs: ImageSet;
   description: string;
   sku: string;
@@ -67,6 +68,8 @@ export type NormalizedProduct = {
   category: string;
   sku: string;
   images: string[];
+  averageRating: number;
+  totalReviews: number;
   hasVariants: boolean;
   options: Record<string, string[]>;
   variants: NormalizedVariant[];
@@ -125,6 +128,8 @@ function normalize(p: ProductDetailsRaw): NormalizedProduct {
       category: pv.category,
       sku: pv.sku,
       images: pv.imgs?.previews ?? [],
+      averageRating: pv.averageRating ?? 0,
+      totalReviews: pv.totalReviews ?? 0,
       hasVariants: true,
       options: pv.variantOptions ?? {},
       variants,
@@ -148,6 +153,8 @@ function normalize(p: ProductDetailsRaw): NormalizedProduct {
       category: ps.category,
       sku: ps.sku,
       images: ps.imgs?.previews ?? [],
+      averageRating: ps.averageRating ?? 0,
+      totalReviews: ps.totalReviews ?? 0,
       hasVariants: false,
       options: {},
       variants: [],

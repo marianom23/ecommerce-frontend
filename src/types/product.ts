@@ -2,7 +2,8 @@ export type FulfillmentType = 'PHYSICAL' | 'DIGITAL_ON_DEMAND' | 'DIGITAL_INSTAN
 
 export type Product = {
   title: string;
-  reviews: number;
+  averageRating: number | null;
+  totalReviews: number;
   price: number;
   discountedPrice: number;
   id: number;

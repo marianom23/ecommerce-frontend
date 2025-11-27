@@ -14,6 +14,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { updateproductDetails } from "@/redux/features/product-details";
 import { generateProductUrl } from "@/utils/slug";
+import { StarRating } from "@/components/Common/StarRating";
 
 const SingleGridItem = ({ item }: { item: Product }) => {
   const { openModal } = useModalContext();
@@ -62,7 +63,7 @@ const SingleGridItem = ({ item }: { item: Product }) => {
     item.imgs?.previews?.[0] ??
     item.imgs?.thumbnails?.[0] ??
     "/placeholder.png";
-    
+
   // 👇 CLASES DINÁMICAS ajustadas para asegurar el relleno
   const wishlistButtonClasses = `
     flex items-center justify-center w-9 h-9 rounded-[5px] shadow-1 ease-out duration-200 bg-white 
@@ -141,42 +142,7 @@ const SingleGridItem = ({ item }: { item: Product }) => {
         </div>
       </div>
 
-      <div className="flex items-center gap-2.5 mb-2">
-        <div className="flex items-center gap-1">
-          <Image
-            src="/images/icons/icon-star.svg"
-            alt="star icon"
-            width={15}
-            height={15}
-          />
-          <Image
-            src="/images/icons/icon-star.svg"
-            alt="star icon"
-            width={15}
-            height={15}
-          />
-          <Image
-            src="/images/icons/icon-star.svg"
-            alt="star icon"
-            width={15}
-            height={15}
-          />
-          <Image
-            src="/images/icons/icon-star.svg"
-            alt="star icon"
-            width={15}
-            height={15}
-          />
-          <Image
-            src="/images/icons/icon-star.svg"
-            alt="star icon"
-            width={15}
-            height={15}
-          />
-        </div>
-
-        <p className="text-custom-sm">({item.reviews})</p>
-      </div>
+      <StarRating rating={item.averageRating} totalReviews={item.totalReviews} />
 
       <h3 className="font-medium text-dark ease-out duration-200 hover:text-blue mb-1.5">
         <Link href={generateProductUrl(item.id, item.title)} onClick={handleProductDetails}> {item.title} </Link>

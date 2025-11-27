@@ -12,6 +12,7 @@ import { useCart } from "@/hooks/useCart";
 import toast from "react-hot-toast";
 import { updateproductDetails } from "@/redux/features/product-details";
 import { generateProductUrl } from "@/utils/slug";
+import { StarRating } from "@/components/Common/StarRating";
 
 const SingleListItem = ({ item }: { item: Product }) => {
   const { openModal } = useModalContext();
@@ -125,42 +126,7 @@ const SingleListItem = ({ item }: { item: Product }) => {
             </span>
           </div>
 
-          <div className="flex items-center gap-2.5 mb-2">
-            <div className="flex items-center gap-1">
-              <Image
-                src="/images/icons/icon-star.svg"
-                alt="star icon"
-                width={15}
-                height={15}
-              />
-              <Image
-                src="/images/icons/icon-star.svg"
-                alt="star icon"
-                width={15}
-                height={15}
-              />
-              <Image
-                src="/images/icons/icon-star.svg"
-                alt="star icon"
-                width={15}
-                height={15}
-              />
-              <Image
-                src="/images/icons/icon-star.svg"
-                alt="star icon"
-                width={15}
-                height={15}
-              />
-              <Image
-                src="/images/icons/icon-star.svg"
-                alt="star icon"
-                width={15}
-                height={15}
-              />
-            </div>
-
-            <p className="text-custom-sm">({item.reviews})</p>
-          </div>
+          <StarRating rating={item.averageRating} totalReviews={item.totalReviews} />
         </div>
       </div>
     </div>

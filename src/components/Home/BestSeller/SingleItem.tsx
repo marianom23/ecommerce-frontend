@@ -10,6 +10,7 @@ import { updateQuickView } from "@/redux/features/quickView-slice";
 import { useCart } from "@/hooks/useCart";
 import { addItemToWishlist } from "@/redux/features/wishlist-slice";
 import toast from "react-hot-toast";
+import { StarRating } from "@/components/Common/StarRating";
 
 const SingleItem = ({ item }: { item: Product }) => {
 
@@ -26,63 +27,31 @@ const SingleItem = ({ item }: { item: Product }) => {
   const shouldOpenVariantPicker = (p: Product) =>
     p.variantCount === 0 || p.variantCount > 1 || p.defaultVariantId == null;
 
-    const handleAddToCart = async () => {
-      if (shouldOpenVariantPicker(item)) {
-        dispatch(updateQuickView({ ...item }));
-        openModal();
-        toast("Debes elegir una variante del producto", { icon: "👈" });
-        return;
-      }
+  const handleAddToCart = async () => {
+    if (shouldOpenVariantPicker(item)) {
+      dispatch(updateQuickView({ ...item }));
+      openModal();
+      toast("Debes elegir una variante del producto", { icon: "👈" });
+      return;
+    }
 
-      await addItem({
-        productId: item.id,
-        variantId: item.defaultVariantId!, // garantizado por el guard
-        quantity: 1,
-      });
-    };
+    await addItem({
+      productId: item.id,
+      variantId: item.defaultVariantId!, // garantizado por el guard
+      quantity: 1,
+    });
+  };
 
   const handleItemToWishList = () => {
-    dispatch(addItemToWishlist({ ...item}));
+    dispatch(addItemToWishlist({ ...item }));
   };
 
   return (
     <div className="group">
       <div className="relative overflow-hidden rounded-lg bg-[#F6F7FB] min-h-[403px]">
         <div className="text-center px-4 py-7.5">
-          <div className="flex items-center justify-center gap-2.5 mb-2">
-            <div className="flex items-center gap-1">
-              <Image
-                src="/images/icons/icon-star.svg"
-                alt="star icon"
-                width={14}
-                height={14}
-              />
-              <Image
-                src="/images/icons/icon-star.svg"
-                alt="star icon"
-                width={14}
-                height={14}
-              />
-              <Image
-                src="/images/icons/icon-star.svg"
-                alt="star icon"
-                width={14}
-                height={14}
-              />
-              <Image
-                src="/images/icons/icon-star.svg"
-                alt="star icon"
-                width={14}
-                height={14}
-              />
-              <Image
-                src="/images/icons/icon-star.svg"
-                alt="star icon"
-                width={14}
-                height={14}
-              />
-            </div>
-            <p className="text-custom-sm">({item.reviews})</p>
+          <div className="flex justify-center">
+            <StarRating rating={item.averageRating} totalReviews={item.totalReviews} size={14} />
           </div>
 
           <h3 className="font-medium text-dark ease-out duration-200 hover:text-blue mb-1.5">
