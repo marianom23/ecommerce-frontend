@@ -1,7 +1,9 @@
 "use client";
 import React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
+import { authService } from "@/services/authService";
 import Breadcrumb from "../Common/Breadcrumb";
 import AddressModal from "./AddressModal";
 import Orders from "../Orders";
@@ -39,6 +41,17 @@ const TabLink = ({
 
 export default function MyAccount({ current }: MyAccountProps) {
   const { user } = useAuth();
+  const router = useRouter();
+
+  const handleLogout = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    try {
+      await authService.logout();
+      window.location.href = "/";
+    } catch (error) {
+      console.error("Logout failed", error);
+    }
+  };
 
   return (
     <>
@@ -86,10 +99,13 @@ export default function MyAccount({ current }: MyAccountProps) {
                       Detalles de Cuenta
                     </TabLink>
 
-                    <TabLink href="/mi-cuenta/logout" active={current === "logout"}>
+                    <button
+                      onClick={handleLogout}
+                      className="flex items-center rounded-md gap-2.5 py-3 px-4.5 ease-out duration-200 hover:bg-blue hover:text-white text-dark-2 bg-gray-1 w-full text-left"
+                    >
                       <svg className="fill-current" width="22" height="22" viewBox="0 0 22 22" aria-hidden />
                       Cerrar Sesión
-                    </TabLink>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -104,12 +120,12 @@ export default function MyAccount({ current }: MyAccountProps) {
             <div className={`xl:max-w-[770px] w-full bg-white rounded-xl shadow-1 py-9.5 px-4 sm:px-7.5 xl:px-10 ${current === "dashboard" ? "block" : "hidden"}`}>
               <p className="text-dark">
                 Hola {user?.firstName ? user.firstName : user?.name || "Usuario"} (¿no eres {user?.firstName ? user.firstName : user?.name || "Usuario"}?
-                <a
-                  href="#"
+                <button
+                  onClick={handleLogout}
                   className="text-red ease-out duration-200 hover:underline"
                 >
                   Cerrar Sesión
-                </a>
+                </button>
                 )
               </p>
 
