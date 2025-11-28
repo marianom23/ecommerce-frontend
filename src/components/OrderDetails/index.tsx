@@ -13,7 +13,7 @@ import { statusToBadge, fmtDate, fmtMoney } from "@/utils/orders";
 type Props = { orderNumber: string };
 
 export default function OrderDetails({ orderNumber }: Props) {
-  
+
 
   console.log(orderNumber);
 
@@ -84,8 +84,13 @@ export default function OrderDetails({ orderNumber }: Props) {
         <p><strong>Método:</strong> {p.method}</p>
         <p><strong>Estado:</strong> {p.status}</p>
         <p><strong>Importe:</strong> {fmtMoney(p.amount)}</p>
-        {p.redirectUrl && (
-          <a href={p.redirectUrl} target="_blank" rel="noreferrer" className="text-blue-500 underline">
+        {p.redirectUrl && p.status === 'INITIATED' && (
+          <a
+            href={p.redirectUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-2 inline-block bg-blue text-white text-sm font-medium py-2 px-4 rounded-md hover:bg-blue-dark transition"
+          >
             Ir al checkout
           </a>
         )}
