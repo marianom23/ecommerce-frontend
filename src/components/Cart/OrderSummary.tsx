@@ -121,7 +121,7 @@ const OrderSummary = () => {
                 : "text-white bg-blue hover:bg-blue-dark"
               } disabled:opacity-60 disabled:cursor-not-allowed`}
           >
-            {isLoading ? "Creando orden..." : "Proceder al Pago"}
+            {isLoading ? "Creando orden..." : "Proceder a checkout"}
           </button>
         </div>
       </div>

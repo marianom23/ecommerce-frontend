@@ -116,7 +116,7 @@ const Checkout = () => {
                 <Shipping orderId={orderId} onSelected={setShippingSelected} />
 
                 {/* Notas (opcional, si luego las querés enviar al back, agregá estado y PATCH) */}
-                <div className="bg-white shadow-1 rounded-[10px] p-4 sm:p-8.5 mt-7.5">
+                {/* <div className="bg-white shadow-1 rounded-[10px] p-4 sm:p-8.5 mt-7.5">
                   <div>
                     <label htmlFor="notes" className="block mb-2.5">
                       Otras notas (opcional)
@@ -128,7 +128,7 @@ const Checkout = () => {
                       placeholder="Notas sobre tu pedido (opcional)"
                     />
                   </div>
-                </div>
+                </div> */}
               </div>
 
               {/* right */}
