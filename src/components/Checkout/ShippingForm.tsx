@@ -1,13 +1,15 @@
 "use client";
-import React, { useState } from "react";
-import { AddressRequest, AddressResponse, addressService } from "@/services/addressService";
+import React, { useState, useEffect } from "react";
+import { AddressRequest, AddressResponse, addressService, AddressType } from "@/services/addressService";
 
 const ShippingForm: React.FC<{
+  initialData?: AddressResponse;
+  type?: AddressType;
   onSaved: (addr: AddressResponse) => void;
   onCancel?: () => void;
-}> = ({ onSaved, onCancel }) => {
+}> = ({ initialData, type = "SHIPPING", onSaved, onCancel }) => {
   const [form, setForm] = useState<AddressRequest>({
-    type: "SHIPPING",
+    type: type,
     street: "",
     streetNumber: "",
     apartmentNumber: "",
@@ -20,125 +22,137 @@ const ShippingForm: React.FC<{
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (initialData) {
+      setForm({
+        type: initialData.type,
+        street: initialData.street,
+        streetNumber: initialData.streetNumber || "",
+        apartmentNumber: initialData.apartmentNumber || "",
+        floor: initialData.floor || "",
+        city: initialData.city,
+        state: initialData.state || "",
+        postalCode: initialData.postalCode || "",
+        country: initialData.country,
+      });
+    } else {
+      setForm(prev => ({ ...prev, type }));
+    }
+  }, [initialData, type]);
+
   async function save() {
     if (loading) return;
     setErr(null);
     setLoading(true);
     try {
-      const created = await addressService.create(form);
-      onSaved(created);
+      let result: AddressResponse;
+      if (initialData) {
+        result = await addressService.update(initialData.id, form);
+      } else {
+        result = await addressService.create(form);
+      }
+      onSaved(result);
     } catch (e: any) {
-      setErr(e?.message || "No se pudo guardar la dirección.");
+      setErr(e?.response?.data?.message || "Error al guardar la dirección");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="bg-white shadow-1 rounded-[10px] p-4 sm:p-8.5">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="font-medium text-lg text-dark">Cargar dirección de envío</h3>
-        {onCancel && (
-          <button type="button" onClick={onCancel} className="text-blue text-sm">Cancelar</button>
-        )}
-      </div>
+    <div className="bg-gray-1 rounded-[10px] p-4 sm:p-6">
+      <h3 className="font-medium text-dark mb-4">
+        {initialData ? "Editar dirección" : "Nueva dirección"}
+      </h3>
 
-      {err && <p className="mb-4 text-red-600 text-sm">{err}</p>}
+      {err && <div className="text-red-500 text-sm mb-3">{err}</div>}
 
-      {/* Country */}
-      <div className="mb-5">
-        <label htmlFor="countryName" className="block mb-2.5">Country/Region <span className="text-red">*</span></label>
-        <input
-          id="countryName"
-          className="rounded-md border border-gray-3 bg-gray-1 w-full py-2.5 px-5 outline-none focus:shadow-input focus:ring-2 focus:ring-blue/20"
-          value={form.country}
-          onChange={(e) => setForm((f) => ({ ...f, country: e.target.value }))}
-          required
-          placeholder="Argentina"
-        />
-      </div>
-
-      {/* Street */}
-      <div className="mb-5">
-        <label htmlFor="street" className="block mb-2.5">Street Address <span className="text-red">*</span></label>
-        <input
-          id="street"
-          className="rounded-md border border-gray-3 bg-gray-1 w-full py-2.5 px-5 outline-none focus:shadow-input focus:ring-2 focus:ring-blue/20"
-          value={form.street}
-          onChange={(e) => setForm((f) => ({ ...f, street: e.target.value }))}
-          placeholder="Calle"
-          required
-        />
-
-        <div className="mt-5 grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+        <div>
+          <label className="block text-sm text-dark-5 mb-1">Calle</label>
           <input
-            id="streetNumber"
-            className="rounded-md border border-gray-3 bg-gray-1 w-full py-2.5 px-5 outline-none focus:shadow-input focus:ring-2 focus:ring-blue/20"
+            className="w-full border border-gray-3 rounded px-3 py-2 text-sm focus:border-blue outline-none"
+            value={form.street}
+            onChange={(e) => setForm({ ...form, street: e.target.value })}
+            placeholder="Ej: Av. Corrientes"
+          />
+        </div>
+        <div>
+          <label className="block text-sm text-dark-5 mb-1">Altura</label>
+          <input
+            className="w-full border border-gray-3 rounded px-3 py-2 text-sm focus:border-blue outline-none"
             value={form.streetNumber || ""}
-            onChange={(e) => setForm((f) => ({ ...f, streetNumber: e.target.value }))}
-            placeholder="Número"
+            onChange={(e) => setForm({ ...form, streetNumber: e.target.value })}
+            placeholder="1234"
           />
+        </div>
+        <div>
+          <label className="block text-sm text-dark-5 mb-1">Piso (opcional)</label>
           <input
-            id="floor"
-            className="rounded-md border border-gray-3 bg-gray-1 w-full py-2.5 px-5 outline-none focus:shadow-input focus:ring-2 focus:ring-blue/20"
+            className="w-full border border-gray-3 rounded px-3 py-2 text-sm focus:border-blue outline-none"
             value={form.floor || ""}
-            onChange={(e) => setForm((f) => ({ ...f, floor: e.target.value }))}
-            placeholder="Piso"
+            onChange={(e) => setForm({ ...form, floor: e.target.value })}
           />
+        </div>
+        <div>
+          <label className="block text-sm text-dark-5 mb-1">Depto (opcional)</label>
           <input
-            id="apartmentNumber"
-            className="rounded-md border border-gray-3 bg-gray-1 w-full py-2.5 px-5 outline-none focus:shadow-input focus:ring-2 focus:ring-blue/20"
+            className="w-full border border-gray-3 rounded px-3 py-2 text-sm focus:border-blue outline-none"
             value={form.apartmentNumber || ""}
-            onChange={(e) => setForm((f) => ({ ...f, apartmentNumber: e.target.value }))}
-            placeholder="Depto"
+            onChange={(e) => setForm({ ...form, apartmentNumber: e.target.value })}
           />
         </div>
-      </div>
-
-      {/* City */}
-      <div className="mb-5">
-        <label htmlFor="city" className="block mb-2.5">Town/City <span className="text-red">*</span></label>
-        <input
-          id="city"
-          className="rounded-md border border-gray-3 bg-gray-1 w-full py-2.5 px-5 outline-none focus:shadow-input focus:ring-2 focus:ring-blue/20"
-          value={form.city}
-          onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
-          required
-        />
-      </div>
-
-      {/* State / Postal */}
-      <div className="mb-5 grid grid-cols-2 gap-3">
         <div>
-          <label htmlFor="state" className="block mb-2.5">State / Province</label>
+          <label className="block text-sm text-dark-5 mb-1">Ciudad / Localidad</label>
           <input
-            id="state"
-            className="rounded-md border border-gray-3 bg-gray-1 w-full py-2.5 px-5 outline-none focus:shadow-input focus:ring-2 focus:ring-blue/20"
+            className="w-full border border-gray-3 rounded px-3 py-2 text-sm focus:border-blue outline-none"
+            value={form.city}
+            onChange={(e) => setForm({ ...form, city: e.target.value })}
+          />
+        </div>
+        <div>
+          <label className="block text-sm text-dark-5 mb-1">Provincia / Estado</label>
+          <input
+            className="w-full border border-gray-3 rounded px-3 py-2 text-sm focus:border-blue outline-none"
             value={form.state || ""}
-            onChange={(e) => setForm((f) => ({ ...f, state: e.target.value }))}
-            placeholder="Mendoza"
+            onChange={(e) => setForm({ ...form, state: e.target.value })}
           />
         </div>
         <div>
-          <label htmlFor="postalCode" className="block mb-2.5">Postal Code</label>
+          <label className="block text-sm text-dark-5 mb-1">Código Postal</label>
           <input
-            id="postalCode"
-            className="rounded-md border border-gray-3 bg-gray-1 w-full py-2.5 px-5 outline-none focus:shadow-input focus:ring-2 focus:ring-blue/20"
+            className="w-full border border-gray-3 rounded px-3 py-2 text-sm focus:border-blue outline-none"
             value={form.postalCode || ""}
-            onChange={(e) => setForm((f) => ({ ...f, postalCode: e.target.value }))}
-            placeholder="5500"
+            onChange={(e) => setForm({ ...form, postalCode: e.target.value })}
+          />
+        </div>
+        <div>
+          <label className="block text-sm text-dark-5 mb-1">País</label>
+          <input
+            className="w-full border border-gray-3 rounded px-3 py-2 text-sm focus:border-blue outline-none bg-gray-2"
+            value={form.country}
+            disabled
           />
         </div>
       </div>
 
-      <button
-        type="button"
-        disabled={loading}
-        onClick={save}
-        className="w-full inline-flex items-center justify-center font-medium text-white bg-blue py-3 px-6 rounded-md ease-out duration-200 hover:bg-blue-dark mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
-      >
-        {loading ? "Guardando..." : "Guardar dirección de facturación"}
-      </button>
+      <div className="flex justify-end gap-3">
+        {onCancel && (
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 text-sm font-medium text-dark-5 hover:text-dark"
+          >
+            Cancelar
+          </button>
+        )}
+        <button
+          onClick={save}
+          disabled={loading || !form.street || !form.streetNumber || !form.city}
+          className="px-6 py-2 bg-blue text-white text-sm font-medium rounded hover:bg-blue-dark disabled:opacity-50"
+        >
+          {loading ? "Guardando..." : "Guardar"}
+        </button>
+      </div>
     </div>
   );
 };
