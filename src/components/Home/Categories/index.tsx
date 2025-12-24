@@ -59,8 +59,7 @@ const Categories = () => {
         const cats = (facets?.categoryFacets ?? []).map((c: CategoryFacet) => ({
           id: Number(c.id),
           title: c.name,
-          // si tu backend trae imagen de la categoría, usala acá (p.ej. c.imageUrl)
-          img: (c as any)?.imageUrl ?? null,
+          img: c.imageUrl ?? null,
           count: c.count,
         }));
 
