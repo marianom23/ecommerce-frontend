@@ -30,7 +30,7 @@ const Hero = ({ banners }: { banners: import("@/types/banner").Banner[] }) => {
           <div className="xl:max-w-[393px] w-full">
             <div className="flex flex-col sm:flex-row xl:flex-col gap-5 h-full">
               {sideTop && (
-                <div className="w-full relative rounded-[10px] bg-white p-4 sm:p-7.5 flex-1">
+                <div className="w-full relative rounded-[10px] bg-white p-4 sm:p-7.5 flex-1 overflow-hidden">
                   <div className="flex items-start justify-between h-full">
                     <div className="flex flex-col justify-between h-full relative z-10">
                       <h2 className="max-w-[153px] font-semibold text-dark text-xl mb-4">
@@ -44,12 +44,12 @@ const Hero = ({ banners }: { banners: import("@/types/banner").Banner[] }) => {
                       </div>
                     </div>
 
-                    <div className="flex-shrink-0 absolute right-4 bottom-4 sm:right-7.5 sm:bottom-7.5">
+                    <div className="flex-shrink-0 absolute right-0 bottom-0">
                       <Image
                         src={sideTop.imageUrl}
                         alt={sideTop.title}
-                        width={120}
-                        height={120}
+                        width={200}
+                        height={200}
                         className="object-contain"
                       />
                     </div>
@@ -58,7 +58,7 @@ const Hero = ({ banners }: { banners: import("@/types/banner").Banner[] }) => {
               )}
 
               {sideBottom && (
-                <div className="w-full relative rounded-[10px] bg-white p-4 sm:p-7.5 flex-1">
+                <div className="w-full relative rounded-[10px] bg-white p-4 sm:p-7.5 flex-1 overflow-hidden">
                   <div className="flex items-start justify-between h-full">
                     <div className="flex flex-col justify-between h-full relative z-10">
                       <h2 className="max-w-[153px] font-semibold text-dark text-xl mb-4">
@@ -72,12 +72,12 @@ const Hero = ({ banners }: { banners: import("@/types/banner").Banner[] }) => {
                       </div>
                     </div>
 
-                    <div className="flex-shrink-0 absolute right-4 bottom-4 sm:right-7.5 sm:bottom-7.5">
+                    <div className="flex-shrink-0 absolute right-0 bottom-0">
                       <Image
                         src={sideBottom.imageUrl}
                         alt={sideBottom.title}
-                        width={120}
-                        height={120}
+                        width={200}
+                        height={200}
                         className="object-contain"
                       />
                     </div>
