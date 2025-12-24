@@ -32,34 +32,25 @@ const Hero = ({ banners }: { banners: import("@/types/banner").Banner[] }) => {
               {sideTop && (
                 <div className="w-full relative rounded-[10px] bg-white p-4 sm:p-7.5 flex-1">
                   <div className="flex items-start justify-between h-full">
-                    <div className="flex flex-col justify-between h-full">
+                    <div className="flex flex-col justify-between h-full relative z-10">
                       <h2 className="max-w-[153px] font-semibold text-dark text-xl mb-4">
                         <a href={sideTop.ctaUrl || "#"}> {sideTop.title} </a>
                       </h2>
 
                       <div>
-                        <p className="font-medium text-dark-4 text-custom-sm mb-1.5">
-                          {sideTop.subtitle}
+                        <p className="font-medium text-blue text-custom-sm mb-1.5">
+                          Compralo por ${sideTop.price}
                         </p>
-                        <span className="flex items-center gap-3">
-                          <span className="font-medium text-heading-5 text-red">
-                            ${sideTop.price}
-                          </span>
-                          {sideTop.oldPrice && (
-                            <span className="font-medium text-2xl text-dark-4 line-through">
-                              ${sideTop.oldPrice}
-                            </span>
-                          )}
-                        </span>
                       </div>
                     </div>
 
-                    <div className="flex-shrink-0">
+                    <div className="flex-shrink-0 absolute right-4 bottom-4 sm:right-7.5 sm:bottom-7.5">
                       <Image
                         src={sideTop.imageUrl}
                         alt={sideTop.title}
-                        width={123}
-                        height={161}
+                        width={120}
+                        height={120}
+                        className="object-contain"
                       />
                     </div>
                   </div>
@@ -69,34 +60,25 @@ const Hero = ({ banners }: { banners: import("@/types/banner").Banner[] }) => {
               {sideBottom && (
                 <div className="w-full relative rounded-[10px] bg-white p-4 sm:p-7.5 flex-1">
                   <div className="flex items-start justify-between h-full">
-                    <div className="flex flex-col justify-between h-full">
+                    <div className="flex flex-col justify-between h-full relative z-10">
                       <h2 className="max-w-[153px] font-semibold text-dark text-xl mb-4">
                         <a href={sideBottom.ctaUrl || "#"}> {sideBottom.title} </a>
                       </h2>
 
                       <div>
-                        <p className="font-medium text-dark-4 text-custom-sm mb-1.5">
-                          {sideBottom.subtitle}
+                        <p className="font-medium text-blue text-custom-sm mb-1.5">
+                          Compralo por ${sideBottom.price}
                         </p>
-                        <span className="flex items-center gap-3">
-                          <span className="font-medium text-heading-5 text-red">
-                            ${sideBottom.price}
-                          </span>
-                          {sideBottom.oldPrice && (
-                            <span className="font-medium text-2xl text-dark-4 line-through">
-                              ${sideBottom.oldPrice}
-                            </span>
-                          )}
-                        </span>
                       </div>
                     </div>
 
-                    <div className="flex-shrink-0">
+                    <div className="flex-shrink-0 absolute right-4 bottom-4 sm:right-7.5 sm:bottom-7.5">
                       <Image
                         src={sideBottom.imageUrl}
                         alt={sideBottom.title}
-                        width={123}
-                        height={161}
+                        width={120}
+                        height={120}
+                        className="object-contain"
                       />
                     </div>
                   </div>
