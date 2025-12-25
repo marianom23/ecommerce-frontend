@@ -37,7 +37,7 @@ const SingleItem: React.FC<{ item: Product }> = ({ item }) => {
     }
     await addItem({
       productId: item.id,
-      variantId: item.defaultVariantId!,
+      variantId: item.defaultVariantId,
       quantity: 1,
     });
     // toast.success("Agregado al carrito"); // opcional

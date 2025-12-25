@@ -520,6 +520,7 @@ const QuickViewModal = () => {
                   <h4 className="font-semibold text-lg text-dark mb-3.5">Cantidad</h4>
                   <div className="flex items-center gap-3">
                     <button
+                      type="button"
                       onClick={() => setQuantity(q => Math.max(1, q - 1))}
                       aria-label="button for remove product"
                       className="flex items-center justify-center w-10 h-10 rounded-[5px] bg-gray-2 text-dark ease-out duration-200 hover:text-blue"
@@ -546,8 +547,9 @@ const QuickViewModal = () => {
                     </span>
 
                     <button
+                      type="button"
                       onClick={() => {
-                        const max = variantStock ?? 9999;
+                        const max = isDigitalOnDemand ? 9999 : (variantStock ?? 9999);
                         setQuantity(q => Math.min(q + 1, max));
                       }}
                       aria-label="button for add product"

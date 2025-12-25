@@ -100,7 +100,7 @@ const PromoBanner = ({ banners }: { banners: import("@/types/banner").Banner[] }
                   {smallBanner2.title}
                 </h2>
 
-                <p className="max-w-[285px] text-custom-sm">
+                <p className="font-semibold text-custom-1 text-orange">
                   {smallBanner2.description}
                 </p>
 

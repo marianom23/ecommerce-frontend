@@ -54,7 +54,7 @@ export function useCart() {
     refreshLogged: () => dispatch(fetchCartLogged()),
 
     // mutaciones
-    addItem: (p: { productId: number; variantId?: number; quantity: number }) =>
+    addItem: (p: { productId?: number; variantId?: number; quantity: number }) =>
       isLogged ? dispatch(addCartItemLogged(p)) : dispatch(addCartItemGuest(p)),
 
     updateQuantity: (itemId: number, quantity: number) =>

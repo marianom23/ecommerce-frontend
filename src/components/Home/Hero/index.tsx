@@ -28,9 +28,9 @@ const Hero = ({ banners }: { banners: import("@/types/banner").Banner[] }) => {
           </div>
 
           <div className="xl:max-w-[393px] w-full">
-            <div className="flex flex-col sm:flex-row xl:flex-col gap-5 h-full">
+            <div className="flex flex-col lg:flex-row xl:flex-col gap-5 h-full">
               {sideTop && (
-                <div className="w-full relative rounded-[10px] bg-white p-4 sm:p-7.5 flex-1 overflow-hidden">
+                <div className="w-full relative rounded-[10px] bg-white p-4 sm:p-7.5 flex-1 overflow-hidden min-h-[200px]">
                   <div className="flex items-start justify-between h-full">
                     <div className="flex flex-col justify-between h-full relative z-10">
                       <h2 className="max-w-[153px] font-semibold text-dark text-xl mb-4">
@@ -44,7 +44,7 @@ const Hero = ({ banners }: { banners: import("@/types/banner").Banner[] }) => {
                       </div>
                     </div>
 
-                    <div className="flex-shrink-0 absolute right-0 bottom-0">
+                    <div className="flex-shrink-0 absolute right-0 bottom-2">
                       <Image
                         src={sideTop.imageUrl}
                         alt={sideTop.title}
@@ -58,7 +58,7 @@ const Hero = ({ banners }: { banners: import("@/types/banner").Banner[] }) => {
               )}
 
               {sideBottom && (
-                <div className="w-full relative rounded-[10px] bg-white p-4 sm:p-7.5 flex-1 overflow-hidden">
+                <div className="w-full relative rounded-[10px] bg-white p-4 sm:p-7.5 flex-1 overflow-hidden min-h-[200px]">
                   <div className="flex items-start justify-between h-full">
                     <div className="flex flex-col justify-between h-full relative z-10">
                       <h2 className="max-w-[153px] font-semibold text-dark text-xl mb-4">
@@ -72,7 +72,7 @@ const Hero = ({ banners }: { banners: import("@/types/banner").Banner[] }) => {
                       </div>
                     </div>
 
-                    <div className="flex-shrink-0 absolute right-0 bottom-0">
+                    <div className="flex-shrink-0 absolute right-0 bottom-2">
                       <Image
                         src={sideBottom.imageUrl}
                         alt={sideBottom.title}

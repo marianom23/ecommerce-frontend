@@ -22,7 +22,7 @@ export const fetchCartLogged = createAsyncThunk<Cart>("cart/fetchLogged", async 
 
 /* ========== MUTACIONES GUEST ========== */
 export const addCartItemGuest = createAsyncThunk<Cart,
-  { productId: number; variantId?: number; quantity: number },
+  { productId?: number; variantId?: number; quantity: number },
   { rejectValue: string }>(
     "cart/addItemGuest",
     async (body, { rejectWithValue }) => {
@@ -69,7 +69,7 @@ export const clearCartGuest = createAsyncThunk<Cart>(
 
 /* ========== MUTACIONES LOGGED ========== */
 export const addCartItemLogged = createAsyncThunk<Cart,
-  { productId: number; variantId?: number; quantity: number },
+  { productId?: number; variantId?: number; quantity: number },
   { rejectValue: string }>(
     "cart/addItemLogged",
     async (body, { rejectWithValue }) => {

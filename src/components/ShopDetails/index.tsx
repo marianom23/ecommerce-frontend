@@ -267,7 +267,7 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
     try {
       await addItem({
         productId: productDetails.id,
-        variantId: productDetails.hasVariants ? selectedVariantId : undefined,
+        variantId: productDetails.hasVariants && selectedVariantId ? selectedVariantId : undefined,
         quantity,
       });
     } catch (err) {
@@ -452,27 +452,7 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
                       Envío gratuito disponible
                     </li>
 
-                    <li className="flex items-center gap-2.5">
-                      <svg
-                        width="20"
-                        height="20"
-                        viewBox="0 0 20 20"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          d="M13.3589 8.35863C13.603 8.11455 13.603 7.71882 13.3589 7.47475C13.1149 7.23067 12.7191 7.23067 12.4751 7.47475L8.75033 11.1995L7.5256 9.97474C7.28152 9.73067 6.8858 9.73067 6.64172 9.97474C6.39764 10.2188 6.39764 10.6146 6.64172 10.8586L8.30838 12.5253C8.55246 12.7694 8.94819 12.7694 9.19227 12.5253L13.3589 8.35863Z"
-                          fill="#3C50E0"
-                        />
-                        <path
-                          fillRule="evenodd"
-                          clipRule="evenodd"
-                          d="M10.0003 1.04169C5.05277 1.04169 1.04199 5.05247 1.04199 10C1.04199 14.9476 5.05277 18.9584 10.0003 18.9584C14.9479 18.9584 18.9587 14.9476 18.9587 10C18.9587 5.05247 14.9479 1.04169 10.0003 1.04169ZM2.29199 10C2.29199 5.74283 5.74313 2.29169 10.0003 2.29169C14.2575 2.29169 17.7087 5.74283 17.7087 10C17.7087 14.2572 14.2575 17.7084 10.0003 17.7084C5.74313 17.7084 2.29199 14.2572 2.29199 10Z"
-                          fill="#3C50E0"
-                        />
-                      </svg>
-                      Oferta 30% de descuento. Usa el código: PROMO30
-                    </li>
+
                   </ul>
 
                   <form onSubmit={(e) => e.preventDefault()}>
@@ -569,6 +549,7 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
                     <div className="flex flex-wrap items-center gap-4.5">
                       <div className="flex items-center rounded-md border border-gray-3">
                         <button
+                          type="button"
                           aria-label="button for remove product"
                           className="flex items-center justify-center w-12 h-12 ease-out duration-200 hover:text-blue"
                           onClick={() =>
@@ -595,8 +576,10 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
                         </span>
 
                         <button
+                          type="button"
                           onClick={() => {
-                            const max = selectedVariant?.stock ?? 9999;
+                            const isDigital = productDetails?.fulfillmentType === 'DIGITAL_ON_DEMAND';
+                            const max = isDigital ? 9999 : (selectedVariant?.stock ?? productDetails?.stockTotal ?? 9999);
                             setQuantity(q => Math.min(q + 1, max));
                           }}
                           aria-label="button for add product"
@@ -623,12 +606,13 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
                       </div>
 
                       <button
+                        type="button"
                         onClick={handleAddToCart}
                         disabled={!isInStock || quantity === 0}
                         className="inline-flex font-medium text-white bg-blue py-3 px-7 rounded-md ease-out duration-200 hover:bg-blue-dark disabled:opacity-60 disabled:cursor-not-allowed"
                       >
                         {productDetails?.fulfillmentType === 'DIGITAL_ON_DEMAND'
-                          ? "Agregar (Digital)"
+                          ? "Agregar"
                           : isInStock
                             ? "Agregar"
                             : "Sin Stock"

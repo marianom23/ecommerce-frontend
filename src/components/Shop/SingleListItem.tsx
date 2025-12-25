@@ -41,7 +41,7 @@ const SingleListItem = ({ item }: { item: Product }) => {
 
     await addItem({
       productId: item.id,
-      variantId: item.defaultVariantId!, // seguro por el guard
+      variantId: item.defaultVariantId,
       quantity: 1,
     });
   };

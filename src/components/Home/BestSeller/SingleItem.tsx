@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import Image from "next/image";
+import CloudinaryImage from "@/components/Common/CloudinaryImage";
 import Link from "next/link";
 import { useDispatch } from "react-redux";
 import { AppDispatch, useAppSelector } from "@/redux/store";
@@ -44,7 +45,7 @@ const SingleItem = ({ item }: { item: Product }) => {
 
     await addItem({
       productId: item.id,
-      variantId: item.defaultVariantId!, // garantizado por el guard
+      variantId: item.defaultVariantId,
       quantity: 1,
     });
   };
@@ -64,8 +65,8 @@ const SingleItem = ({ item }: { item: Product }) => {
 
   return (
     <div className="group">
-      <div className="relative overflow-hidden rounded-lg bg-[#F6F7FB] min-h-[403px]">
-        <div className="text-center px-4 py-7.5">
+      <div className="relative overflow-hidden rounded-lg bg-[#F6F7FB] aspect-[2/3] flex flex-col">
+        <div className="text-center px-4 pt-6 pb-2 z-10 relative">
           <div className="flex justify-center">
             <StarRating rating={item.averageRating} totalReviews={item.totalReviews} size={14} />
           </div>
@@ -85,8 +86,14 @@ const SingleItem = ({ item }: { item: Product }) => {
           />
         </div>
 
-        <div className="flex justify-center items-center">
-          <Image src={item.imgs.previews[0]} alt={item.title ?? ""} width={280} height={280} />
+        <div className="relative w-full h-full flex-1">
+          <CloudinaryImage
+            src={item.imgs.previews[0]}
+            alt={item.title ?? ""}
+            fill
+            className="object-contain p-5"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          />
           {(item.fulfillmentType === 'DIGITAL_ON_DEMAND' || item.fulfillmentType === 'DIGITAL_INSTANT') && (
             <span className="absolute top-3 right-3 z-10 inline-flex items-center justify-center rounded-full bg-[#22AD5C] px-2.5 py-0.5 text-xs font-medium text-white">
               Digital

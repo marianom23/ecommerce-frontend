@@ -27,7 +27,7 @@ export type Cart = {
 
 
 export type AddItemDto = {
-  productId: number;
+  productId?: number;
   variantId?: number;
   quantity: number;
 };

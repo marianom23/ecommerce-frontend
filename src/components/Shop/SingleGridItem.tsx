@@ -1,4 +1,3 @@
-// app/(site)/(pages)/shop/SingleGridItem.tsx
 "use client";
 import React from "react";
 import { Product } from "@/types/product";
@@ -11,7 +10,7 @@ import { AppDispatch } from "@/redux/store";
 import { useAppSelector } from "@/redux/store";
 import toast from "react-hot-toast";
 import Link from "next/link";
-import Image from "next/image";
+import CloudinaryImage from "@/components/Common/CloudinaryImage";
 import { updateproductDetails } from "@/redux/features/product-details";
 import { generateProductUrl } from "@/utils/slug";
 import { StarRating } from "@/components/Common/StarRating";
@@ -43,7 +42,8 @@ const SingleGridItem = ({ item }: { item: Product }) => {
     // Producto simple o con variante por defecto conocida
     await addItem({
       productId: item.id,
-      variantId: item.defaultVariantId, // viaja solo si existe
+      variantId: item.defaultVariantId,
+
       quantity: 1,
     });
   };
@@ -79,8 +79,14 @@ const SingleGridItem = ({ item }: { item: Product }) => {
 
   return (
     <div className="group">
-      <div className="relative overflow-hidden flex items-center justify-center rounded-lg bg-white shadow-1 min-h-[270px] mb-4">
-        <Image src={imgSrc} alt={item.title} width={250} height={250} />
+      <div className="relative overflow-hidden flex items-center justify-center rounded-lg bg-white shadow-1 aspect-[2/3] mb-4">
+        <CloudinaryImage
+          src={imgSrc}
+          alt={item.title}
+          fill
+          className="object-contain p-5"
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+        />
 
         {(item.fulfillmentType === 'DIGITAL_ON_DEMAND' || item.fulfillmentType === 'DIGITAL_INSTANT') && (
           <span className="absolute top-3 right-3 z-10 inline-flex items-center justify-center rounded-full bg-[#22AD5C] px-2.5 py-0.5 text-xs font-medium text-white">
