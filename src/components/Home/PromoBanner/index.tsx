@@ -1,5 +1,6 @@
 import React from "react";
 import Image from "next/image";
+import CloudinaryImage from "@/components/Common/CloudinaryImage";
 
 const PromoBanner = ({ banners }: { banners: import("@/types/banner").Banner[] }) => {
   const bigBanner = banners.find((b) => b.placement === "HOME_PROMO_TOP");
@@ -35,10 +36,10 @@ const PromoBanner = ({ banners }: { banners: import("@/types/banner").Banner[] }
               </a>
             </div>
 
-            <Image
+            <CloudinaryImage
               src={bigBanner.imageUrl}
               alt={bigBanner.title}
-              className="absolute top-1/2 -translate-y-1/2 right-4 lg:right-10 -z-1"
+              className="absolute top-1/2 -translate-y-1/2 right-4 lg:right-10 -z-1 object-contain"
               width={274}
               height={350}
             />
@@ -49,10 +50,10 @@ const PromoBanner = ({ banners }: { banners: import("@/types/banner").Banner[] }
           {/* <!-- promo banner small --> */}
           {smallBanner1 && (
             <div className="relative z-1 overflow-hidden rounded-lg bg-[#DBF4F3] py-10 xl:py-16 px-4 sm:px-7.5 xl:px-10">
-              <Image
+              <CloudinaryImage
                 src={smallBanner1.imageUrl}
                 alt={smallBanner1.title}
-                className="absolute top-1/2 -translate-y-1/2 left-3 sm:left-10 -z-1"
+                className="absolute top-1/2 -translate-y-1/2 left-3 sm:left-10 -z-1 object-contain"
                 width={241}
                 height={241}
               />
@@ -83,10 +84,10 @@ const PromoBanner = ({ banners }: { banners: import("@/types/banner").Banner[] }
           {/* <!-- promo banner small --> */}
           {smallBanner2 && (
             <div className="relative z-1 overflow-hidden rounded-lg bg-[#FFECE1] py-10 xl:py-16 px-4 sm:px-7.5 xl:px-10">
-              <Image
+              <CloudinaryImage
                 src={smallBanner2.imageUrl}
                 alt={smallBanner2.title}
-                className="absolute top-1/2 -translate-y-1/2 right-3 sm:right-8.5 -z-1"
+                className="absolute top-1/2 -translate-y-1/2 right-3 sm:right-8.5 -z-1 object-contain"
                 width={280}
                 height={280}
               />

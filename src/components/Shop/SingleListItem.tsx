@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import Image from "next/image";
+import CloudinaryImage from "@/components/Common/CloudinaryImage";
 import Link from "next/link";
 import { Product } from "@/types/product";
 import { useModalContext } from "@/app/context/QuickViewModalContext";
@@ -63,7 +64,16 @@ const SingleListItem = ({ item }: { item: Product }) => {
     <div className="group rounded-lg bg-white shadow-1">
       <div className="flex">
         <div className="shadow-list relative overflow-hidden flex items-center justify-center max-w-[270px] w-full sm:min-h-[270px] p-4">
-          <Image src={item.imgs.previews[0]} alt="" width={250} height={250} />
+          {item.imgs.previews[0] ? (
+            <CloudinaryImage
+              src={item.imgs.previews[0]}
+              alt={item.title}
+              fill
+              className="object-contain p-4"
+            />
+          ) : (
+            <Image src="/placeholder.png" alt="" width={250} height={250} className="object-contain" />
+          )}
 
           {(item.fulfillmentType === 'DIGITAL_ON_DEMAND' || item.fulfillmentType === 'DIGITAL_INSTANT') && (
             <span className="absolute top-3 right-3 z-10 inline-flex items-center justify-center rounded-full bg-[#22AD5C] px-2.5 py-0.5 text-xs font-medium text-white">

@@ -7,6 +7,7 @@ import "swiper/css/pagination";
 import "swiper/css";
 
 import Image from "next/image";
+import CloudinaryImage from "@/components/Common/CloudinaryImage";
 
 const HeroCarousel = ({ banners }: { banners: import("@/types/banner").Banner[] }) => {
   return (
@@ -61,11 +62,12 @@ const HeroCarousel = ({ banners }: { banners: import("@/types/banner").Banner[] 
             </div>
 
             <div>
-              <Image
+              <CloudinaryImage
                 src={banner.imageUrl}
                 alt={banner.title}
                 width={351}
                 height={358}
+                className="object-contain"
               />
             </div>
           </div>

@@ -2,6 +2,7 @@ import React from "react";
 import HeroCarousel from "./HeroCarousel";
 import HeroFeature from "./HeroFeature";
 import Image from "next/image";
+import CloudinaryImage from "@/components/Common/CloudinaryImage";
 
 const Hero = ({ banners }: { banners: import("@/types/banner").Banner[] }) => {
   const mainBanners = banners.filter((b) => b.placement === "HOME_HERO_MAIN");
@@ -45,7 +46,7 @@ const Hero = ({ banners }: { banners: import("@/types/banner").Banner[] }) => {
                     </div>
 
                     <div className="flex-shrink-0 absolute right-0 bottom-2">
-                      <Image
+                      <CloudinaryImage
                         src={sideTop.imageUrl}
                         alt={sideTop.title}
                         width={200}
@@ -73,7 +74,7 @@ const Hero = ({ banners }: { banners: import("@/types/banner").Banner[] }) => {
                     </div>
 
                     <div className="flex-shrink-0 absolute right-0 bottom-2">
-                      <Image
+                      <CloudinaryImage
                         src={sideBottom.imageUrl}
                         alt={sideBottom.title}
                         width={200}

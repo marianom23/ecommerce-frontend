@@ -6,6 +6,7 @@ import { AppDispatch, useAppSelector } from "@/redux/store";
 import { useCart } from "@/hooks/useCart";
 import { useDispatch } from "react-redux";
 import Image from "next/image";
+import CloudinaryImage from "@/components/Common/CloudinaryImage";
 import { usePreviewSlider } from "@/app/context/PreviewSliderContext";
 import { updateproductDetails } from "@/redux/features/product-details";
 import { toggleWishlist } from "@/redux/features/wishlist-slice";
@@ -335,12 +336,12 @@ const QuickViewModal = () => {
                       className={`flex items-center justify-center w-20 h-20 overflow-hidden rounded-lg bg-gray-1 ease-out duration-200 hover:border-2 hover:border-blue ${activePreview === key && "border-2 border-blue"
                         }`}
                     >
-                      <Image
+                      <CloudinaryImage
                         src={img || ""}
                         alt="thumbnail"
                         width={61}
                         height={61}
-                        className="aspect-square"
+                        className="aspect-square object-cover"
                       />
                     </button>
                   ))}
@@ -371,11 +372,12 @@ const QuickViewModal = () => {
                       </svg>
                     </button>
 
-                    <Image
+                    <CloudinaryImage
                       src={galleryImages[activePreview] || ""}
                       alt="products-details"
                       width={400}
                       height={400}
+                      className="object-contain"
                     />
                   </div>
                 </div>

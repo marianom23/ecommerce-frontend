@@ -2,6 +2,7 @@
 import React, { use, useEffect, useState } from "react";
 import Breadcrumb from "../Common/Breadcrumb";
 import Image from "next/image";
+import CloudinaryImage from "@/components/Common/CloudinaryImage";
 import Newsletter from "../Common/Newsletter";
 import RecentlyViewdItems from "./RecentlyViewd";
 import { usePreviewSlider } from "@/app/context/PreviewSliderContext";
@@ -330,11 +331,12 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
                         </svg>
                       </button>
 
-                      <Image
+                      <CloudinaryImage
                         src={currentImages[previewImg] || "/placeholder.png"}
                         alt="products-details"
                         width={400}
                         height={400}
+                        className="object-contain"
                       />
                     </div>
                   </div>
@@ -350,11 +352,12 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
                           : "border-transparent"
                           }`}
                       >
-                        <Image
+                        <CloudinaryImage
                           width={50}
                           height={50}
                           src={item}
                           alt="thumbnail"
+                          className="object-contain"
                         />
                       </button>
                     ))}

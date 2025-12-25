@@ -1,6 +1,7 @@
 "use client";
 import React, { useMemo } from "react";
 import Image from "next/image";
+import CloudinaryImage from "@/components/Common/CloudinaryImage";
 import { useCart } from "@/hooks/useCart";
 
 type SingleItemProps = {
@@ -46,14 +47,24 @@ const SingleItem: React.FC<SingleItemProps> = ({ item }) => {
 
   return (
     <div className="flex items-center justify-between gap-5">
-      <div className="w-full flex items-center gap-6">
-        <div className="flex items-center justify-center rounded-[10px] bg-gray-3 max-w-[90px] w-full h-22.5 overflow-hidden">
-          <Image
-            src={item.imageUrl || "/placeholder.png"}
-            alt={item.name}
-            width={100}
-            height={100}
-          />
+      <div className="flex-1 flex items-center gap-6">
+        <div className="flex items-center justify-center rounded-[10px] bg-gray-3 max-w-[90px] w-full h-22.5 overflow-hidden relative">
+          {item.imageUrl ? (
+            <CloudinaryImage
+              src={item.imageUrl}
+              alt={item.name}
+              fill
+              className="object-contain"
+            />
+          ) : (
+            <Image
+              src="/placeholder.png"
+              alt={item.name}
+              width={100}
+              height={100}
+              className="object-contain"
+            />
+          )}
         </div>
 
         <div className="min-w-0">
@@ -89,6 +100,7 @@ const SingleItem: React.FC<SingleItemProps> = ({ item }) => {
             {/* Controles de cantidad */}
             <div className="flex items-center gap-2" aria-label="Controles de cantidad">
               <button
+                type="button"
                 onClick={handleDecrease}
                 aria-label="Disminuir cantidad"
                 disabled={item.quantity <= 1}
@@ -98,6 +110,7 @@ const SingleItem: React.FC<SingleItemProps> = ({ item }) => {
               </button>
               <span aria-live="polite" className="min-w-6 text-center">{item.quantity}</span>
               <button
+                type="button"
                 onClick={handleIncrease}
                 aria-label="Aumentar cantidad"
                 className="w-8 h-8 border border-gray-300 rounded hover:bg-gray-100"
@@ -115,6 +128,7 @@ const SingleItem: React.FC<SingleItemProps> = ({ item }) => {
       </div>
 
       <button
+        type="button"
         onClick={handleRemoveFromCart}
         aria-label="Quitar producto del carrito"
         className="flex items-center justify-center rounded-lg max-w-[38px] w-full h-9.5 bg-gray-2 border border-gray-3 text-dark ease-out duration-200 hover:bg-red-light-6 hover:border-red-light-4 hover:text-red"

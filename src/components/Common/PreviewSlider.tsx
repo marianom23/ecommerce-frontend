@@ -4,6 +4,7 @@ import { useCallback, useRef } from "react";
 import "swiper/css/navigation";
 import "swiper/css";
 import Image from "next/image";
+import CloudinaryImage from "@/components/Common/CloudinaryImage";
 
 import { usePreviewSlider } from "@/app/context/PreviewSliderContext";
 import { useAppSelector } from "@/redux/store";
@@ -101,7 +102,7 @@ const PreviewSliderModal = () => {
         {images.map((img, index) => (
           <SwiperSlide key={index}>
             <div className="flex justify-center items-center h-full">
-              <Image
+              <CloudinaryImage
                 src={img}
                 alt={`product image ${index + 1}`}
                 width={600}

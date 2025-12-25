@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import Image from "next/image";
+import CloudinaryImage from "@/components/Common/CloudinaryImage";
 import Link from "next/link";
 
 type UICategory = {
@@ -19,7 +20,7 @@ const SingleItem = ({ item }: { item: UICategory }) => {
       className="group flex flex-col items-center"
     >
       <div className="max-w-[130px] w-full bg-[#F2F3F8] h-32.5 rounded-full flex items-center justify-center mb-4 overflow-hidden">
-        <Image src={imgSrc} alt={item.title} width={82} height={62} />
+        <CloudinaryImage src={imgSrc} alt={item.title} width={82} height={62} className="object-contain" />
       </div>
 
       <div className="flex justify-center">

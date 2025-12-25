@@ -2,6 +2,7 @@
 "use client";
 import React from "react";
 import Image from "next/image";
+import CloudinaryImage from "@/components/Common/CloudinaryImage";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/redux/store";
 import type { Product } from "@/types/product";
@@ -82,8 +83,17 @@ const SingleItem: React.FC<{ item: Product }> = ({ item }) => {
       <div className="min-w-[500px]">
         <div className="flex items-center justify-between gap-5">
           <div className="w-full flex items-center gap-5.5">
-            <div className="flex items-center justify-center rounded-[5px] bg-gray-2 max-w-[80px] w-full h-17.5">
-              <Image src={item.imgs?.thumbnails[0]} alt="product" width={200} height={200} />
+            <div className="flex items-center justify-center rounded-[5px] bg-gray-2 max-w-[80px] w-full h-17.5 relative overflow-hidden">
+              {item.imgs?.thumbnails?.[0] ? (
+                <CloudinaryImage
+                  src={item.imgs.thumbnails[0]}
+                  alt="product"
+                  fill
+                  className="object-contain"
+                />
+              ) : (
+                <Image src="/placeholder.png" alt="product" width={200} height={200} className="object-contain" />
+              )}
             </div>
             <div>
               <h3 className="text-dark ease-out duration-200 hover:text-blue">
