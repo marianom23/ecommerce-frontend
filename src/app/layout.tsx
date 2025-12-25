@@ -7,6 +7,8 @@ export const metadata: Metadata = {
   description: "Tu tienda de tecnología de confianza",
 };
 
+import { AuthProvider } from "@/app/context/AuthContext";
+
 export default function RootLayout({
   children,
 }: {
@@ -14,7 +16,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
-      <body>{children}</body>
+      <body>
+        <AuthProvider>{children}</AuthProvider>
+      </body>
     </html>
   );
 }

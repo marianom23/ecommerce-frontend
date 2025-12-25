@@ -11,7 +11,10 @@ import { useAppSelector } from "@/redux/store";
 const PreviewSliderModal = () => {
   const { closePreviewModal, isModalPreviewOpen } = usePreviewSlider();
 
-  const data = useAppSelector((state) => state.productDetailsReducer.value);
+  const data = useAppSelector((state) => state.productDetailsReducer.value) as any;
+  const images = data?.images?.length
+    ? data.images
+    : data?.imgs?.previews ?? [];
 
   const sliderRef = useRef(null);
 
@@ -95,16 +98,19 @@ const PreviewSliderModal = () => {
       </div>
 
       <Swiper ref={sliderRef} slidesPerView={1} spaceBetween={20}>
-        <SwiperSlide>
-          <div className="flex justify-center items-center">
-            <Image
-              src={"/images/products/product-2-bg-1.png"}
-              alt={"product image"}
-              width={450}
-              height={450}
-            />
-          </div>
-        </SwiperSlide>
+        {images.map((img, index) => (
+          <SwiperSlide key={index}>
+            <div className="flex justify-center items-center h-full">
+              <Image
+                src={img}
+                alt={`product image ${index + 1}`}
+                width={600}
+                height={600}
+                className="object-contain max-h-[80vh]"
+              />
+            </div>
+          </SwiperSlide>
+        ))}
       </Swiper>
     </div>
   );

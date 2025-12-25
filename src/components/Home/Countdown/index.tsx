@@ -119,7 +119,7 @@ const CounDown = ({ banners }: { banners: import("@/types/banner").Banner[] }) =
           <Image
             src={banner.imageUrl}
             alt={banner.title}
-            className="hidden lg:block absolute right-4 xl:right-33 bottom-4 xl:bottom-10 -z-1"
+            className="hidden lg:block absolute right-4 xl:right-33 top-1/2 -translate-y-1/2 -z-1"
             width={411}
             height={376}
           />

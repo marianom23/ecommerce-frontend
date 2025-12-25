@@ -124,7 +124,8 @@ const ShopWithSidebar: React.FC = () => {
       },
       { replace: true }
     );
-  }, [page, selectedOption, categoryId, minPrice, maxPrice, inStockOnly, urlQ, brandIds, setParams]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, selectedOption, categoryId, minPrice, maxPrice, inStockOnly, urlQ, brandIds]);
 
   /******************
    * Sort param para el backend
@@ -412,8 +413,8 @@ const ShopWithSidebar: React.FC = () => {
                       onClick={() => setProductStyle("grid")}
                       aria-label="button for product grid tab"
                       className={`${productStyle === "grid"
-                          ? "bg-blue border-blue text-white"
-                          : "text-dark bg-gray-1 border-gray-3"
+                        ? "bg-blue border-blue text-white"
+                        : "text-dark bg-gray-1 border-gray-3"
                         } flex items-center justify-center w-10.5 h-9 rounded-[5px] border ease-out duration-200 hover:bg-blue hover:border-blue hover:text-white`}
                     >
                       {/* grid icon */}
@@ -456,8 +457,8 @@ const ShopWithSidebar: React.FC = () => {
                       onClick={() => setProductStyle("list")}
                       aria-label="button for product list tab"
                       className={`${productStyle === "list"
-                          ? "bg-blue border-blue text-white"
-                          : "text-dark bg-gray-1 border-gray-3"
+                        ? "bg-blue border-blue text-white"
+                        : "text-dark bg-gray-1 border-gray-3"
                         } flex items-center justify-center w-10.5 h-9 rounded-[5px] border ease-out duration-200 hover:bg-blue hover:border-blue hover:text-white`}
                     >
                       {/* list icon */}
@@ -490,8 +491,8 @@ const ShopWithSidebar: React.FC = () => {
               {/* Products Grid/List */}
               <div
                 className={`${productStyle === "grid"
-                    ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-7.5 gap-y-9"
-                    : "flex flex-col gap-7.5"
+                  ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-7.5 gap-y-9"
+                  : "flex flex-col gap-7.5"
                   }`}
               >
                 {loading && (
@@ -560,8 +561,8 @@ const ShopWithSidebar: React.FC = () => {
                             type="button"
                             onClick={() => goToPage(item as number)}
                             className={`flex py-1.5 px-3.5 duration-200 rounded-[3px] ${page === item
-                                ? "bg-blue text-white hover:text-white hover:bg-blue"
-                                : "hover:text-white hover:bg-blue"
+                              ? "bg-blue text-white hover:text-white hover:bg-blue"
+                              : "hover:text-white hover:bg-blue"
                               }`}
                           >
                             {item}

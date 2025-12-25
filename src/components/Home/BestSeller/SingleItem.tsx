@@ -87,6 +87,11 @@ const SingleItem = ({ item }: { item: Product }) => {
 
         <div className="flex justify-center items-center">
           <Image src={item.imgs.previews[0]} alt={item.title ?? ""} width={280} height={280} />
+          {(item.fulfillmentType === 'DIGITAL_ON_DEMAND' || item.fulfillmentType === 'DIGITAL_INSTANT') && (
+            <span className="absolute top-3 right-3 z-10 inline-flex items-center justify-center rounded-full bg-[#22AD5C] px-2.5 py-0.5 text-xs font-medium text-white">
+              Digital
+            </span>
+          )}
         </div>
 
         <div className="absolute right-0 bottom-0 translate-x-full u-w-full flex flex-col gap-2 p-5.5 ease-linear duration-300 group-hover:translate-x-0">

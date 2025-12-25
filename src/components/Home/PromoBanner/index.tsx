@@ -38,7 +38,7 @@ const PromoBanner = ({ banners }: { banners: import("@/types/banner").Banner[] }
             <Image
               src={bigBanner.imageUrl}
               alt={bigBanner.title}
-              className="absolute bottom-0 right-4 lg:right-26 -z-1"
+              className="absolute top-1/2 -translate-y-1/2 right-4 lg:right-10 -z-1"
               width={274}
               height={350}
             />
@@ -87,8 +87,8 @@ const PromoBanner = ({ banners }: { banners: import("@/types/banner").Banner[] }
                 src={smallBanner2.imageUrl}
                 alt={smallBanner2.title}
                 className="absolute top-1/2 -translate-y-1/2 right-3 sm:right-8.5 -z-1"
-                width={200}
-                height={200}
+                width={280}
+                height={280}
               />
 
               <div>
