@@ -1,5 +1,6 @@
 import React, { useMemo } from "react";
 import Image from "next/image";
+import CloudinaryImage from "@/components/Common/CloudinaryImage";
 import { useCart } from "@/hooks/useCart";
 
 type CartItem = {
@@ -48,11 +49,12 @@ const SingleItem: React.FC<Props> = ({ item, layout = "row" }) => {
     return (
       <div className="w-full flex items-center gap-5.5">
         <div className="flex items-center justify-center rounded-[5px] bg-gray-2 max-w-[80px] w-full h-17.5 overflow-hidden">
-          <Image
+          <CloudinaryImage
             width={160}
             height={160}
             src={item.imageUrl || "/placeholder.png"}
             alt={item.name}
+            className="object-contain"
           />
         </div>
         <div className="min-w-0">
@@ -76,11 +78,12 @@ const SingleItem: React.FC<Props> = ({ item, layout = "row" }) => {
     <div className="flex items-center justify-between gap-5">
       <div className="w-full flex items-center gap-6">
         <div className="flex items-center justify-center rounded-[10px] bg-gray-3 max-w-[90px] w-full h-22.5 overflow-hidden">
-          <Image
+          <CloudinaryImage
             src={item.imageUrl || "/placeholder.png"}
             alt={item.name}
             width={100}
             height={100}
+            className="object-contain"
           />
         </div>
 

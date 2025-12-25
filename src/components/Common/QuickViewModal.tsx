@@ -392,6 +392,10 @@ const QuickViewModal = () => {
                 </span>
               )}
 
+              <h3 className="font-semibold text-xl xl:text-heading-5 text-dark mb-4">
+                {title}
+              </h3>
+
               {/* Descripción */}
               {description && (
                 <div className="mb-5">
@@ -407,10 +411,6 @@ const QuickViewModal = () => {
                   )}
                 </div>
               )}
-
-              <h3 className="font-semibold text-xl xl:text-heading-5 text-dark mb-4">
-                {title}
-              </h3>
 
               {/* Stock */}
               <div className="flex items-center gap-2 mb-4">
@@ -466,11 +466,9 @@ const QuickViewModal = () => {
                         .join(" · ");
                       const label = attrLabel || `Variante #${v.id}`;
                       const sfx = (v.stock > 0 || fulfillmentType === 'DIGITAL_ON_DEMAND') ? "" : " — (Sin stock)";
-                      const transferPrice = transferRatio > 0 ? v.discountedPrice * transferRatio : null;
-                      const transferLabel = transferPrice ? ` | Transf: ${currency.format(transferPrice)}` : "";
                       return (
                         <option key={v.id} value={v.id}>
-                          {label} — {currency.format(v.discountedPrice)}{transferLabel}{sfx}
+                          {label} — {currency.format(v.discountedPrice)}{sfx}
                         </option>
                       );
                     })}
@@ -650,7 +648,7 @@ const QuickViewModal = () => {
           )}
         </div>
       </div>
-    </div>
+    </div >
   );
 };
 
