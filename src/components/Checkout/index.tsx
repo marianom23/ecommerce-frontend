@@ -5,9 +5,7 @@ import Breadcrumb from "../Common/Breadcrumb";
 import Shipping from "./ShippingContainer";
 import ShippingMethod from "./ShippingMethod";
 import PaymentMethod from "./PaymentMethod";
-import Coupon from "./Coupon";
 import OrderList from "./OrderList";
-import Billing from "./BillingContainer";
 import BillingProfileContainer from "./BillingProfileContainer";
 import { AddressResponse } from "@/services/addressService";
 import { BillingProfileResponse } from "@/services/billingProfileService";
@@ -23,7 +21,6 @@ const Checkout = () => {
   const orderId = orderIdParam ? Number(orderIdParam) : null;
 
   const [shippingSelected, setShippingSelected] = useState<AddressResponse | null>(null);
-  const [billingAddressSelected, setBillingAddressSelected] = useState<AddressResponse | null>(null);
   const [billingProfileSelected, setBillingProfileSelected] = useState<BillingProfileResponse | null>(null);
 
   const [saving, setSaving] = useState(false);
@@ -43,10 +40,7 @@ const Checkout = () => {
       toast.error("Primero creá la orden desde el carrito.");
       return;
     }
-    if (!billingAddressSelected) {
-      toast.error("Seleccioná una dirección de facturación.");
-      return;
-    }
+    // La dirección de facturación ahora es parte del perfil
     if (!billingProfileSelected) {
       toast.error("Seleccioná un perfil de facturación.");
       return;
@@ -101,44 +95,17 @@ const Checkout = () => {
           <form onSubmit={onSubmit}>
             <div className="flex flex-col lg:flex-row gap-7.5 xl:gap-11">
               {/* left */}
-              <div className="lg:max-w-[670px] w-full">
-                {/* Login removido: la autenticación se valida antes de llegar a checkout */}
-                <Billing onSelected={setBillingAddressSelected} />
-
-                {/* Parchea la orden al elegir/crear perfil de facturación */}
-                <BillingProfileContainer
-                  orderId={orderId}
-                  billingAddressId={billingAddressSelected?.id ?? null}
-                  onSelected={setBillingProfileSelected}
-                />
-
+              <div className="lg:max-w-[670px] w-full flex flex-col gap-6">
                 {/* Parchea la orden al elegir/crear dirección de envío */}
                 <Shipping orderId={orderId} onSelected={setShippingSelected} />
 
-                {/* Notas (opcional, si luego las querés enviar al back, agregá estado y PATCH) */}
-                {/* <div className="bg-white shadow-1 rounded-[10px] p-4 sm:p-8.5 mt-7.5">
-                  <div>
-                    <label htmlFor="notes" className="block mb-2.5">
-                      Otras notas (opcional)
-                    </label>
-                    <textarea
-                      id="notes"
-                      rows={5}
-                      className="rounded-md border border-gray-3 bg-gray-1 w-full p-5 outline-none"
-                      placeholder="Notas sobre tu pedido (opcional)"
-                    />
-                  </div>
-                </div> */}
-              </div>
+                {/* Parchea la orden al elegir/crear perfil de facturación (incluye dirección) */}
+                <BillingProfileContainer
+                  orderId={orderId}
+                  shippingAddress={shippingSelected}
+                  onSelected={setBillingProfileSelected}
+                />
 
-              {/* right */}
-              <div className="max-w-[455px] w-full">
-                <OrderList orderId={orderId} reloadKey={reloadOrderKey} />
-                <ShippingMethod />
-                <Coupon />
-
-                {/* Parchea método de pago al seleccionar */}
-                {/* Parchea método de pago al seleccionar */}
                 <PaymentMethod
                   orderId={orderId}
                   onApplied={(method) => {
@@ -146,6 +113,12 @@ const Checkout = () => {
                     setReloadOrderKey((prev) => prev + 1);
                   }}
                 />
+              </div>
+
+              {/* right */}
+              <div className="max-w-[455px] w-full sticky top-24 h-fit flex flex-col gap-6">
+                <ShippingMethod />
+                <OrderList orderId={orderId} reloadKey={reloadOrderKey} />
 
                 {err && (
                   <p className="text-red-600 text-sm mt-3">{err}</p>
@@ -154,7 +127,6 @@ const Checkout = () => {
                 {(() => {
                   const isReady = Boolean(
                     orderId &&
-                    billingAddressSelected &&
                     billingProfileSelected &&
                     shippingSelected &&
                     paymentMethodSelected
@@ -164,8 +136,8 @@ const Checkout = () => {
                       type="submit"
                       disabled={saving || !canSubmit}
                       className={`w-full flex justify-center font-medium py-3 px-6 rounded-md mt-7.5 ${!isReady || saving || !canSubmit
-                          ? "text-gray-600 bg-gray-400 cursor-not-allowed border-2 border-gray-300"
-                          : "text-white bg-blue hover:bg-blue-dark"
+                        ? "text-gray-600 bg-gray-400 cursor-not-allowed border-2 border-gray-300"
+                        : "text-white bg-blue hover:bg-blue-dark"
                         }`}
                     >
                       {saving ? "Procesando..." : "Confirmar y pagar"}

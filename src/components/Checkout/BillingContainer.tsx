@@ -10,9 +10,10 @@ import { useRouter } from "next/navigation";
 
 type Props = {
   onSelected?: (addr: AddressResponse | null) => void;
+  shippingAddress?: AddressResponse | null;
 };
 
-const BillingContainer: React.FC<Props> = ({ onSelected }) => {
+const BillingContainer: React.FC<Props> = ({ onSelected, shippingAddress }) => {
   const { isAuthenticated, loading } = useAuth();
   const router = useRouter();
 
@@ -20,6 +21,7 @@ const BillingContainer: React.FC<Props> = ({ onSelected }) => {
   const [list, setList] = useState<AddressResponse[]>([]);
   const [mode, setMode] = useState<"list" | "form">("list");
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [copying, setCopying] = useState(false);
 
   /* =============== CARGAR LISTA =============== */
   async function load() {
@@ -48,6 +50,53 @@ const BillingContainer: React.FC<Props> = ({ onSelected }) => {
       load();
     }
   }, [isAuthenticated, loading]);
+
+  /* =============== COPIAR DE ENVÍO =============== */
+  const handleUseShipping = async () => {
+    if (!shippingAddress) return;
+    setCopying(true);
+    try {
+      // 1. Buscar si ya existe una igual
+      const found = list.find(a =>
+        a.street === shippingAddress.street &&
+        a.streetNumber === shippingAddress.streetNumber &&
+        a.city === shippingAddress.city &&
+        a.postalCode === shippingAddress.postalCode
+      );
+
+      if (found) {
+        setSelectedId(found.id);
+        onSelected?.(found);
+        toast.success("Dirección de envío seleccionada para facturación");
+      } else {
+        // 2. Crear nueva como BILLING
+        const created = await addressService.create({
+          street: shippingAddress.street,
+          streetNumber: shippingAddress.streetNumber,
+          city: shippingAddress.city,
+          state: shippingAddress.state,
+          postalCode: shippingAddress.postalCode,
+          country: shippingAddress.country,
+          apartmentNumber: shippingAddress.apartmentNumber,
+          floor: shippingAddress.floor,
+          type: "BILLING"
+        });
+
+        // Recargar lista y seleccionar
+        const res = await addressService.list("BILLING");
+        setList(res);
+        setSelectedId(created.id);
+        onSelected?.(created);
+        setMode("list");
+        toast.success("Dirección de envío copiada y seleccionada");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Error al copiar la dirección");
+    } finally {
+      setCopying(false);
+    }
+  };
 
   /* =============== SI NO ESTÁ AUTENTICADO =============== */
   if (!isAuthenticated && !loading) {
@@ -82,14 +131,16 @@ const BillingContainer: React.FC<Props> = ({ onSelected }) => {
           loading={loading}
           addresses={list}
           selectedId={selectedId}
-          onSelect={(a) => { 
-            setSelectedId(a?.id ?? null); 
+          onSelect={(a) => {
+            setSelectedId(a?.id ?? null);
             onSelected?.(a);
             if (a) {
               toast.success("Dirección de facturación seleccionada ✓");
             }
           }}
           onAddNew={() => setMode("form")}
+          onUseShipping={shippingAddress ? handleUseShipping : undefined}
+          copying={copying}
         />
       )}
 

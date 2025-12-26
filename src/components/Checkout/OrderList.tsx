@@ -159,7 +159,11 @@ const OrderList: React.FC<{
                 </div>
               </div>
             ))}
+          </>
+        )}
 
+        {!loading && !err && items.length > 0 && (
+          <>
             {/* Discount */}
             {discount > 0 && (
               <div className="flex items-center justify-between py-5 border-b border-gray-3">

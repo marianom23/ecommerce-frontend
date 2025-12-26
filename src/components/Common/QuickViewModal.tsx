@@ -468,7 +468,7 @@ const QuickViewModal = () => {
                       const sfx = (v.stock > 0 || fulfillmentType === 'DIGITAL_ON_DEMAND') ? "" : " — (Sin stock)";
                       return (
                         <option key={v.id} value={v.id}>
-                          {label} — {currency.format(v.discountedPrice)}{sfx}
+                          {label}{sfx}
                         </option>
                       );
                     })}

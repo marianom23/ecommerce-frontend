@@ -91,7 +91,7 @@ const Header = () => {
 
   return (
     <header
-      className={`fixed left-0 top-0 w-full z-9999 bg-white transition-all ease-in-out duration-300 ${stickyMenu && "shadow"}`}
+      className={`fixed left-0 top-0 w-full z-9999 bg-white transition-all ease-in-out duration-300 border-b border-gray-3 ${stickyMenu && "shadow"}`}
     >
       <div className="max-w-[1170px] mx-auto px-4 sm:px-7.5 xl:px-0">
         {/* header top */}

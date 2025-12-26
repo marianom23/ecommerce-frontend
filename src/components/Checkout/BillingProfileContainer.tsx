@@ -5,19 +5,21 @@ import {
   billingProfileService,
   BillingProfileResponse,
 } from "@/services/billingProfileService";
+import { addressService, AddressResponse } from "@/services/addressService"; // ⬅️ import
 import BillingProfileList from "./BillingProfileList";
 import BillingProfileForm from "./BillingProfileForm";
-import { orderService } from "@/services/orderService"; // ⬅️ import
+import { orderService } from "@/services/orderService";
 import toast from "react-hot-toast";
 
 const BillingProfileContainer: React.FC<{
-  orderId: number | null;             // ⬅️ nuevo prop
-  billingAddressId: number | null;
+  orderId: number | null;
+  shippingAddress?: AddressResponse | null; // ⬅️ nuevo prop
   onSelected?: (bp: BillingProfileResponse | null) => void;
-}> = ({ orderId, billingAddressId, onSelected }) => {
+}> = ({ orderId, shippingAddress, onSelected }) => {
   const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);     // ⬅️ para cuando parcheamos
+  const [saving, setSaving] = useState(false);
   const [profiles, setProfiles] = useState<BillingProfileResponse[]>([]);
+  const [addresses, setAddresses] = useState<AddressResponse[]>([]); // ⬅️ estado para direcciones
   const [mode, setMode] = useState<"list" | "form">("list");
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -26,16 +28,22 @@ const BillingProfileContainer: React.FC<{
     setErr(null);
     setLoading(true);
     try {
-      const res = await billingProfileService.listMine();
-      setProfiles(res);
-      const first = res[0] ?? null;
+      const [resProfiles, resAddresses] = await Promise.all([
+        billingProfileService.listMine(),
+        addressService.list("BILLING")
+      ]);
+
+      setProfiles(resProfiles);
+      setAddresses(resAddresses);
+
+      const first = resProfiles[0] ?? null;
       setSelectedId(first?.id ?? null);
       onSelected?.(first);
       // Auto-aplicar el primer perfil a la orden si existe
       if (first && orderId) {
-        await applyToOrder(first, false); // No mostrar toast en auto-selección
+        await applyToOrder(first, false);
       }
-      setMode(res.length ? "list" : "form");
+      setMode(resProfiles.length ? "list" : "form");
     } finally {
       setLoading(false);
     }
@@ -43,7 +51,7 @@ const BillingProfileContainer: React.FC<{
 
   // ⬇️ Aplica el perfil elegido a la orden con PATCH /api/orders/{id}/billing-profile
   async function applyToOrder(bp: BillingProfileResponse, showToast: boolean = true) {
-    if (!orderId) return; // si no hay orderId, no parcheamos
+    if (!orderId) return;
     setErr(null);
     setSaving(true);
     try {
@@ -61,15 +69,6 @@ const BillingProfileContainer: React.FC<{
 
   useEffect(() => { load(); }, []);
 
-  if (!billingAddressId) {
-    return (
-      <div className="bg-white shadow-1 rounded-[10px] p-4 sm:p-8.5 mt-7.5">
-        <h3 className="font-medium text-lg text-dark mb-2">Perfil de Facturación</h3>
-        <p className="text-sm text-dark-5">Primero elegí/cargá una dirección de facturación.</p>
-      </div>
-    );
-  }
-
   return (
     <div className="mt-7.5">
       {err && <div className="bg-red-50 border border-red-200 text-red-700 rounded-md p-3 mb-3 text-sm">{err}</div>}
@@ -79,6 +78,7 @@ const BillingProfileContainer: React.FC<{
           title="Perfil de Facturación"
           loading={loading || saving}
           profiles={profiles}
+          addresses={addresses}
           selectedId={selectedId}
           onSelect={async (bp) => {
             setSelectedId(bp?.id ?? null);
@@ -90,7 +90,8 @@ const BillingProfileContainer: React.FC<{
 
       {mode === "form" && (
         <BillingProfileForm
-          billingAddressId={billingAddressId}
+          billingAddresses={addresses}
+          shippingAddress={shippingAddress}
           onSaved={async (created) => {
             // recargamos, seleccionamos y aplicamos a la orden
             await load();
@@ -108,3 +109,4 @@ const BillingProfileContainer: React.FC<{
 };
 
 export default BillingProfileContainer;
+

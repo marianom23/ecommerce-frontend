@@ -6,8 +6,8 @@ import ShippingForm from "./ShippingForm";
 import ShippingList from "./ShippingList";
 import { orderService } from "@/services/orderService";
 import toast from "react-hot-toast";
-import { useAuth } from "@/hooks/useAuth";      
-import { useRouter } from "next/navigation";  
+import { useAuth } from "@/hooks/useAuth";
+import { useRouter } from "next/navigation";
 
 type Props = {
   orderId?: number | null;
@@ -36,18 +36,13 @@ const ShippingContainer: React.FC<Props> = ({ orderId, onSelected }) => {
       setSelectedId(first?.id ?? null);
       onSelected?.(first);
 
-      // Auto-aplicar la primera dirección a la orden si existe
-      if (first && orderId) {
-        await applyToOrder(first);
-      }
-
       setMode(res.length ? "list" : "form");
     } finally {
       setLoadingList(false);
     }
   }
 
-  async function applyToOrder(addr: AddressResponse) {
+  async function applyToOrder(addr: AddressResponse, silent = false) {
     if (!orderId) return; // todavía no hay orderId
     setErr(null);
     setSaving(true);
@@ -56,13 +51,15 @@ const ShippingContainer: React.FC<Props> = ({ orderId, onSelected }) => {
         shippingAddressId: addr.id,
         // si más adelante pedís recipientName/phone, los mandás acá
       });
-      toast.success("Dirección de envío aplicada a la orden ✓");
+      if (!silent) {
+        toast.success("Dirección de envío aplicada a la orden ✓");
+      }
       onSelected?.(addr);
     } catch (e: any) {
       setErr(
         e?.response?.data?.message ||
-          e?.message ||
-          "No se pudo aplicar la dirección a la orden."
+        e?.message ||
+        "No se pudo aplicar la dirección a la orden."
       );
     } finally {
       setSaving(false);
@@ -73,6 +70,16 @@ const ShippingContainer: React.FC<Props> = ({ orderId, onSelected }) => {
     if (loading) return;           // todavía consultando /b/me
     if (isAuthenticated) load();   // solo cargamos direcciones si está logueado
   }, [isAuthenticated, loading]);
+
+  // Auto-aplicar la primera dirección cuando se cargue la lista por primera vez (silenciosamente)
+  useEffect(() => {
+    if (list.length > 0 && orderId && selectedId) {
+      const firstAddr = list.find(a => a.id === selectedId);
+      if (firstAddr) {
+        applyToOrder(firstAddr, true); // silent = true
+      }
+    }
+  }, [list.length, orderId]); // Solo se ejecuta cuando cambia la lista o el orderId
 
   // Si ya sabemos que NO está autenticado
   if (!isAuthenticated && !loading) {
@@ -110,10 +117,8 @@ const ShippingContainer: React.FC<Props> = ({ orderId, onSelected }) => {
   }
 
   return (
-    <div className="mt-9">
-      <h2 className="font-medium text-dark text-xl sm:text-2xl mb-5.5">
-        Detalles de envío
-      </h2>
+    <div>
+
 
       {err && (
         <div className="bg-red-50 border border-red-200 text-red-700 rounded-md p-3 mb-3 text-sm">

@@ -9,19 +9,31 @@ const BillingList: React.FC<{
   selectedId: number | null;
   onSelect: (addr: AddressResponse | null) => void;
   onAddNew: () => void;
-}> = ({ title, loading, addresses, selectedId, onSelect, onAddNew }) => {
+  onUseShipping?: () => void;
+  copying?: boolean;
+}> = ({ title, loading, addresses, selectedId, onSelect, onAddNew, onUseShipping, copying }) => {
   return (
     <div className="bg-white shadow-1 rounded-[10px] p-4 sm:p-8.5">
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex flex-wrap items-center justify-between mb-3 gap-2">
         <h3 className="font-medium text-lg text-dark">{title}</h3>
-        <button type="button" className="text-blue text-sm" onClick={onAddNew}>
-          Agregar nueva
-        </button>
+        <div className="flex items-center gap-4">
+          {onUseShipping && (
+            <button
+              type="button"
+              className="text-blue text-sm hover:underline disabled:opacity-50"
+              onClick={onUseShipping}
+              disabled={copying}
+            >
+              {copying ? "Copiando..." : "Usar dirección de envío"}
+            </button>
+          )}
+          <button type="button" className="text-blue text-sm hover:underline" onClick={onAddNew}>
+            Agregar nueva
+          </button>
+        </div>
       </div>
 
-      {!loading && addresses.length > 0 && (
-        <p className="text-sm text-dark-5 mb-3">Seleccioná una dirección de facturación.</p>
-      )}
+
 
       {loading && <p className="text-sm text-dark-5">Cargando...</p>}
 

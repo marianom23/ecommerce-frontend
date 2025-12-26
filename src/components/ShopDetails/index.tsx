@@ -533,10 +533,6 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
                                       {Object.entries(variant.attrs).map(([key, value]) => `${key}: ${value}`).join(", ") || `Variant ${variant.id}`}
                                     </span>
                                     <span className="text-xs text-gray-5">
-                                      ${variant.discountedPrice.toFixed(2)}
-                                      {variant.discountedPrice < variant.price && (
-                                        <span className="line-through ml-1">${variant.price.toFixed(2)}</span>
-                                      )}
                                       {isOutOfStock && <span className="text-red ml-1">(Sin Stock)</span>}
                                       {productDetails?.fulfillmentType === 'DIGITAL_ON_DEMAND' && <span className="text-green ml-1">(Digital)</span>}
                                     </span>

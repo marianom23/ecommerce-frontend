@@ -69,67 +69,67 @@ const ShippingForm: React.FC<{
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
         <div>
-          <label className="block text-sm text-dark-5 mb-1">Calle</label>
+          <label className="block text-sm text-dark mb-1">Calle</label>
           <input
-            className="w-full border border-gray-3 rounded px-3 py-2 text-sm focus:border-blue outline-none"
+            className="w-full border border-gray-4 rounded px-3 py-2 text-sm focus:border-blue outline-none"
             value={form.street}
             onChange={(e) => setForm({ ...form, street: e.target.value })}
             placeholder="Ej: Av. Corrientes"
           />
         </div>
         <div>
-          <label className="block text-sm text-dark-5 mb-1">Altura</label>
+          <label className="block text-sm text-dark mb-1">Altura</label>
           <input
-            className="w-full border border-gray-3 rounded px-3 py-2 text-sm focus:border-blue outline-none"
+            className="w-full border border-gray-4 rounded px-3 py-2 text-sm focus:border-blue outline-none"
             value={form.streetNumber || ""}
             onChange={(e) => setForm({ ...form, streetNumber: e.target.value })}
             placeholder="1234"
           />
         </div>
         <div>
-          <label className="block text-sm text-dark-5 mb-1">Piso (opcional)</label>
+          <label className="block text-sm text-dark mb-1">Piso (opcional)</label>
           <input
-            className="w-full border border-gray-3 rounded px-3 py-2 text-sm focus:border-blue outline-none"
+            className="w-full border border-gray-4 rounded px-3 py-2 text-sm focus:border-blue outline-none"
             value={form.floor || ""}
             onChange={(e) => setForm({ ...form, floor: e.target.value })}
           />
         </div>
         <div>
-          <label className="block text-sm text-dark-5 mb-1">Depto (opcional)</label>
+          <label className="block text-sm text-dark mb-1">Depto (opcional)</label>
           <input
-            className="w-full border border-gray-3 rounded px-3 py-2 text-sm focus:border-blue outline-none"
+            className="w-full border border-gray-4 rounded px-3 py-2 text-sm focus:border-blue outline-none"
             value={form.apartmentNumber || ""}
             onChange={(e) => setForm({ ...form, apartmentNumber: e.target.value })}
           />
         </div>
         <div>
-          <label className="block text-sm text-dark-5 mb-1">Ciudad / Localidad</label>
+          <label className="block text-sm text-dark mb-1">Ciudad / Localidad</label>
           <input
-            className="w-full border border-gray-3 rounded px-3 py-2 text-sm focus:border-blue outline-none"
+            className="w-full border border-gray-4 rounded px-3 py-2 text-sm focus:border-blue outline-none"
             value={form.city}
             onChange={(e) => setForm({ ...form, city: e.target.value })}
           />
         </div>
         <div>
-          <label className="block text-sm text-dark-5 mb-1">Provincia / Estado</label>
+          <label className="block text-sm text-dark mb-1">Provincia / Estado</label>
           <input
-            className="w-full border border-gray-3 rounded px-3 py-2 text-sm focus:border-blue outline-none"
+            className="w-full border border-gray-4 rounded px-3 py-2 text-sm focus:border-blue outline-none"
             value={form.state || ""}
             onChange={(e) => setForm({ ...form, state: e.target.value })}
           />
         </div>
         <div>
-          <label className="block text-sm text-dark-5 mb-1">Código Postal</label>
+          <label className="block text-sm text-dark mb-1">Código Postal</label>
           <input
-            className="w-full border border-gray-3 rounded px-3 py-2 text-sm focus:border-blue outline-none"
+            className="w-full border border-gray-4 rounded px-3 py-2 text-sm focus:border-blue outline-none"
             value={form.postalCode || ""}
             onChange={(e) => setForm({ ...form, postalCode: e.target.value })}
           />
         </div>
         <div>
-          <label className="block text-sm text-dark-5 mb-1">País</label>
+          <label className="block text-sm text-dark mb-1">País</label>
           <input
-            className="w-full border border-gray-3 rounded px-3 py-2 text-sm focus:border-blue outline-none bg-gray-2"
+            className="w-full border border-gray-4 rounded px-3 py-2 text-sm focus:border-blue outline-none bg-gray-2"
             value={form.country}
             disabled
           />
@@ -140,7 +140,7 @@ const ShippingForm: React.FC<{
         {onCancel && (
           <button
             onClick={onCancel}
-            className="px-4 py-2 text-sm font-medium text-dark-5 hover:text-dark"
+            className="px-4 py-2 text-sm font-medium text-dark hover:text-black"
           >
             Cancelar
           </button>
