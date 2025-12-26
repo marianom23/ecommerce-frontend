@@ -8,6 +8,9 @@ import Breadcrumb from "@/components/Common/Breadcrumb";
 import { orderService, type OrderResponse as ServiceOrderResponse } from "@/services/orderService";
 
 import { bankAccountService, type BankAccount } from "@/services/bankAccountService";
+import { paymentService } from "@/services/paymentService";
+import Modal from "@/components/Common/Modal";
+import toast from "react-hot-toast";
 
 type Mode = "success" | "failure" | "pending";
 
@@ -27,6 +30,8 @@ export default function CheckoutResult({ mode }: Props) {
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [err, setErr] = useState<string | null>(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [confirming, setConfirming] = useState(false);
 
   // MP suele mandar external_reference con algún valor que vos definiste.
   const externalRef = search.get("external_reference") || search.get("externalReference") || "";
@@ -123,6 +128,23 @@ export default function CheckoutResult({ mode }: Props) {
     if (ps === "REJECTED" || ps === "CANCELED" || ps === "EXPIRED") return "failure";
     return "pending";
   }, [order, mode]);
+
+  const handleConfirmTransfer = async () => {
+    if (!order?.id) return;
+
+    setConfirming(true);
+    try {
+      const updatedOrder = await paymentService.confirmBankTransfer(order.id);
+      setOrder(updatedOrder);
+      setShowConfirmModal(false);
+      toast.success("Confirmación enviada. El pago está en revisión por el administrador.");
+    } catch (error: any) {
+      const msg = error?.response?.data?.message || error?.message || "Error al confirmar la transferencia";
+      toast.error(msg);
+    } finally {
+      setConfirming(false);
+    }
+  };
 
   const show = messagesByMode[resolvedMode];
 
@@ -238,6 +260,35 @@ export default function CheckoutResult({ mode }: Props) {
                   <div className="mt-6 text-sm text-gray-600 text-center">
                     <p>Por favor, enviá el comprobante de transferencia indicando el número de orden.</p>
                   </div>
+
+                  {/* Warning and confirmation button for INITIATED status */}
+                  {order?.payment?.status === "INITIATED" && order?.payment?.method === "BANK_TRANSFER" && (
+                    <div className="mt-6 space-y-4">
+                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-start gap-3">
+                        <svg className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                        </svg>
+                        <div className="flex-1">
+                          <p className="font-semibold text-yellow-800">Tenés 2 horas para confirmar la transferencia</p>
+                          <p className="text-sm text-yellow-700 mt-1">
+                            Una vez que hayas realizado la transferencia, confirmala para que el administrador pueda verificar el pago.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="text-center">
+                        <button
+                          onClick={() => setShowConfirmModal(true)}
+                          className="inline-flex items-center gap-2 font-medium text-white bg-green py-3 px-8 rounded-md ease-out duration-200 hover:bg-green-dark shadow-sm"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          Confirmar transferencia
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -270,6 +321,46 @@ export default function CheckoutResult({ mode }: Props) {
           </div>
         </div>
       </section>
+
+      {/* Confirmation Modal */}
+      <Modal
+        isOpen={showConfirmModal}
+        onClose={() => setShowConfirmModal(false)}
+        title="Confirmar transferencia"
+        className="max-w-md"
+      >
+        <div className="text-center">
+          <div className="mb-4 flex justify-center">
+            <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center">
+              <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+          </div>
+
+          <p className="text-dark mb-2 font-semibold">¿Estás seguro de haber realizado la transferencia?</p>
+          <p className="text-sm text-gray-600 mb-6">
+            Si no realizaste la transferencia, el pago será denegado después de las 2 horas.
+          </p>
+
+          <div className="flex justify-center gap-4">
+            <button
+              onClick={() => setShowConfirmModal(false)}
+              className="px-6 py-2.5 border border-gray-3 text-dark font-medium rounded hover:bg-gray-1 transition-colors"
+              disabled={confirming}
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleConfirmTransfer}
+              disabled={confirming}
+              className="px-6 py-2.5 bg-green text-white font-medium rounded hover:bg-green-dark transition-colors disabled:opacity-50"
+            >
+              {confirming ? "Confirmando..." : "Sí, confirmar"}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </>
   );
 }
