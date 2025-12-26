@@ -69,6 +69,28 @@ const BillingProfileContainer: React.FC<{
 
   useEffect(() => { load(); }, []);
 
+  // Auto-aplicar el perfil seleccionado cuando llegue el orderId (si hubo race condition)
+  useEffect(() => {
+    if (profiles.length > 0 && orderId && selectedId) {
+      const selected = profiles.find(p => p.id === selectedId);
+      if (selected) {
+        // silent=false porque en shipping era silent=true, pero aquí el usuario quizas quiera saber.
+        // Aunque si es "auto", mejor silent=true para no spammear al cargar.
+        // El ShippingContainer usa silent=true. Usaremos false 'showToast' si queremos feedback, 
+        // pero la función applyToOrder toma 'showToast'. 
+        // En ShippingContainer 'silent' es el segundo argumento.
+        // Aquí applyToOrder(bp, showToast=true).
+        // Si es carga inicial automática, mejor que sea silencioso o sutil. 
+        // Pero ShippingContainer usa silent=true.
+        // Voy a modificar applyToOrder para aceptar 'silent' explícito o usar el booleano.
+        // La firma es: async function applyToOrder(bp: BillingProfileResponse, showToast: boolean = true)
+        // Pasaré false.
+        applyToOrder(selected, false);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orderId, profiles.length]); // Replicando lógica de ShippingContainer
+
   return (
     <div className="mt-7.5">
       {err && <div className="bg-red-50 border border-red-200 text-red-700 rounded-md p-3 mb-3 text-sm">{err}</div>}
