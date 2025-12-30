@@ -88,7 +88,7 @@ const SingleItem = ({ item }: { item: Product }) => {
 
         <div className="relative w-full h-full flex-1">
           <CloudinaryImage
-            src={item.imgs.previews[0]}
+            src={item.imgs?.urls?.[0] ?? "/placeholder.png"}
             alt={item.title ?? ""}
             fill
             className="object-contain p-5"

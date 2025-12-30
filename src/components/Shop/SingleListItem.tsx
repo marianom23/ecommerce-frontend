@@ -64,9 +64,9 @@ const SingleListItem = ({ item }: { item: Product }) => {
     <div className="group rounded-lg bg-white shadow-1">
       <div className="flex">
         <div className="shadow-list relative overflow-hidden flex items-center justify-center max-w-[270px] w-full sm:min-h-[270px] p-4">
-          {item.imgs.previews[0] ? (
+          {item.imgs?.urls?.[0] ? (
             <CloudinaryImage
-              src={item.imgs.previews[0]}
+              src={item.imgs.urls[0]}
               alt={item.title}
               fill
               className="object-contain p-4"

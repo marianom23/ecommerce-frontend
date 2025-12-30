@@ -45,8 +45,7 @@ const SingleItem: React.FC<{ item: Product }> = ({ item }) => {
   };
 
   const imgSrc =
-    item.imgs?.previews?.[0] ??
-    item.imgs?.thumbnails?.[0] ??
+    item.imgs?.urls?.[0] ??
     "/placeholder.png";
 
   return (

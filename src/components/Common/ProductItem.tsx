@@ -67,7 +67,7 @@ const ProductItem = ({ item }: { item: Product }) => {
     <div className="group">
       <div className="relative overflow-hidden flex items-center justify-center rounded-lg bg-[#F6F7FB] aspect-[2/3] mb-4">
         <CloudinaryImage
-          src={item.imgs.previews[0]}
+          src={item.imgs?.urls?.[0] ?? "/placeholder.png"}
           alt={item.title}
           fill
           className="object-contain p-5"

@@ -67,8 +67,7 @@ const SingleGridItem = ({ item }: { item: Product }) => {
   };
 
   const imgSrc =
-    item.imgs?.previews?.[0] ??
-    item.imgs?.thumbnails?.[0] ??
+    item.imgs?.urls?.[0] ??
     "/placeholder.png";
 
   // 👇 CLASES DINÁMICAS ajustadas para asegurar el relleno

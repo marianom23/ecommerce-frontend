@@ -36,7 +36,7 @@ const QuickViewModal = () => {
     totalReviews: number;
     price: number;
     discountedPrice: number;
-    imgs?: { thumbnails: string[]; previews: string[] };
+    imgs?: { urls: string[] };
     fulfillmentType?: 'PHYSICAL' | 'DIGITAL_ON_DEMAND' | 'DIGITAL_INSTANT';
     priceWithTransfer?: number;
   } | null);
@@ -90,7 +90,7 @@ const QuickViewModal = () => {
           title: d.title,
           price,
           discountedPrice,
-          imgs: { thumbnails: (v?.images ?? d.images) ?? [], previews: (v?.images ?? d.images) ?? [] },
+          imgs: { urls: (v?.images ?? d.images) ?? [] },
           quantity: qty,
           variantId: v?.id,
           variantAttrs: v?.attrs ?? {},
@@ -104,7 +104,7 @@ const QuickViewModal = () => {
           title: d.title,
           price,
           discountedPrice,
-          imgs: { thumbnails: d.images ?? [], previews: d.images ?? [] },
+          imgs: { urls: d.images ?? [] },
           quantity: qty,
         };
       }
@@ -115,7 +115,7 @@ const QuickViewModal = () => {
       title: p.title,
       price: p.price,
       discountedPrice: p.discountedPrice ?? p.price,
-      imgs: p.imgs ?? { thumbnails: [], previews: [] },
+      imgs: p.imgs ?? { urls: [] },
       quantity: qty,
     };
   };
@@ -164,7 +164,7 @@ const QuickViewModal = () => {
 
   // Imágenes para galería: combinar base + variante para no perder las fotos generales
   const galleryImages: string[] = useMemo(() => {
-    const baseImages = details?.images?.length ? details.images : (product?.imgs?.previews ?? []);
+    const baseImages = details?.images?.length ? details.images : (product?.imgs?.urls ?? []);
     const variantImages = selectedVariant?.images?.length ? selectedVariant.images : [];
 
     // Unificar y quitar duplicados. "basese primero" => base primero
@@ -177,7 +177,7 @@ const QuickViewModal = () => {
     // muestre exactamente lo mismo que la galería (incluyendo variantes y base).
     const payload = details
       ? { ...details, images: galleryImages }
-      : { ...product, imgs: { ...product?.imgs, previews: galleryImages } };
+      : { ...product, imgs: { ...product?.imgs, urls: galleryImages } };
 
     dispatch(updateproductDetails(payload));
     openPreviewModal();

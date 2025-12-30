@@ -8,8 +8,7 @@ export type Product = {
   discountedPrice: number;
   id: number;
   imgs?: {
-    thumbnails: string[];
-    previews: string[];
+    urls: string[];
   };
   variantCount: number;
   defaultVariantId: number | null;

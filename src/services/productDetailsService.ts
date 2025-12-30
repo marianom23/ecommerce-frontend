@@ -6,7 +6,7 @@ const basePublic = "/products"; // pasa por app/api/p/[...path]/route.ts (públi
 const baseAdmin = "/products"; // pasa por app/api/b/[...path]/route.ts (con Bearer)
 
 /** ===== Tipos mínimos del endpoint /products/:id/details ===== */
-type ImageSet = { thumbnails: string[]; previews: string[] };
+type ImageSet = { urls: string[] };
 
 type APIVariant = {
   id: number;
@@ -102,7 +102,7 @@ function normalize(p: ProductDetailsRaw): NormalizedProduct {
       const price = money(v.price);
       const discounted = money(v.discountedPrice ?? v.price);
       const images =
-        (v.imgs?.previews?.length ? v.imgs.previews : pv.imgs?.previews) ?? [];
+        (v.imgs?.urls?.length ? v.imgs.urls : pv.imgs?.urls) ?? [];
       return {
         id: v.id,
         sku: v.sku,
@@ -132,7 +132,7 @@ function normalize(p: ProductDetailsRaw): NormalizedProduct {
       brand: pv.brand,
       category: pv.category,
       sku: pv.sku,
-      images: pv.imgs?.previews ?? [],
+      images: pv.imgs?.urls ?? [],
       averageRating: pv.averageRating ?? 0,
       totalReviews: pv.totalReviews ?? 0,
       hasVariants: true,
@@ -158,7 +158,7 @@ function normalize(p: ProductDetailsRaw): NormalizedProduct {
       brand: ps.brand,
       category: ps.category,
       sku: ps.sku,
-      images: ps.imgs?.previews ?? [],
+      images: ps.imgs?.urls ?? [],
       averageRating: ps.averageRating ?? 0,
       totalReviews: ps.totalReviews ?? 0,
       hasVariants: false,

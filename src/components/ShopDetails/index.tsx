@@ -154,7 +154,7 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
 
   // Combinar imágenes base y de variante para galería
   const currentImages = React.useMemo(() => {
-    const baseImages = productDetails?.images ?? product?.imgs?.previews ?? [];
+    const baseImages = productDetails?.images ?? product?.imgs?.urls ?? [];
     const variantImages = selectedVariant?.images?.length ? selectedVariant.images : [];
     // "basese primero" => base primero, luego variant, unicos
     return Array.from(new Set([...baseImages, ...variantImages]));
@@ -218,7 +218,7 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
       const payload = {
         ...basePayload,
         images: currentImages, // for normalized/redux structure usually expected
-        imgs: { ...(basePayload as any).imgs, previews: currentImages } // fallback for light structure
+        imgs: { ...(basePayload as any).imgs, urls: currentImages } // fallback for light structure
       };
       dispatch(updateproductDetails(payload as any));
     }
