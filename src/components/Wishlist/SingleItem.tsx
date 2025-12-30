@@ -45,8 +45,8 @@ const SingleItem: React.FC<{ item: Product }> = ({ item }) => {
   };
 
   const imgSrc =
-    item.imgs?.thumbnails?.[0] ??
     item.imgs?.previews?.[0] ??
+    item.imgs?.thumbnails?.[0] ??
     "/placeholder.png";
 
   return (
@@ -84,10 +84,10 @@ const SingleItem: React.FC<{ item: Product }> = ({ item }) => {
         <div className="flex items-center justify-between gap-5">
           <div className="w-full flex items-center gap-5.5">
             <div className="flex items-center justify-center rounded-[5px] bg-gray-2 max-w-[80px] w-full h-17.5 relative overflow-hidden">
-              {item.imgs?.thumbnails?.[0] ? (
+              {imgSrc ? (
                 <CloudinaryImage
-                  src={item.imgs.thumbnails[0]}
-                  alt="product"
+                  src={imgSrc}
+                  alt={item.title}
                   fill
                   className="object-contain"
                 />

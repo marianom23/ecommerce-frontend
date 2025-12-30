@@ -152,9 +152,13 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
     ? productDetails.variants.find(v => v.id === selectedVariantId) ?? null
     : null;
 
-  const currentImages = selectedVariant?.images?.length
-    ? selectedVariant.images
-    : productDetails?.images ?? product?.imgs?.previews ?? [];
+  // Combinar imágenes base y de variante para galería
+  const currentImages = React.useMemo(() => {
+    const baseImages = productDetails?.images ?? product?.imgs?.previews ?? [];
+    const variantImages = selectedVariant?.images?.length ? selectedVariant.images : [];
+    // "basese primero" => base primero, luego variant, unicos
+    return Array.from(new Set([...baseImages, ...variantImages]));
+  }, [productDetails, product, selectedVariant]);
 
   const currentPrice = selectedVariant
     ? selectedVariant.discountedPrice
@@ -206,8 +210,18 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
   const isInStock = productDetails?.inStock ?? true;
 
   const handlePreviewSlider = () => {
-    // Pass the full product details to the preview modal
-    dispatch(updateproductDetails(productDetails ?? product));
+    // Pass the full product details to the preview modal with merged images
+    const basePayload = productDetails ?? product;
+    if (basePayload) {
+      // Create a payload that explicitly overrides images with our merged list
+      // Check if it's NormalizedProduct style or "light" product style
+      const payload = {
+        ...basePayload,
+        images: currentImages, // for normalized/redux structure usually expected
+        imgs: { ...(basePayload as any).imgs, previews: currentImages } // fallback for light structure
+      };
+      dispatch(updateproductDetails(payload as any));
+    }
     openPreviewModal();
   };
 

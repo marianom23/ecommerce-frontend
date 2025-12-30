@@ -162,17 +162,24 @@ const QuickViewModal = () => {
     return details.variants.find(v => v.id === selectedVariantId) ?? null;
   }, [details, selectedVariantId]);
 
-  // Imágenes para galería (si hay variante elegida, usamos sus imágenes)
+  // Imágenes para galería: combinar base + variante para no perder las fotos generales
   const galleryImages: string[] = useMemo(() => {
-    if (selectedVariant?.images?.length) return selectedVariant.images;
-    if (details?.images?.length) return details.images;
-    return product?.imgs?.previews ?? [];
+    const baseImages = details?.images?.length ? details.images : (product?.imgs?.previews ?? []);
+    const variantImages = selectedVariant?.images?.length ? selectedVariant.images : [];
+
+    // Unificar y quitar duplicados. "basese primero" => base primero
+    return Array.from(new Set([...baseImages, ...variantImages]));
   }, [selectedVariant, details, product]);
 
   // preview modal
   const handlePreviewSlider = () => {
-    // Pasamos el detalle (incluye variantes) o el light como fallback
-    dispatch(updateproductDetails(details ?? product));
+    // Pasamos el detalle con las imágenes YA COMBINADAS para que el slider
+    // muestre exactamente lo mismo que la galería (incluyendo variantes y base).
+    const payload = details
+      ? { ...details, images: galleryImages }
+      : { ...product, imgs: { ...product?.imgs, previews: galleryImages } };
+
+    dispatch(updateproductDetails(payload));
     openPreviewModal();
   };
 
