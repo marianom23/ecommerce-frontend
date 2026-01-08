@@ -1,11 +1,11 @@
 // app/layout.tsx
 "use client";
-import { Metadata } from "next";
 import React from "react";
 import { GoogleOAuthProvider } from '@react-oauth/google';
 
 import { AuthProvider } from "@/app/context/AuthContext";
 import MetaPixel from "@/components/MetaPixel";
+import { ReduxProvider } from "@/redux/provider";
 
 export default function RootLayout({
   children,
@@ -22,10 +22,12 @@ export default function RootLayout({
       </head>
       <body>
         <GoogleOAuthProvider clientId={googleClientId}>
-          <AuthProvider>
-            <MetaPixel />
-            {children}
-          </AuthProvider>
+          <ReduxProvider>
+            <AuthProvider>
+              <MetaPixel />
+              {children}
+            </AuthProvider>
+          </ReduxProvider>
         </GoogleOAuthProvider>
       </body>
     </html>
