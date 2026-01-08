@@ -45,8 +45,8 @@ const Signin = () => {
         password: formData.password
       });
 
-      // acá guardás token según cómo funciona tu backend
-      localStorage.setItem("token", data.token!);
+      // NOTE: authService.login ya guarda el token en localStorage como 'auth_token'
+      // No necesitamos guardarlo de nuevo aquí
 
       window.location.href = next; // redirige
     } catch (err: any) {

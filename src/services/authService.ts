@@ -30,11 +30,18 @@ export const authService = {
   async login(payload: LoginRequest) {
     const response = await api.post<LoginResponse>("/login", payload);
 
+    // DEBUG: Ver qué recibimos
+    console.log('Login response:', response);
+    console.log('Token:', response.token);
+
     // Guardar token en localStorage para modo incógnito
     if (response.token) {
       if (typeof window !== 'undefined') {
         localStorage.setItem('auth_token', response.token);
+        console.log('✅ Token guardado en localStorage');
       }
+    } else {
+      console.warn('⚠️ No se recibió token en la respuesta');
     }
 
     return response;
