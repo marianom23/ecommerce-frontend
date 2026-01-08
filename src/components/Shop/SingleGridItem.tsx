@@ -16,6 +16,7 @@ import { generateProductUrl } from "@/utils/slug";
 import { StarRating } from "@/components/Common/StarRating";
 import { PriceDisplay } from "@/components/Common/PriceDisplay";
 import { useAuth } from "@/hooks/useAuth";
+import * as pixel from "@/utils/pixel";
 
 const SingleGridItem = ({ item }: { item: Product }) => {
   const { isAuthenticated } = useAuth();
@@ -46,6 +47,14 @@ const SingleGridItem = ({ item }: { item: Product }) => {
 
       quantity: 1,
     });
+
+    pixel.event("AddToCart", {
+      content_name: item.title,
+      content_ids: [item.id],
+      content_type: "product",
+      value: (item.discountedPrice || item.price),
+      currency: "USD",
+    });
   };
 
   const handleItemToWishList = async () => {
@@ -58,6 +67,16 @@ const SingleGridItem = ({ item }: { item: Product }) => {
     if (products) {
       const isIn = products.some((p) => p.id === item.id);
       toast(isIn ? "Añadido a tu wishlist" : "Quitado de tu wishlist");
+
+      if (isIn) {
+        pixel.event("AddToWishlist", {
+          content_name: item.title,
+          content_ids: [item.id],
+          content_type: "product",
+          value: item.discountedPrice || item.price,
+          currency: "USD",
+        });
+      }
     }
   };
 

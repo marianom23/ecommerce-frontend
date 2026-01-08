@@ -16,6 +16,7 @@ import { AppDispatch, useAppSelector } from "@/redux/store";
 import Link from "next/link";
 import { useCart } from "@/hooks/useCart"; // 👈
 import { useAuth } from "@/hooks/useAuth";
+import * as pixel from "@/utils/pixel";
 
 const ProductItem = ({ item }: { item: Product }) => {
   const { isAuthenticated } = useAuth();
@@ -44,6 +45,13 @@ const ProductItem = ({ item }: { item: Product }) => {
       variantId: item.defaultVariantId,
       quantity: 1,
     });
+    pixel.event("AddToCart", {
+      content_name: item.title,
+      content_ids: [item.id],
+      content_type: "product",
+      value: item.discountedPrice || item.price,
+      currency: "USD",
+    });
   };
 
   const handleItemToWishList = async () => {
@@ -56,6 +64,15 @@ const ProductItem = ({ item }: { item: Product }) => {
     if (products) {
       const isIn = products.some((p) => p.id === item.id);
       toast(isIn ? "Añadido a tu wishlist" : "Quitado de tu wishlist");
+      if (isIn) {
+        pixel.event("AddToWishlist", {
+          content_name: item.title,
+          content_ids: [item.id],
+          content_type: "product",
+          value: item.discountedPrice || item.price,
+          currency: "USD",
+        });
+      }
     }
   };
 

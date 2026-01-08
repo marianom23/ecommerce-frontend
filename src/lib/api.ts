@@ -39,9 +39,33 @@ export const instance = axios.create({
   withCredentials: true,              // importante para mandar auth_token
 });
 
-// ✅ Dejar pasar el error original (con response/status/data)
+// ✅ REQUEST INTERCEPTOR: Añade headers automáticamente desde localStorage
+instance.interceptors.request.use((config) => {
+  if (typeof window !== 'undefined') {
+    // 1. Auth Token (para login)
+    const authToken = localStorage.getItem('auth_token');
+    if (authToken) {
+      config.headers.Authorization = `Bearer ${authToken}`;
+    }
+
+    // 2. Cart Session (para carrito anónimo)
+    const cartSession = localStorage.getItem('cart_session');
+    if (cartSession) {
+      config.headers['X-Cart-Session'] = cartSession;
+    }
+  }
+  return config;
+});
+
+// ✅ RESPONSE INTERCEPTOR: Guardar sessionId del carrito
 instance.interceptors.response.use(
-  (res) => res,
+  (res) => {
+    // Si el response tiene sessionId, guardarlo en localStorage
+    if (typeof window !== 'undefined' && res.data?.data?.sessionId) {
+      localStorage.setItem('cart_session', res.data.data.sessionId);
+    }
+    return res;
+  },
   (err) => Promise.reject(err)
 );
 
@@ -62,9 +86,9 @@ async function request<T = any>(
 }
 
 export const api = {
-  get:   <T>(url: string, opts?: Options) => request<T>("GET", url, undefined, opts),
-  post:  <T>(url: string, body?: any, opts?: Options) => request<T>("POST", url, body, opts),
-  put:   <T>(url: string, body?: any, opts?: Options) => request<T>("PUT", url, body, opts),
+  get: <T>(url: string, opts?: Options) => request<T>("GET", url, undefined, opts),
+  post: <T>(url: string, body?: any, opts?: Options) => request<T>("POST", url, body, opts),
+  put: <T>(url: string, body?: any, opts?: Options) => request<T>("PUT", url, body, opts),
   patch: <T>(url: string, body?: any, opts?: Options) => request<T>("PATCH", url, body, opts),
-  del:   <T>(url: string, opts?: Options) => request<T>("DELETE", url, undefined, opts),
+  del: <T>(url: string, opts?: Options) => request<T>("DELETE", url, undefined, opts),
 };

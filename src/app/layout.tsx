@@ -8,6 +8,7 @@ export const metadata: Metadata = {
 };
 
 import { AuthProvider } from "@/app/context/AuthContext";
+import MetaPixel from "@/components/MetaPixel";
 
 export default function RootLayout({
   children,
@@ -17,7 +18,10 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body>
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <MetaPixel />
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );

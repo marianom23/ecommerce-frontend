@@ -23,17 +23,34 @@ export type LoginResponse = {
 export const authService = {
   /** Obtener usuario actual (si está logueado) */
   me() {
-    return api.get<MeResponse>("/me"); // ✔️ CORRECTO
+    return api.get<MeResponse>("/me");
   },
 
   /** Login con email y contraseña */
-  login(payload: LoginRequest) {
-    return api.post<LoginResponse>("/login", payload); // ✔️ CORRECTO
+  async login(payload: LoginRequest) {
+    const response = await api.post<LoginResponse>("/login", payload);
+
+    // Guardar token en localStorage para modo incógnito
+    if (response.token) {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('auth_token', response.token);
+      }
+    }
+
+    return response;
   },
 
   /** Logout: backend borra las cookies HttpOnly */
-  logout() {
-    console.log("logout")
-    return api.post<void>("/logout", {}); // ✔️ CORRECTO
+  async logout() {
+    try {
+      console.log("logout");
+      await api.post<void>("/logout", {});
+    } finally {
+      // Limpiar localStorage (incógnito mode)
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('cart_session');
+      }
+    }
   },
 };

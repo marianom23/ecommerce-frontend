@@ -13,6 +13,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { orderService, type PaymentMethod as PM } from "@/services/orderService";
 import toast from "react-hot-toast";
 import { useAuth } from "@/hooks/useAuth";
+import * as pixel from "@/utils/pixel";
 
 const Checkout = () => {
   const searchParams = useSearchParams();
@@ -27,6 +28,23 @@ const Checkout = () => {
   const [err, setErr] = useState<string | null>(null);
   const [paymentMethodSelected, setPaymentMethodSelected] = useState<PM | null>(null);
   const [reloadOrderKey, setReloadOrderKey] = useState(0);
+
+  // Track if InitiateCheckout has been fired to prevent duplicates
+  const [hasTrackedInitiateCheckout, setHasTrackedInitiateCheckout] = useState(false);
+
+  // Handler for OrderList onLoaded
+  const handleOrderLoaded = (cart: any) => {
+    if (!hasTrackedInitiateCheckout && cart && cart.items.length > 0) {
+      pixel.event("InitiateCheckout", {
+        content_ids: cart.items.map((item: any) => item.productId || item.id), // Ensure we get the ID
+        content_type: "product",
+        value: cart.total,
+        currency: "USD", // Adjust if needed, maybe cart.currency
+        num_items: cart.items.reduce((acc: number, item: any) => acc + item.quantity, 0),
+      });
+      setHasTrackedInitiateCheckout(true);
+    }
+  };
 
   // 👇 AHORA USAMOS TU SISTEMA DE AUTH
   const { isAuthenticated, loading } = useAuth();
@@ -118,7 +136,11 @@ const Checkout = () => {
               {/* right */}
               <div className="max-w-[455px] w-full sticky top-24 h-fit flex flex-col gap-6">
                 <ShippingMethod />
-                <OrderList orderId={orderId} reloadKey={reloadOrderKey} />
+                <OrderList
+                  orderId={orderId}
+                  reloadKey={reloadOrderKey}
+                  onLoaded={handleOrderLoaded}
+                />
 
                 {err && (
                   <p className="text-red-600 text-sm mt-3">{err}</p>

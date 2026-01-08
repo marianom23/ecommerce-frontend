@@ -17,6 +17,7 @@ import {
   type NormalizedVariant,
 } from "@/services/productDetailsService";
 import { PriceDisplay } from "@/components/Common/PriceDisplay";
+import * as pixel from "@/utils/pixel";
 import { useAuth } from "@/hooks/useAuth";
 
 const currency = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" });
@@ -141,6 +142,14 @@ const QuickViewModal = () => {
         } else {
           setSelectedVariantId(null);
         }
+        // Track ViewContent
+        pixel.event("ViewContent", {
+          content_name: d.title,
+          content_ids: [d.id],
+          content_type: "product",
+          value: d.discountedPrice || d.price,
+          currency: "USD",
+        });
       } catch (e) {
         console.error(e);
         if (!cancelled) setErr("No se pudo cargar el producto.");
@@ -185,28 +194,35 @@ const QuickViewModal = () => {
 
   // add to cart
   const handleAddToCart = async () => {
-    const productId = details?.id ?? product?.id;
-    if (!productId) return;
+    const productDetails = details ?? product;
+    if (!productDetails) return;
 
-    // si el producto tiene variantes, necesitamos una seleccionada
-    const variantId =
-      details?.hasVariants ? (selectedVariantId ?? undefined) : undefined;
+    const productId = productDetails.id;
+    // Si el producto tiene variantes, necesitamos una seleccionada
+    const variantId = details?.hasVariants ? (selectedVariantId ?? undefined) : undefined;
 
     if (details?.hasVariants && !variantId) {
-      // acá podrías dar feedback si querés
-      // toast("Elegí una variante", { icon: "👉" });
       return;
     }
 
-    await addItem({
-      productId,
-      variantId,
-      quantity, // del estado local
-    });
+    try {
+      await addItem({
+        productId,
+        variantId,
+        quantity, // del estado local
+      });
 
-    // (opcional): cerrar el modal o dar feedback
-    // closeModal();
-    // toast.success("Producto agregado");
+      pixel.event("AddToCart", {
+        content_name: productDetails.title,
+        content_ids: [productDetails.id],
+        content_type: "product",
+        value: (productDetails.discountedPrice || productDetails.price) * quantity,
+        currency: "USD",
+      });
+    } catch (err) {
+      console.error("Error adding to cart:", err);
+      toast.error("No se pudo agregar el producto al carrito.");
+    }
   };
 
 
@@ -613,6 +629,18 @@ const QuickViewModal = () => {
                       if (products) {
                         const isIn = products.some((p) => p.id === product.id);
                         toast(isIn ? "Añadido a tu wishlist" : "Quitado de tu wishlist");
+                        if (!isIn) { // If it was added to wishlist
+                          const productDetails = details ?? product;
+                          if (productDetails) {
+                            pixel.event("AddToWishlist", {
+                              content_name: productDetails.title,
+                              content_ids: [productDetails.id],
+                              content_type: "product",
+                              value: productDetails.discountedPrice || productDetails.price,
+                              currency: "USD",
+                            });
+                          }
+                        }
                       }
                     }
                   }}
@@ -658,5 +686,4 @@ const QuickViewModal = () => {
     </div >
   );
 };
-
 export default QuickViewModal;

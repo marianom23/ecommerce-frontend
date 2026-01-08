@@ -24,7 +24,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         try {
             const res = await authService.me();
             setUser(res);
-        } catch {
+        } catch (error) {
+            // Token inválido/expirado - limpiar localStorage
+            if (typeof window !== 'undefined') {
+                localStorage.removeItem('auth_token');
+            }
             setUser(null);
         } finally {
             setLoading(false);
@@ -32,7 +36,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
 
     useEffect(() => {
-        fetchUser();
+        // Verificar si hay token en localStorage antes de hacer la petición
+        if (typeof window !== 'undefined') {
+            const token = localStorage.getItem('auth_token');
+            if (token) {
+                // Token existe, validar con backend
+                fetchUser();
+            } else {
+                // No hay token, marcar como no autenticado
+                setLoading(false);
+            }
+        } else {
+            fetchUser();
+        }
     }, []);
 
     return (

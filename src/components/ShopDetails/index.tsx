@@ -21,6 +21,7 @@ import { ReviewForm } from "./ReviewForm";
 import { useAuth } from "@/hooks/useAuth";
 import { StarRating } from "@/components/Common/StarRating";
 import { PriceDisplay } from "@/components/Common/PriceDisplay";
+import * as pixel from "@/utils/pixel";
 
 interface ShopDetailsProps {
   productId?: string;
@@ -100,6 +101,15 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
 
         // Update Redux store with full details
         dispatch(updateproductDetails(details));
+
+        // Track ViewContent
+        pixel.event("ViewContent", {
+          content_name: details.title,
+          content_ids: [details.id],
+          content_type: "product",
+          value: details.discountedPrice || details.price,
+          currency: "USD", // Adjust currency if needed
+        });
       } catch (err) {
         console.error('Error fetching product details:', err);
         setError('Failed to load product details');
@@ -284,6 +294,14 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
         productId: productDetails.id,
         variantId: productDetails.hasVariants && selectedVariantId ? selectedVariantId : undefined,
         quantity,
+      });
+
+      pixel.event("AddToCart", {
+        content_name: productDetails.title,
+        content_ids: [productDetails.id],
+        content_type: "product",
+        value: (productDetails.discountedPrice || productDetails.price) * quantity,
+        currency: "USD",
       });
     } catch (err) {
       console.error('Error adding to cart:', err);
@@ -645,6 +663,15 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
                             if (products) {
                               const isIn = products.some((p) => p.id === productDetails.id);
                               toast(isIn ? "Añadido a tu wishlist" : "Quitado de tu wishlist");
+                              if (!isIn) {
+                                pixel.event("AddToWishlist", {
+                                  content_name: productDetails.title,
+                                  content_ids: [productDetails.id],
+                                  content_type: "product",
+                                  value: productDetails.discountedPrice || productDetails.price,
+                                  currency: "USD",
+                                });
+                              }
                             }
                           }
                         }}
