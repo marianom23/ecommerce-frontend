@@ -88,6 +88,14 @@ const Signin = () => {
     setLoading(true);
 
     try {
+      // Inicializar MSAL antes de usarlo (requerido en v3+)
+      try {
+        await msalInstance.initialize();
+      } catch (e) {
+        // Si ya está inicializado puede lanzar error, lo ignoramos
+        console.log("Info MSAL:", e);
+      }
+
       const loginResponse = await msalInstance.loginPopup({
         scopes: ["openid", "profile", "email"]
       });
@@ -100,6 +108,7 @@ const Signin = () => {
       // Token ya guardado en localStorage
       window.location.href = next;
     } catch (err: any) {
+      console.error(err);
       setError(err?.message || "Error al iniciar sesión con Microsoft");
       setLoading(false);
     }
