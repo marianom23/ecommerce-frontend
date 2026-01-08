@@ -67,7 +67,7 @@ instance.interceptors.request.use((config) => {
   return config;
 });
 
-// ✅ RESPONSE INTERCEPTOR: Auto-refresh en 401
+// ✅ RESPONSE INTERCEPTOR: Guardar sessionId del carrito
 instance.interceptors.response.use(
   (res) => {
     // Si el response tiene sessionId, guardarlo en localStorage
@@ -76,63 +76,7 @@ instance.interceptors.response.use(
     }
     return res;
   },
-  async (error) => {
-    const originalRequest = error.config;
-
-    // Si es 401 y no es el endpoint de refresh ni un reintento previo
-    if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url.includes('/auth/refresh')) {
-      originalRequest._retry = true;
-
-      // Si ya hay un refresh en curso, esperar
-      if (isRefreshing) {
-        return new Promise((resolve) => {
-          refreshSubscribers.push((token: string) => {
-            originalRequest.headers.Authorization = `Bearer ${token}`;
-            resolve(instance(originalRequest));
-          });
-        });
-      }
-
-      isRefreshing = true;
-
-      try {
-        // Llamar a refresh usando la instancia limpia (sin interceptores)
-        const response = await refreshInstance.post('/auth/refresh');
-
-        // Ajustar según la estructura de tu respuesta. 
-        const newAccessToken = response.data?.data?.token;
-
-        if (!newAccessToken) throw new Error("No token returned from refresh");
-
-        // Guardar nuevo access token
-        localStorage.setItem('access_token', newAccessToken);
-
-        // Actualizar header del request original
-        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-
-        // Notificar a requests en espera
-        refreshSubscribers.forEach(callback => callback(newAccessToken));
-        refreshSubscribers = [];
-
-        // Reintentar request original
-        return instance(originalRequest);
-
-      } catch (refreshError) {
-        // Refresh falló = logout
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('cart_session');
-        if (typeof window !== 'undefined') {
-          window.location.href = '/login';
-        }
-        return Promise.reject(refreshError);
-
-      } finally {
-        isRefreshing = false;
-      }
-    }
-
-    return Promise.reject(error);
-  }
+  (err) => Promise.reject(err)
 );
 
 type HttpMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
