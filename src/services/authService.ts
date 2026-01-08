@@ -44,7 +44,7 @@ export const authService = {
     // Guardar token en localStorage para modo incógnito
     if (response.token) {
       if (typeof window !== 'undefined') {
-        localStorage.setItem('auth_token', response.token);
+        localStorage.setItem('access_token', response.token);
         console.log('✅ Token guardado en localStorage');
       }
     } else {
@@ -63,7 +63,7 @@ export const authService = {
     // Guardar token en localStorage
     if (response.token) {
       if (typeof window !== 'undefined') {
-        localStorage.setItem('auth_token', response.token);
+        localStorage.setItem('access_token', response.token);
         console.log('✅ Token de OAuth guardado en localStorage');
       }
     } else {
@@ -81,7 +81,7 @@ export const authService = {
     } finally {
       // Limpiar localStorage (incógnito mode)
       if (typeof window !== 'undefined') {
-        localStorage.removeItem('auth_token');
+        localStorage.removeItem('access_token');
         localStorage.removeItem('cart_session');
       }
     }

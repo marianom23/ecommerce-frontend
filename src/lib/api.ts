@@ -39,11 +39,15 @@ export const instance = axios.create({
   withCredentials: true,              // importante para mandar auth_token
 });
 
+
+let isRefreshing = false;
+let refreshSubscribers: ((token: string) => void)[] = [];
+
 // ✅ REQUEST INTERCEPTOR: Añade headers automáticamente desde localStorage
 instance.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
-    // 1. Auth Token (para login)
-    const authToken = localStorage.getItem('auth_token');
+    // 1. Auth Token (para login) -> Ahora "access_token"
+    const authToken = localStorage.getItem('access_token');
     if (authToken) {
       config.headers.Authorization = `Bearer ${authToken}`;
     }
@@ -57,7 +61,7 @@ instance.interceptors.request.use((config) => {
   return config;
 });
 
-// ✅ RESPONSE INTERCEPTOR: Guardar sessionId del carrito
+// ✅ RESPONSE INTERCEPTOR: Auto-refresh en 401
 instance.interceptors.response.use(
   (res) => {
     // Si el response tiene sessionId, guardarlo en localStorage
@@ -66,7 +70,64 @@ instance.interceptors.response.use(
     }
     return res;
   },
-  (err) => Promise.reject(err)
+  async (error) => {
+    const originalRequest = error.config;
+
+    // Si es 401 y no es el endpoint de refresh ni un reintento previo
+    if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url.includes('/auth/refresh')) {
+      originalRequest._retry = true;
+
+      // Si ya hay un refresh en curso, esperar
+      if (isRefreshing) {
+        return new Promise((resolve) => {
+          refreshSubscribers.push((token: string) => {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            resolve(instance(originalRequest));
+          });
+        });
+      }
+
+      isRefreshing = true;
+
+      try {
+        // Llamar a refresh (refreshToken va automáticamente en cookie)
+        // Usamos instance para obtener la respuesta raw completa
+        const response = await instance.post('/auth/refresh');
+
+        // Ajustar según la estructura de tu respuesta. 
+        // Si backend devuelve ServiceResult: { data: { token: "..." }, status: "OK", ... }
+        // Entonces axios devuelve { data: { data: { token: "..." } ... } ... }
+        const newAccessToken = response.data?.data?.token;
+
+        if (!newAccessToken) throw new Error("No token returned from refresh");
+
+        // Guardar nuevo access token
+        localStorage.setItem('access_token', newAccessToken);
+
+        // Actualizar header del request original
+        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+
+        // Notificar a requests en espera
+        refreshSubscribers.forEach(callback => callback(newAccessToken));
+        refreshSubscribers = [];
+
+        // Reintentar request original
+        return instance(originalRequest);
+
+      } catch (refreshError) {
+        // Refresh falló = logout
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('cart_session');
+        window.location.href = '/login'; // O usar router.push si estuviera disponible
+        return Promise.reject(refreshError);
+
+      } finally {
+        isRefreshing = false;
+      }
+    }
+
+    return Promise.reject(error);
+  }
 );
 
 type HttpMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
