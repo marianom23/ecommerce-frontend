@@ -58,60 +58,46 @@ instance.interceptors.request.use((config) => {
       config.headers.Authorization = `Bearer ${authToken}`;
     }
 
-    // 2. Cart Session (para carrito anónimo)
-    const cartSession = localStorage.getItem('cart_session');
-    if (cartSession) {
-      config.headers['X-Cart-Session'] = cartSession;
-    }
+    // 2. Cart Session (para carrito anónimo) -> YA NO ES NECESARIO (Cookies automáticas por subdominio)
+    // const cartSession = localStorage.getItem('cart_session');
+    // if (cartSession) {
+    //   config.headers['X-Cart-Session'] = cartSession;
+    // }
   }
   return config;
 });
 
-// ✅ RESPONSE INTERCEPTOR: Guardar sessionId del carrito
-instance.interceptors.response.use(
-  (res) => {
-    // Si el response tiene sessionId, guardarlo en localStorage
-    if (typeof window !== 'undefined' && res.data?.data?.sessionId) {
-      localStorage.setItem('cart_session', res.data.data.sessionId);
-    }
-    return res;
-  },
-  (err) => Promise.reject(err)
-);
+
 
 // ✅ INTERCEPTOR DE REFRESH (SOLO CLIENTE)
 if (typeof window !== 'undefined') {
   let isRefreshing = false;
-  let refreshSubscribers: ((token: string) => void)[] = [];
+  let refreshSubscribers: { resolve: (token: string) => void; reject: (err: any) => void }[] = [];
 
   instance.interceptors.response.use(
     (response) => response,
     async (error) => {
       const originalRequest = error.config;
 
-      // Si es 401 y no es (login/refresh/logout) ni un reintento
+      // Si es 401 (Unauthorized) o 403 (Forbidden - a veces pasa cuando el token expira pero Spring lo trata como anónimo)
       if (
-        error.response?.status === 401 &&
+        (error.response?.status === 401 || error.response?.status === 403) &&
         !originalRequest._retry &&
         !originalRequest.url?.includes('/auth/refresh') &&
         !originalRequest.url?.includes('/login')
       ) {
 
-        // 🛑 GUARDIA: Si no tenemos token guardado, no intentamos refresh. 
-        // Significa que somos anónimos o ya cerramos sesión.
-        const storedToken = localStorage.getItem('access_token');
-        if (!storedToken) {
-          return Promise.reject(error);
-        }
-
+        console.log("🔄 Token expirado o inválido (" + error.response.status + "). Intentando refresh...");
         originalRequest._retry = true;
 
         if (isRefreshing) {
-          return new Promise((resolve) => {
-            refreshSubscribers.push((token) => {
-              originalRequest.headers.Authorization = `Bearer ${token}`;
-              resolve(instance(originalRequest));
-            });
+          return new Promise((resolve, reject) => {
+            refreshSubscribers.push({ resolve, reject });
+          }).then((token) => {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            return instance(originalRequest);
+          }).catch((err) => {
+            return Promise.reject(err);
           });
         }
 
@@ -127,23 +113,29 @@ if (typeof window !== 'undefined') {
 
           if (!newToken) throw new Error("No token returned");
 
+          console.log("✅ Token refrescado exitosamente.");
           localStorage.setItem('access_token', newToken);
 
-          refreshSubscribers.forEach((cb) => cb(newToken));
+          // Notificar a los suscriptores
+          refreshSubscribers.forEach(({ resolve }) => resolve(newToken));
           refreshSubscribers = [];
 
           originalRequest.headers.Authorization = `Bearer ${newToken}`;
           return instance(originalRequest);
 
         } catch (refreshError) {
-          // Si falla refresh, logout
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('cart_session');
+          console.error("❌ Falló el refresh token:", refreshError);
 
-          // Evitar loop infinito de recargas si ya estamos en login
-          if (window.location.pathname !== '/login') {
-            window.location.href = '/login';
-          }
+          // Si falla refresh, logout y rechazar pedidos pendientes
+          localStorage.removeItem('access_token');
+
+          refreshSubscribers.forEach(({ reject }) => reject(refreshError));
+          refreshSubscribers = [];
+
+          // COMENTADO: No forzar recarga/redirect para mantener la UX fluida (modo guest)
+          // if (window.location.pathname !== '/login') {
+          //   window.location.href = '/login';
+          // }
           return Promise.reject(refreshError);
         } finally {
           isRefreshing = false;

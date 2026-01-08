@@ -82,7 +82,6 @@ export const authService = {
       // Limpiar localStorage (incógnito mode)
       if (typeof window !== 'undefined') {
         localStorage.removeItem('access_token');
-        localStorage.removeItem('cart_session');
       }
     }
   },
