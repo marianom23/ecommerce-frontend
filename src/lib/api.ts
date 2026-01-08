@@ -40,6 +40,12 @@ export const instance = axios.create({
 });
 
 
+// Crear una instancia separada para refresh para evitar bucles en interceptores
+const refreshInstance = axios.create({
+  baseURL: `${BACKEND_BASE_URL}/api`,
+  withCredentials: true,
+});
+
 let isRefreshing = false;
 let refreshSubscribers: ((token: string) => void)[] = [];
 
@@ -90,13 +96,10 @@ instance.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        // Llamar a refresh (refreshToken va automáticamente en cookie)
-        // Usamos instance para obtener la respuesta raw completa
-        const response = await instance.post('/auth/refresh');
+        // Llamar a refresh usando la instancia limpia (sin interceptores)
+        const response = await refreshInstance.post('/auth/refresh');
 
         // Ajustar según la estructura de tu respuesta. 
-        // Si backend devuelve ServiceResult: { data: { token: "..." }, status: "OK", ... }
-        // Entonces axios devuelve { data: { data: { token: "..." } ... } ... }
         const newAccessToken = response.data?.data?.token;
 
         if (!newAccessToken) throw new Error("No token returned from refresh");
@@ -118,7 +121,9 @@ instance.interceptors.response.use(
         // Refresh falló = logout
         localStorage.removeItem('access_token');
         localStorage.removeItem('cart_session');
-        window.location.href = '/login'; // O usar router.push si estuviera disponible
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
+        }
         return Promise.reject(refreshError);
 
       } finally {
