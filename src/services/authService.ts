@@ -31,16 +31,7 @@ export const authService = {
     return api.get<MeResponse>("/me");
   },
 
-  /** Obtener token actual desde cookie (para OAuth) */
-  async getToken() {
-    try {
-      const response = await api.get<{ token: string }>("/auth/token");
-      return response;
-    } catch (error) {
-      console.error('Error obteniendo token:', error);
-      return null;
-    }
-  },
+
 
   /** Login con email y contraseña */
   async login(payload: LoginRequest) {
