@@ -2,10 +2,10 @@
 
 import { usePathname, useSearchParams } from "next/navigation";
 import Script from "next/script";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import * as pixel from "@/utils/pixel";
 
-const MetaPixel = () => {
+const MetaPixelComponent = () => {
     const [loaded, setLoaded] = useState(false);
     const pathname = usePathname();
     const searchParams = useSearchParams();
@@ -56,4 +56,13 @@ const MetaPixel = () => {
     );
 };
 
+const MetaPixel = () => {
+    return (
+        <Suspense fallback={null}>
+            <MetaPixelComponent />
+        </Suspense>
+    );
+};
+
 export default MetaPixel;
+
