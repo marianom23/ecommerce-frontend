@@ -79,6 +79,70 @@ instance.interceptors.response.use(
   (err) => Promise.reject(err)
 );
 
+// ✅ INTERCEPTOR DE REFRESH (SOLO CLIENTE)
+if (typeof window !== 'undefined') {
+  let isRefreshing = false;
+  let refreshSubscribers: ((token: string) => void)[] = [];
+
+  instance.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+      const originalRequest = error.config;
+
+      // Si es 401 y no es (login/refresh/logout) ni un reintento
+      if (
+        error.response?.status === 401 &&
+        !originalRequest._retry &&
+        !originalRequest.url?.includes('/auth/refresh') &&
+        !originalRequest.url?.includes('/login')
+      ) {
+        originalRequest._retry = true;
+
+        if (isRefreshing) {
+          return new Promise((resolve) => {
+            refreshSubscribers.push((token) => {
+              originalRequest.headers.Authorization = `Bearer ${token}`;
+              resolve(instance(originalRequest));
+            });
+          });
+        }
+
+        isRefreshing = true;
+
+        try {
+          // Instancia limpia solo para refresh
+          const refreshResponse = await axios.post(`${BACKEND_BASE_URL}/api/auth/refresh`, {}, {
+            withCredentials: true
+          });
+
+          const newToken = refreshResponse.data?.data?.token;
+
+          if (!newToken) throw new Error("No token returned");
+
+          localStorage.setItem('access_token', newToken);
+
+          refreshSubscribers.forEach((cb) => cb(newToken));
+          refreshSubscribers = [];
+
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+          return instance(originalRequest);
+
+        } catch (refreshError) {
+          // Si falla refresh, logout
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('cart_session');
+          window.location.href = '/login';
+          return Promise.reject(refreshError);
+        } finally {
+          isRefreshing = false;
+        }
+      }
+
+      return Promise.reject(error);
+    }
+  );
+}
+
 type HttpMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
 
 async function request<T = any>(
