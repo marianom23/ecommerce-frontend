@@ -4,6 +4,7 @@ import { cartService } from "@/services/cartService";
 import type { RootState } from "../store";
 import type { Cart } from "@/types/cart";
 import toast from "react-hot-toast";
+import * as pixel from "@/utils/pixel";
 
 type CartState = {
   cart: Cart | null;
@@ -27,7 +28,19 @@ export const addCartItemGuest = createAsyncThunk<Cart,
     "cart/addItemGuest",
     async (body, { rejectWithValue }) => {
       try {
-        return pickCart(await cartService.addGuest(body));
+        // 1. Generar ID único para deduplicación (Pixel + CAPI)
+        const eventId = crypto.randomUUID();
+
+        // 2. Disparar Pixel (Frontend)
+        pixel.event("AddToCart", {
+          content_type: "product",
+          content_ids: [body.productId],
+          value: undefined, // Opcional: podrías pasar el precio si lo tuvieras aquí
+          currency: "ARS"
+        }, { eventID: eventId });
+
+        // 3. Llamar al Backend pasando el eventId
+        return pickCart(await cartService.addGuest({ ...body, eventId }));
       } catch (error: any) {
         const message = error?.response?.data?.message || error?.message || "Error al agregar al carrito";
         return rejectWithValue(message);
@@ -74,7 +87,19 @@ export const addCartItemLogged = createAsyncThunk<Cart,
     "cart/addItemLogged",
     async (body, { rejectWithValue }) => {
       try {
-        return pickCart(await cartService.addLogged(body));
+        // 1. Generar ID único para deduplicación (Pixel + CAPI)
+        const eventId = crypto.randomUUID();
+
+        // 2. Disparar Pixel (Frontend)
+        pixel.event("AddToCart", {
+          content_type: "product",
+          content_ids: [body.productId],
+          value: undefined,
+          currency: "ARS"
+        }, { eventID: eventId });
+
+        // 3. Llamar al Backend pasando el eventId
+        return pickCart(await cartService.addLogged({ ...body, eventId }));
       } catch (error: any) {
         const message = error?.response?.data?.message || error?.message || "Error al agregar al carrito";
         return rejectWithValue(message);

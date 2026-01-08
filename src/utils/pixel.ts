@@ -7,8 +7,8 @@ export const pageview = () => {
 };
 
 // https://developers.facebook.com/docs/facebook-pixel/advanced/
-export const event = (name: string, options: any = {}) => {
+export const event = (name: string, options: any = {}, eventID?: { eventID: string }) => {
     if (typeof window !== "undefined" && window.fbq) {
-        window.fbq("track", name, options);
+        window.fbq("track", name, options, eventID);
     }
 };

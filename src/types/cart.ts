@@ -30,6 +30,7 @@ export type AddItemDto = {
   productId?: number;
   variantId?: number;
   quantity: number;
+  eventId?: string;
 };
 
 export type UpdateItemDto = { quantity: number };
