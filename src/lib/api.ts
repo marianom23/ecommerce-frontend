@@ -96,6 +96,14 @@ if (typeof window !== 'undefined') {
         !originalRequest.url?.includes('/auth/refresh') &&
         !originalRequest.url?.includes('/login')
       ) {
+
+        // 🛑 GUARDIA: Si no tenemos token guardado, no intentamos refresh. 
+        // Significa que somos anónimos o ya cerramos sesión.
+        const storedToken = localStorage.getItem('access_token');
+        if (!storedToken) {
+          return Promise.reject(error);
+        }
+
         originalRequest._retry = true;
 
         if (isRefreshing) {
@@ -131,7 +139,11 @@ if (typeof window !== 'undefined') {
           // Si falla refresh, logout
           localStorage.removeItem('access_token');
           localStorage.removeItem('cart_session');
-          window.location.href = '/login';
+
+          // Evitar loop infinito de recargas si ya estamos en login
+          if (window.location.pathname !== '/login') {
+            window.location.href = '/login';
+          }
           return Promise.reject(refreshError);
         } finally {
           isRefreshing = false;
