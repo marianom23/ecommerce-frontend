@@ -40,14 +40,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (typeof window !== 'undefined') {
             const token = localStorage.getItem('access_token');
             if (token) {
-                // Token existe, validar con backend
+                // Token existe, validar con backend (si fallara por expirado, el interceptor lo renueva)
                 fetchUser();
             } else {
-                // Intentar hacer una petición por si hay cookie (OAuth)
-                fetchUser();
+                // No hay token, aseguramos que el estado sea no autenticado
+                setLoading(false);
             }
         } else {
-            fetchUser();
+            // En servidor no hacemos fetchUser (esperamos a cliente)
+            setLoading(false);
         }
     }, []);
 
