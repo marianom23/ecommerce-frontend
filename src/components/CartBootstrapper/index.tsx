@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useAppDispatch } from "@/redux/hooks";
-import { fetchCartGuest, fetchCartLogged } from "@/redux/features/cart-slice";
+import { resetCart, fetchCartGuest, fetchCartLogged } from "@/redux/features/cart-slice";
 import { useAuth } from "@/hooks/useAuth"; // 👈 tu nuevo hook
 
 export default function CartBootstrapper() {
@@ -11,6 +11,9 @@ export default function CartBootstrapper() {
 
   useEffect(() => {
     if (loading) return; // Todavía consultando /b/me
+
+    // Limpiar estado anterior para evitar mezclas
+    dispatch(resetCart());
 
     if (isAuthenticated) {
       void dispatch(fetchCartLogged());   // /b/cart/me
