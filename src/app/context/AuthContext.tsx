@@ -35,6 +35,31 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
     };
 
+    // Sincronizar token desde cookie a localStorage (para OAuth)
+    useEffect(() => {
+        const syncTokenFromCookie = async () => {
+            if (typeof window !== 'undefined' && user) {
+                const storedToken = localStorage.getItem('auth_token');
+
+                // Si hay usuario autenticado pero no hay token en localStorage
+                if (!storedToken) {
+                    console.log('🔑 Usuario autenticado sin token en localStorage (OAuth flow)');
+                    try {
+                        const tokenData = await authService.getToken();
+                        if (tokenData?.token) {
+                            localStorage.setItem('auth_token', tokenData.token);
+                            console.log('✅ Token sincronizado desde cookie a localStorage');
+                        }
+                    } catch (error) {
+                        console.warn('⚠️ No se pudo obtener token:', error);
+                    }
+                }
+            }
+        };
+
+        syncTokenFromCookie();
+    }, [user]);
+
     useEffect(() => {
         // Verificar si hay token en localStorage antes de hacer la petición
         if (typeof window !== 'undefined') {
@@ -43,8 +68,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 // Token existe, validar con backend
                 fetchUser();
             } else {
-                // No hay token, marcar como no autenticado
-                setLoading(false);
+                // Intentar hacer una petición por si hay cookie (OAuth)
+                fetchUser();
             }
         } else {
             fetchUser();

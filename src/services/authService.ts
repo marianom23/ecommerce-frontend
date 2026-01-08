@@ -15,15 +15,31 @@ export type LoginRequest = {
 };
 
 export type LoginResponse = {
-  token?: string;     // opcional (solo si backend también lo devuelve)
-  expiresAt?: string; // opcional
+  token?: string;
+  expiresAt?: string;
   user: MeResponse;
+};
+
+export type OAuthCallbackRequest = {
+  idToken: string;
+  provider: 'GOOGLE' | 'AZURE_AD';
 };
 
 export const authService = {
   /** Obtener usuario actual (si está logueado) */
   me() {
     return api.get<MeResponse>("/me");
+  },
+
+  /** Obtener token actual desde cookie (para OAuth) */
+  async getToken() {
+    try {
+      const response = await api.get<{ token: string }>("/auth/token");
+      return response;
+    } catch (error) {
+      console.error('Error obteniendo token:', error);
+      return null;
+    }
   },
 
   /** Login con email y contraseña */
@@ -42,6 +58,25 @@ export const authService = {
       }
     } else {
       console.warn('⚠️ No se recibió token en la respuesta');
+    }
+
+    return response;
+  },
+
+  /** OAuth callback (Google/Microsoft) - para flujo cliente */
+  async oauthCallback(payload: OAuthCallbackRequest) {
+    const response = await api.post<LoginResponse>("/oauth2/callback", payload);
+
+    console.log('OAuth callback response:', response);
+
+    // Guardar token en localStorage
+    if (response.token) {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('auth_token', response.token);
+        console.log('✅ Token de OAuth guardado en localStorage');
+      }
+    } else {
+      console.warn('⚠️ No se recibió token del OAuth callback');
     }
 
     return response;
