@@ -1,5 +1,7 @@
 "use client";
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { useDispatch } from "react-redux";
+import { resetCart } from "@/redux/features/cart-slice";
 import { authService } from "@/services/authService";
 
 interface AuthContextType {
@@ -18,6 +20,7 @@ const AuthContext = createContext<AuthContextType>({
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [user, setUser] = useState<any>(null);
+    const dispatch = useDispatch();
     const [loading, setLoading] = useState(true);
 
     const fetchUser = async () => {
@@ -51,6 +54,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             setLoading(false);
         }
     }, []);
+
+    useEffect(() => {
+        const handleLogout = () => {
+            console.log("🔒 Evento auth:logout recibido. Limpiando sesión...");
+            setUser(null);
+            dispatch(resetCart()); // Resetear estado de Redux Cart
+            if (typeof window !== 'undefined') {
+                localStorage.removeItem('access_token');
+            }
+        };
+
+        window.addEventListener('auth:logout', handleLogout);
+        return () => window.removeEventListener('auth:logout', handleLogout);
+    }, [dispatch]);
 
     return (
         <AuthContext.Provider

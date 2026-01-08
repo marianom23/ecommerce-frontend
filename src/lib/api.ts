@@ -128,6 +128,9 @@ if (typeof window !== 'undefined') {
 
           // Si falla refresh, logout y rechazar pedidos pendientes
           localStorage.removeItem('access_token');
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new Event('auth:logout'));
+          }
 
           refreshSubscribers.forEach(({ reject }) => reject(refreshError));
           refreshSubscribers = [];
