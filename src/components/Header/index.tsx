@@ -200,7 +200,7 @@ const Header = () => {
                   SOPORTE 24/7
                 </span>
                 <p className="font-medium text-custom-sm text-dark">
-                  (+54) 261 2184782
+                  (+54) 261 4689151
                 </p>
               </div>
             </div>
