@@ -33,7 +33,7 @@ const Contact = () => {
                         fill="#3C50E0"
                       />
                     </svg>
-                    Nombre: James Septimus
+                    Nombre: HorneroTech
                   </p>
 
                   <p className="flex items-center gap-4">
@@ -61,7 +61,7 @@ const Contact = () => {
                         fill="#3C50E0"
                       />
                     </svg>
-                    Teléfono: 1234 567890
+                    Teléfono: (+54) 261 4689151
                   </p>
 
                   <p className="flex gap-4">
@@ -80,7 +80,7 @@ const Contact = () => {
                         fill="#3C50E0"
                       />
                     </svg>
-                    Dirección: 7398 Smoke Ranch RoadLas Vegas, Nevada 89128
+                    Dirección: Chacras de Coria, Lujan de Cuyo, Mendoza.
                   </p>
                 </div>
               </div>
