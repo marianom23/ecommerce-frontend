@@ -1,9 +1,34 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { addressSchema, AddressSchema } from "@/lib/schemas";
+import { addressService } from "@/services/addressService";
+import toast from "react-hot-toast";
 
-const AddressModal = ({ isOpen, closeModal }) => {
+interface AddressModalProps {
+  isOpen: boolean;
+  closeModal: () => void;
+  onAddressSaved: () => void; // Callback para recargar la lista
+}
+
+const AddressModal: React.FC<AddressModalProps> = ({ isOpen, closeModal, onAddressSaved }) => {
+  const [loading, setLoading] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<AddressSchema>({
+    resolver: zodResolver(addressSchema),
+    defaultValues: {
+      country: "Argentina",
+    }
+  });
+
   useEffect(() => {
     // closing modal while clicking outside
-    function handleClickOutside(event) {
+    function handleClickOutside(event: any) {
       if (!event.target.closest(".modal-content")) {
         closeModal();
       }
@@ -11,111 +36,151 @@ const AddressModal = ({ isOpen, closeModal }) => {
 
     if (isOpen) {
       document.addEventListener("mousedown", handleClickOutside);
+    } else {
+      reset(); // Limpiar formulario al cerrar
     }
 
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [isOpen, closeModal]);
+  }, [isOpen, closeModal, reset]);
+
+  const onSubmit = async (data: AddressSchema) => {
+    setLoading(true);
+    try {
+      // Default to SHIPPING if not specified
+      const payload = { ...data, type: data.type || "SHIPPING" };
+      await addressService.create(payload as any);
+      toast.success("Dirección guardada correctamente");
+      onAddressSaved();
+      closeModal();
+      reset();
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Error al guardar la dirección");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div
-      className={`fixed top-0 left-0 overflow-y-auto no-scrollbar w-full h-screen sm:py-20 xl:py-25 2xl:py-[230px] bg-dark/70 sm:px-8 px-4 py-5 ${isOpen ? "block z-99999" : "hidden"
+      className={`fixed top-0 left-0 overflow-y-auto w-full h-screen sm:py-20 xl:py-25 2xl:py-[100px] bg-dark/70 sm:px-8 px-4 py-5 ${isOpen ? "block z-99999" : "hidden"
         }`}
     >
-      <div className="flex items-center justify-center ">
+      <div className="flex items-center justify-center min-h-screen sm:min-h-0">
         <div
-          x-show="addressModal"
-          className="w-full max-w-[1100px] rounded-xl shadow-3 bg-white p-7.5 relative modal-content"
+          className="w-full max-w-[900px] rounded-xl shadow-3 bg-white p-6 sm:p-10 relative modal-content"
         >
           <button
             onClick={closeModal}
             aria-label="button for close modal"
-            className="absolute top-0 right-0 sm:top-3 sm:right-3 flex items-center justify-center w-10 h-10 rounded-full ease-in duration-150 bg-meta text-body hover:text-dark"
+            className="absolute top-4 right-4 sm:top-6 sm:right-6 flex items-center justify-center w-8 h-8 rounded-full bg-gray-1 text-dark hover:bg-gray-2 duration-200"
           >
-            <svg
-              className="fill-current"
-              width="26"
-              height="26"
-              viewBox="0 0 26 26"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                fillRule="evenodd"
-                clipRule="evenodd"
-                d="M14.3108 13L19.2291 8.08167C19.5866 7.72417 19.5866 7.12833 19.2291 6.77083C19.0543 6.59895 18.8189 6.50262 18.5737 6.50262C18.3285 6.50262 18.0932 6.59895 17.9183 6.77083L13 11.6892L8.08164 6.77083C7.90679 6.59895 7.67142 6.50262 7.42623 6.50262C7.18104 6.50262 6.94566 6.59895 6.77081 6.77083C6.41331 7.12833 6.41331 7.72417 6.77081 8.08167L11.6891 13L6.77081 17.9183C6.41331 18.2758 6.41331 18.8717 6.77081 19.2292C7.12831 19.5867 7.72414 19.5867 8.08164 19.2292L13 14.3108L17.9183 19.2292C18.2758 19.5867 18.8716 19.5867 19.2291 19.2292C19.5866 18.8717 19.5866 18.2758 19.2291 17.9183L14.3108 13Z"
-                fill=""
-              />
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M14 1.41L12.59 0L7 5.59L1.41 0L0 1.41L5.59 7L0 12.59L1.41 14L7 8.41L12.59 14L14 12.59L8.41 7L14 1.41Z" fill="currentcolor" />
             </svg>
           </button>
 
-          <div>
-            <form>
-              <div className="flex flex-col lg:flex-row gap-5 sm:gap-8 mb-5">
-                <div className="w-full">
-                  <label htmlFor="name" className="block mb-2.5">
-                    Name
-                  </label>
-
-                  <input
-                    type="text"
-                    name="name"
-                    value="James Septimus"
-                    className="rounded-md border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full py-2.5 px-5 outline-none duration-200 focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20"
-                  />
-                </div>
-
-                <div className="w-full">
-                  <label htmlFor="email" className="block mb-2.5">
-                    Email
-                  </label>
-
-                  <input
-                    type="email"
-                    name="email"
-                    value="jamse@example.com"
-                    className="rounded-md border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full py-2.5 px-5 outline-none duration-200 focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20"
-                  />
-                </div>
-              </div>
-
-              <div className="flex flex-col lg:flex-row gap-5 sm:gap-8 mb-5">
-                <div className="w-full">
-                  <label htmlFor="phone" className="block mb-2.5">
-                    Phone
-                  </label>
-
-                  <input
-                    type="text"
-                    name="phone"
-                    value="1234 567890"
-                    className="rounded-md border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full py-2.5 px-5 outline-none duration-200 focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20"
-                  />
-                </div>
-
-                <div className="w-full">
-                  <label htmlFor="address" className="block mb-2.5">
-                    Address
-                  </label>
-
-                  <input
-                    type="text"
-                    name="address"
-                    value="7398 Smoke Ranch RoadLas Vegas, Nevada 89128"
-                    className="rounded-md border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full py-2.5 px-5 outline-none duration-200 focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20"
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                className="inline-flex font-medium text-white bg-blue py-3 px-7 rounded-md ease-out duration-200 hover:bg-blue-dark"
-              >
-                Save Changes
-              </button>
-            </form>
+          <div className="mb-8">
+            <h3 className="text-xl sm:text-2xl font-semibold text-dark mb-2">Nueva Dirección</h3>
+            <p className="text-sm text-dark-5">Ingresa los detalles de tu nueva dirección de envío.</p>
           </div>
+
+          <form onSubmit={handleSubmit(onSubmit)}>
+
+            {/* Calle y Altura */}
+            <div className="flex flex-col sm:flex-row gap-5 mb-5">
+              <div className="w-full sm:w-2/3">
+                <label className="block mb-2 text-sm font-medium text-dark">Calle</label>
+                <input
+                  type="text"
+                  {...register("street")}
+                  placeholder="Ej: Av. Corrientes"
+                  className={`w-full rounded-md border py-2.5 px-5 outline-none duration-200 focus:border-blue bg-gray-1 ${errors.street ? "border-red-500" : "border-gray-3"}`}
+                />
+                {errors.street && <span className="text-red-500 text-xs mt-1 block">{errors.street.message}</span>}
+              </div>
+              <div className="w-full sm:w-1/3">
+                <label className="block mb-2 text-sm font-medium text-dark">Altura</label>
+                <input
+                  type="text"
+                  {...register("streetNumber")}
+                  placeholder="1234"
+                  className={`w-full rounded-md border py-2.5 px-5 outline-none duration-200 focus:border-blue bg-gray-1 ${errors.streetNumber ? "border-red-500" : "border-gray-3"}`}
+                />
+                {errors.streetNumber && <span className="text-red-500 text-xs mt-1 block">{errors.streetNumber.message}</span>}
+              </div>
+            </div>
+
+            {/* Piso y Depto */}
+            <div className="flex flex-col sm:flex-row gap-5 mb-5">
+              <div className="w-full sm:w-1/2">
+                <label className="block mb-2 text-sm font-medium text-dark">Piso (Opcional)</label>
+                <input
+                  type="text"
+                  {...register("floor")}
+                  className="w-full rounded-md border border-gray-3 py-2.5 px-5 outline-none duration-200 focus:border-blue bg-gray-1"
+                />
+              </div>
+              <div className="w-full sm:w-1/2">
+                <label className="block mb-2 text-sm font-medium text-dark">Depto (Opcional)</label>
+                <input
+                  type="text"
+                  {...register("apartmentNumber")}
+                  className="w-full rounded-md border border-gray-3 py-2.5 px-5 outline-none duration-200 focus:border-blue bg-gray-1"
+                />
+              </div>
+            </div>
+
+            {/* Ciudad, Provincia, CP */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-5">
+              <div>
+                <label className="block mb-2 text-sm font-medium text-dark">Ciudad</label>
+                <input
+                  type="text"
+                  {...register("city")}
+                  className={`w-full rounded-md border py-2.5 px-5 outline-none duration-200 focus:border-blue bg-gray-1 ${errors.city ? "border-red-500" : "border-gray-3"}`}
+                />
+                {errors.city && <span className="text-red-500 text-xs mt-1 block">{errors.city.message}</span>}
+              </div>
+              <div>
+                <label className="block mb-2 text-sm font-medium text-dark">Provincia</label>
+                <input
+                  type="text"
+                  {...register("state")}
+                  className={`w-full rounded-md border py-2.5 px-5 outline-none duration-200 focus:border-blue bg-gray-1 ${errors.state ? "border-red-500" : "border-gray-3"}`}
+                />
+                {errors.state && <span className="text-red-500 text-xs mt-1 block">{errors.state.message}</span>}
+              </div>
+              <div>
+                <label className="block mb-2 text-sm font-medium text-dark">Código Postal</label>
+                <input
+                  type="text"
+                  {...register("postalCode")}
+                  className={`w-full rounded-md border py-2.5 px-5 outline-none duration-200 focus:border-blue bg-gray-1 ${errors.postalCode ? "border-red-500" : "border-gray-3"}`}
+                />
+                {errors.postalCode && <span className="text-red-500 text-xs mt-1 block">{errors.postalCode.message}</span>}
+              </div>
+            </div>
+
+            <div className="mb-8">
+              <label className="block mb-2 text-sm font-medium text-dark">País</label>
+              <input
+                type="text"
+                {...register("country")}
+                disabled
+                className="w-full rounded-md border border-gray-3 py-2.5 px-5 bg-gray-2 text-dark-5 cursor-not-allowed"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full sm:w-auto inline-flex justify-center items-center font-medium text-white bg-blue py-3 px-8 rounded-md ease-out duration-200 hover:bg-blue-dark disabled:opacity-70"
+            >
+              {loading ? "Guardando..." : "Guardar Dirección"}
+            </button>
+          </form>
         </div>
       </div>
     </div>

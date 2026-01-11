@@ -52,8 +52,8 @@ const Checkout = () => {
   // Equivalente a lo que antes hacías con NextAuth
   const canSubmit = isAuthenticated;
 
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function onSubmit(e: any) {
+    if (e && e.preventDefault) e.preventDefault();
     if (!orderId) {
       toast.error("Primero creá la orden desde el carrito.");
       return;
@@ -110,71 +110,70 @@ const Checkout = () => {
       <Breadcrumb title={"Checkout"} pages={["checkout"]} />
       <section className="overflow-hidden py-20 bg-gray-2">
         <div className="max-w-[1170px] w-full mx-auto px-4 sm:px-8 xl:px-0">
-          <form onSubmit={onSubmit}>
-            <div className="flex flex-col lg:flex-row gap-7.5 xl:gap-11">
-              {/* left */}
-              <div className="lg:max-w-[670px] w-full flex flex-col gap-6">
-                {/* Parchea la orden al elegir/crear dirección de envío */}
-                <Shipping orderId={orderId} onSelected={setShippingSelected} />
+          <div className="flex flex-col lg:flex-row gap-7.5 xl:gap-11">
+            {/* left */}
+            <div className="lg:max-w-[670px] w-full flex flex-col gap-6">
+              {/* Parchea la orden al elegir/crear dirección de envío */}
+              <Shipping orderId={orderId} onSelected={setShippingSelected} />
 
-                {/* Parchea la orden al elegir/crear perfil de facturación (incluye dirección) */}
-                <BillingProfileContainer
-                  orderId={orderId}
-                  shippingAddress={shippingSelected}
-                  onSelected={setBillingProfileSelected}
-                />
+              {/* Parchea la orden al elegir/crear perfil de facturación (incluye dirección) */}
+              <BillingProfileContainer
+                orderId={orderId}
+                shippingAddress={shippingSelected}
+                onSelected={setBillingProfileSelected}
+              />
 
-                <PaymentMethod
-                  orderId={orderId}
-                  onApplied={(method) => {
-                    setPaymentMethodSelected(method);
-                    setReloadOrderKey((prev) => prev + 1);
-                  }}
-                />
-              </div>
-
-              {/* right */}
-              <div className="max-w-[455px] w-full sticky top-24 h-fit flex flex-col gap-6">
-                <ShippingMethod />
-                <OrderList
-                  orderId={orderId}
-                  reloadKey={reloadOrderKey}
-                  onLoaded={handleOrderLoaded}
-                />
-
-                {err && (
-                  <p className="text-red-600 text-sm mt-3">{err}</p>
-                )}
-
-                {(() => {
-                  const isReady = Boolean(
-                    orderId &&
-                    billingProfileSelected &&
-                    shippingSelected &&
-                    paymentMethodSelected
-                  );
-                  return (
-                    <button
-                      type="submit"
-                      disabled={saving || !canSubmit}
-                      className={`w-full flex justify-center font-medium py-3 px-6 rounded-md mt-7.5 ${!isReady || saving || !canSubmit
-                        ? "text-gray-600 bg-gray-400 cursor-not-allowed border-2 border-gray-300"
-                        : "text-white bg-blue hover:bg-blue-dark"
-                        }`}
-                    >
-                      {saving ? "Procesando..." : "Confirmar y pagar"}
-                    </button>
-                  );
-                })()}
-
-                {!orderId && (
-                  <p className="text-xs text-dark-5 mt-2">
-                    Primero creá la orden desde el carrito para obtener el <code>orderId</code>.
-                  </p>
-                )}
-              </div>
+              <PaymentMethod
+                orderId={orderId}
+                onApplied={(method) => {
+                  setPaymentMethodSelected(method);
+                  setReloadOrderKey((prev) => prev + 1);
+                }}
+              />
             </div>
-          </form>
+
+            {/* right */}
+            <div className="max-w-[455px] w-full sticky top-24 h-fit flex flex-col gap-6">
+              <ShippingMethod />
+              <OrderList
+                orderId={orderId}
+                reloadKey={reloadOrderKey}
+                onLoaded={handleOrderLoaded}
+              />
+
+              {err && (
+                <p className="text-red-600 text-sm mt-3">{err}</p>
+              )}
+
+              {(() => {
+                const isReady = Boolean(
+                  orderId &&
+                  billingProfileSelected &&
+                  shippingSelected &&
+                  paymentMethodSelected
+                );
+                return (
+                  <button
+                    type="button"
+                    onClick={onSubmit}
+                    disabled={saving || !canSubmit}
+                    className={`w-full flex justify-center font-medium py-3 px-6 rounded-md mt-7.5 ${!isReady || saving || !canSubmit
+                      ? "text-gray-600 bg-gray-400 cursor-not-allowed border-2 border-gray-300"
+                      : "text-white bg-blue hover:bg-blue-dark"
+                      }`}
+                  >
+                    {saving ? "Procesando..." : "Confirmar y pagar"}
+                  </button>
+                );
+              })()}
+
+              {!orderId && (
+                <p className="text-xs text-dark-5 mt-2">
+                  Primero creá la orden desde el carrito para obtener el <code>orderId</code>.
+                </p>
+              )}
+            </div>
+          </div>
         </div>
       </section>
     </>

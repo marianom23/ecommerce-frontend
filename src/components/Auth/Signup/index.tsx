@@ -47,7 +47,7 @@ const Signup = () => {
       setSuccess(payload?.message ?? "Cuenta creada correctamente. Redirigiendo al inicio de sesión...");
       setTimeout(() => router.push("/signin"), 2000);
     } catch (err: any) {
-      setError(err?.message || "No se pudo completar el registro.");
+      setError(err?.response?.data?.message || err?.message || "No se pudo completar el registro.");
     } finally {
       setLoading(false);
     }

@@ -109,7 +109,7 @@ const Signin = () => {
       window.location.href = next;
     } catch (err: any) {
       console.error(err);
-      setError(err?.message || "Error al iniciar sesión con Microsoft");
+      setError(err?.response?.data?.message || "Error al iniciar sesión con Microsoft");
       setLoading(false);
     }
   };
