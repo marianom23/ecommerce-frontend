@@ -32,9 +32,8 @@ const ShippingContainer: React.FC<Props> = ({ orderId, onSelected }) => {
       const res = await addressService.list("SHIPPING");
       setList(res);
 
-      const first = res[0] ?? null;
-      setSelectedId(first?.id ?? null);
-      onSelected?.(first);
+      // No auto-seleccionar, dejar que el usuario elija
+      setSelectedId(null);
 
       setMode(res.length ? "list" : "form");
     } finally {
@@ -71,15 +70,7 @@ const ShippingContainer: React.FC<Props> = ({ orderId, onSelected }) => {
     if (isAuthenticated) load();   // solo cargamos direcciones si está logueado
   }, [isAuthenticated, loading]);
 
-  // Auto-aplicar la primera dirección cuando se cargue la lista por primera vez (silenciosamente)
-  useEffect(() => {
-    if (list.length > 0 && orderId && selectedId) {
-      const firstAddr = list.find(a => a.id === selectedId);
-      if (firstAddr) {
-        applyToOrder(firstAddr, true); // silent = true
-      }
-    }
-  }, [list.length, orderId]); // Solo se ejecuta cuando cambia la lista o el orderId
+
 
   // Si ya sabemos que NO está autenticado
   if (!isAuthenticated && !loading) {
