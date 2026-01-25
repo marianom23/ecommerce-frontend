@@ -212,13 +212,7 @@ const QuickViewModal = () => {
         quantity, // del estado local
       });
 
-      pixel.event("AddToCart", {
-        content_name: productDetails.title,
-        content_ids: [productDetails.id],
-        content_type: "product",
-        value: (productDetails.discountedPrice || productDetails.price) * quantity,
-        currency: "USD",
-      });
+      // Pixel event now fired in Redux slice with eventId for deduplication
     } catch (err) {
       console.error("Error adding to cart:", err);
       toast.error("No se pudo agregar el producto al carrito.");

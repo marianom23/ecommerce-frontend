@@ -45,13 +45,7 @@ const ProductItem = ({ item }: { item: Product }) => {
       variantId: item.defaultVariantId,
       quantity: 1,
     });
-    pixel.event("AddToCart", {
-      content_name: item.title,
-      content_ids: [item.id],
-      content_type: "product",
-      value: item.discountedPrice || item.price,
-      currency: "USD",
-    });
+    // Pixel event now fired in Redux slice with eventId for deduplication
   };
 
   const handleItemToWishList = async () => {
