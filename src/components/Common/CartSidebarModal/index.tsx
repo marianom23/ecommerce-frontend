@@ -11,6 +11,7 @@ import toast from "react-hot-toast";
 import SingleItem from "./SingleItem";
 import EmptyCart from "./EmptyCart";
 import { useAuth } from "@/hooks/useAuth";
+import { QuickSignInModal } from "../QuickSignInModal";
 
 const formatter = new Intl.NumberFormat("es-AR", {
   style: "currency",
@@ -22,6 +23,7 @@ const CartSidebarModal = () => {
   const { isCartModalOpen, closeCartModal } = useCartModalContext();
   const router = useRouter();
   const [isCreatingOrder, setIsCreatingOrder] = React.useState(false);
+  const [signInModalOpen, setSignInModalOpen] = React.useState(false);
   const dispatch = useDispatch<AppDispatch>();
   const cartItems = useSelector(selectCartItems);
   const totalPrice = useSelector(selectTotalPrice);
@@ -33,10 +35,7 @@ const CartSidebarModal = () => {
     if (loading) return;
 
     if (!isAuthenticated) {
-      toast("Debes iniciar sesión para proceder al pago", {
-        icon: "🔒",
-        duration: 4000,
-      });
+      setSignInModalOpen(true);
       return;
     }
 
@@ -124,6 +123,11 @@ const CartSidebarModal = () => {
           </div>
         </div>
       </div>
+
+      <QuickSignInModal
+        isOpen={signInModalOpen}
+        onClose={() => setSignInModalOpen(false)}
+      />
     </div>
   );
 };

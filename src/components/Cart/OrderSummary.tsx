@@ -7,6 +7,7 @@ import { selectCartItems, selectTotalPrice } from "@/redux/features/cart-slice";
 import { orderService } from "@/services/orderService";
 import toast from "react-hot-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { QuickSignInModal } from "../Common/QuickSignInModal";
 
 const formatter = new Intl.NumberFormat("es-AR", {
   style: "currency",
@@ -19,6 +20,7 @@ const OrderSummary = () => {
   const totalPrice = useSelector(selectTotalPrice);
   const router = useRouter();
   const [isLoading, setIsLoading] = React.useState(false);
+  const [signInModalOpen, setSignInModalOpen] = React.useState(false);
 
   const { user, loading, isAuthenticated } = useAuth();
 
@@ -26,10 +28,7 @@ const OrderSummary = () => {
     if (loading) return;
 
     if (!isAuthenticated) {
-      toast("Debes iniciar sesión para proceder al pago", {
-        icon: "🔒",
-        duration: 4000,
-      });
+      setSignInModalOpen(true);
       return;
     }
 
@@ -117,14 +116,19 @@ const OrderSummary = () => {
             onClick={handleProceedToCheckout}
             disabled={isLoading || cartItems.length === 0}
             className={`w-full mt-7.5 inline-flex justify-center font-medium py-3 px-6 rounded-md ease-out duration-200 ${!isAuthenticated
-                ? "text-gray-600 bg-gray-400 cursor-not-allowed border-2 border-gray-300"
-                : "text-white bg-blue hover:bg-blue-dark"
+              ? "text-gray-600 bg-gray-400 cursor-not-allowed border-2 border-gray-300"
+              : "text-white bg-blue hover:bg-blue-dark"
               } disabled:opacity-60 disabled:cursor-not-allowed`}
           >
             {isLoading ? "Creando orden..." : "Proceder a checkout"}
           </button>
         </div>
       </div>
+
+      <QuickSignInModal
+        isOpen={signInModalOpen}
+        onClose={() => setSignInModalOpen(false)}
+      />
     </div>
   );
 };

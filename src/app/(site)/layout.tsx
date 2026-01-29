@@ -20,6 +20,7 @@ import PreviewSliderModal from "@/components/Common/PreviewSlider";
 import ScrollToTop from "@/components/Common/ScrollToTop";
 import PreLoader from "@/components/Common/PreLoader";
 import { Toaster } from "react-hot-toast";
+import FloatingWhatsApp from "@/components/Common/FloatingWhatsApp";
 
 import CartBootstrapper from "@/components/CartBootstrapper";
 
@@ -67,6 +68,7 @@ export default function SiteLayout({
       />
 
       <ScrollToTop />
+      <FloatingWhatsApp />
       <Footer />
     </>
   );
