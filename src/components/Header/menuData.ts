@@ -2,7 +2,7 @@ import { Menu } from "@/types/Menu";
 
 // menuData: ids únicos y títulos capitalizados
 export const menuData: Menu[] = [
-  { id: 1, title: "Destacados", newTab: false, path: "/" },
+  { id: 101, title: "Destacados", newTab: false, path: "/#destacados" },
   { id: 2, title: "Productos", newTab: false, path: "/productos" },
   { id: 3, title: "Cómo Funciona", newTab: false, path: "/como-funciona" },
   { id: 4, title: "Marcas", newTab: false, path: "/" },

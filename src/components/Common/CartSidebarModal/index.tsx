@@ -6,12 +6,12 @@ import { useRouter } from "next/navigation";
 import { orderService } from "@/services/orderService";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch } from "@/redux/store";
-import { selectCartItems, selectTotalPrice } from "@/redux/features/cart-slice";
+import { selectCartItems, selectTotalPrice, selectCart } from "@/redux/features/cart-slice";
 import toast from "react-hot-toast";
 import SingleItem from "./SingleItem";
 import EmptyCart from "./EmptyCart";
 import { useAuth } from "@/hooks/useAuth";
-import { QuickSignInModal } from "../QuickSignInModal";
+import { useCart } from "@/hooks/useCart";
 
 const formatter = new Intl.NumberFormat("es-AR", {
   style: "currency",
@@ -23,21 +23,17 @@ const CartSidebarModal = () => {
   const { isCartModalOpen, closeCartModal } = useCartModalContext();
   const router = useRouter();
   const [isCreatingOrder, setIsCreatingOrder] = React.useState(false);
-  const [signInModalOpen, setSignInModalOpen] = React.useState(false);
   const dispatch = useDispatch<AppDispatch>();
+  const cart = useSelector(selectCart);
   const cartItems = useSelector(selectCartItems);
   const totalPrice = useSelector(selectTotalPrice);
+  const { clear } = useCart();
 
   const { isAuthenticated, loading } = useAuth();
 
   const handlePayClick = async (e: React.MouseEvent) => {
     e.preventDefault();
     if (loading) return;
-
-    if (!isAuthenticated) {
-      setSignInModalOpen(true);
-      return;
-    }
 
     if (cartItems.length === 0) {
       toast.error("El carrito está vacío");
@@ -46,10 +42,15 @@ const CartSidebarModal = () => {
 
     try {
       setIsCreatingOrder(true);
-      const res = await orderService.create();
+
+      // Si no está autenticado, enviar sessionId del carrito
+      const sessionId = !isAuthenticated && cart?.sessionId ? cart.sessionId : undefined;
+      const res = await orderService.create(sessionId);
+
       if (res && res.id) {
+        clear();
         closeCartModal();
-        router.push(`/checkout?orderId=${res.id}`);
+        router.push(`/checkout?orderNumber=${res.orderNumber}`);
       } else {
         throw new Error("No se pudo crear la orden");
       }
@@ -112,10 +113,7 @@ const CartSidebarModal = () => {
               <button
                 onClick={handlePayClick}
                 disabled={isCreatingOrder || cartItems.length === 0}
-                className={`w-full flex justify-center font-medium py-[13px] px-6 rounded-md ease-out duration-200 ${!isAuthenticated
-                  ? "text-gray-600 bg-gray-400 cursor-not-allowed border-2 border-gray-300"
-                  : "text-white bg-dark hover:bg-opacity-95"
-                  } disabled:opacity-70`}
+                className="w-full flex justify-center font-medium py-[13px] px-6 rounded-md ease-out duration-200 text-white bg-dark hover:bg-opacity-95 disabled:opacity-70 disabled:cursor-not-allowed"
               >
                 {isCreatingOrder ? "Procesando..." : "Pagar"}
               </button>
@@ -123,11 +121,6 @@ const CartSidebarModal = () => {
           </div>
         </div>
       </div>
-
-      <QuickSignInModal
-        isOpen={signInModalOpen}
-        onClose={() => setSignInModalOpen(false)}
-      />
     </div>
   );
 };

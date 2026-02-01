@@ -329,7 +329,7 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
         "Por favor selecciona un producto"
       ) : (
         <>
-          <section className="overflow-hidden relative pb-20 pt-5 lg:pt-20 xl:pt-28">
+          <section className="overflow-hidden relative pb-10 pt-5 lg:pb-20 lg:pt-20 xl:pt-28">
             <div className="max-w-[1170px] w-full mx-auto px-4 sm:px-8 xl:px-0">
               <div className="flex flex-col lg:flex-row gap-7.5 xl:gap-17.5">
                 <div className="lg:max-w-[570px] w-full">
@@ -368,7 +368,7 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
                   </div>
 
                   {/* ?  &apos;border-blue &apos; :  &apos;border-transparent&apos; */}
-                  <div className="flex flex-wrap sm:flex-nowrap gap-4.5 mt-6">
+                  <div className="flex flex-nowrap overflow-x-auto gap-4.5 mt-6 pb-2 scrollbar-hide">
                     {currentImages.map((item, key) => (
                       <button
                         onClick={() => setPreviewImg(key)}
@@ -700,12 +700,12 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
           <section className="overflow-hidden bg-gray-2 py-20">
             <div className="max-w-[1170px] w-full mx-auto px-4 sm:px-8 xl:px-0">
               {/* <!--== tab header start ==--> */}
-              <div className="flex flex-wrap items-center bg-white rounded-[10px] shadow-1 gap-5 xl:gap-12.5 py-4.5 px-4 sm:px-6">
+              <div className="flex flex-nowrap overflow-x-auto items-center bg-white rounded-[10px] shadow-1 gap-5 xl:gap-12.5 py-4.5 px-4 sm:px-6 mb-8 scrollbar-hide">
                 {tabs.map((item, key) => (
                   <button
                     key={key}
                     onClick={() => setActiveTab(item.id)}
-                    className={`font-medium lg:text-lg ease-out duration-200 hover:text-blue relative before:h-0.5 before:bg-blue before:absolute before:left-0 before:bottom-0 before:ease-out before:duration-200 hover:before:w-full ${activeTab === item.id
+                    className={`font-medium lg:text-lg ease-out duration-200 hover:text-blue relative before:h-0.5 before:bg-blue before:absolute before:left-0 before:bottom-0 before:ease-out before:duration-200 hover:before:w-full whitespace-nowrap ${activeTab === item.id
                       ? "text-blue before:w-full"
                       : "text-dark before:w-0"
                       }`}

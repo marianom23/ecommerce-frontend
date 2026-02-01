@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Breadcrumb from "../Common/Breadcrumb";
 import Shipping from "./ShippingContainer";
 import ShippingMethod from "./ShippingMethod";
@@ -10,7 +10,7 @@ import BillingProfileContainer from "./BillingProfileContainer";
 import { AddressResponse } from "@/services/addressService";
 import { BillingProfileResponse } from "@/services/billingProfileService";
 import { useSearchParams, useRouter } from "next/navigation";
-import { orderService, type PaymentMethod as PM } from "@/services/orderService";
+import { orderService, type PaymentMethod as PM, type OrderResponse } from "@/services/orderService";
 import toast from "react-hot-toast";
 import { useAuth } from "@/hooks/useAuth";
 import * as pixel from "@/utils/pixel";
@@ -18,9 +18,11 @@ import * as pixel from "@/utils/pixel";
 const Checkout = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const orderIdParam = searchParams.get("orderId");
-  const orderId = orderIdParam ? Number(orderIdParam) : null;
+  const orderNumberParam = searchParams.get("orderNumber");
+  const orderNumber = orderNumberParam || null;
 
+  const [order, setOrder] = useState<OrderResponse | null>(null);
+  const [loadingOrder, setLoadingOrder] = useState(false);
   const [shippingSelected, setShippingSelected] = useState<AddressResponse | null>(null);
   const [billingProfileSelected, setBillingProfileSelected] = useState<BillingProfileResponse | null>(null);
 
@@ -49,21 +51,38 @@ const Checkout = () => {
   // 👇 AHORA USAMOS TU SISTEMA DE AUTH
   const { isAuthenticated, loading } = useAuth();
 
-  // Equivalente a lo que antes hacías con NextAuth
-  const canSubmit = isAuthenticated;
+  // Fetch order to get requiresShipping flag
+  useEffect(() => {
+    if (!orderNumber) return;
+
+    const fetchOrder = async () => {
+      setLoadingOrder(true);
+      try {
+        const fetchedOrder = await orderService.getOneByNumber(orderNumber);
+        setOrder(fetchedOrder);
+      } catch (e: any) {
+        toast.error("No se pudo cargar la orden");
+      } finally {
+        setLoadingOrder(false);
+      }
+    };
+
+    fetchOrder();
+  }, [orderNumber]);
 
   async function onSubmit(e: any) {
     if (e && e.preventDefault) e.preventDefault();
-    if (!orderId) {
+    if (!orderNumber) {
       toast.error("Primero creá la orden desde el carrito.");
       return;
     }
-    // La dirección de facturación ahora es parte del perfil
-    if (!billingProfileSelected) {
+    // Billing profile es obligatorio SOLO para usuarios autenticados
+    if (isAuthenticated && !billingProfileSelected) {
       toast.error("Seleccioná un perfil de facturación.");
       return;
     }
-    if (!shippingSelected) {
+    // Solo validar shipping si la orden lo requiere
+    if (order?.requiresShipping && !shippingSelected) {
       toast.error("Seleccioná una dirección de envío.");
       return;
     }
@@ -71,11 +90,16 @@ const Checkout = () => {
       toast.error("Seleccioná un método de pago.");
       return;
     }
+    if (!order) {
+      toast.error("La orden no se ha cargado correctamente.");
+      return;
+    }
+
     setErr(null);
     setSaving(true);
     try {
       // Confirmá la orden. El back debe devolver OrderResponse con payment.redirectUrl o payment.checkoutUrl
-      const order = await orderService.confirm(orderId, {
+      const confirmedOrder = await orderService.confirm(order.orderNumber, {
         successUrl: `${window.location.origin}/checkout/success`,
         failureUrl: `${window.location.origin}/checkout/failure`,
         pendingUrl: `${window.location.origin}/checkout/pending`,
@@ -84,15 +108,15 @@ const Checkout = () => {
       });
 
       const redirect =
-        order?.payment?.redirectUrl ||
-        order?.payment?.checkoutUrl ||
+        confirmedOrder?.payment?.redirectUrl ||
+        confirmedOrder?.payment?.checkoutUrl ||
         null;
 
       if (redirect) {
         window.location.href = redirect; // 👉 redirección a Mercado Pago (Checkout Pro)
       } else {
         // TRANSFER / CASH sin redirect: vamos a pending
-        router.push(`/checkout/pending?orderId=${orderId}`);
+        router.push(`/checkout/pending?orderNumber=${confirmedOrder.orderNumber}`);
       }
     } catch (e: any) {
       setErr(
@@ -113,18 +137,20 @@ const Checkout = () => {
           <div className="flex flex-col lg:flex-row gap-7.5 xl:gap-11">
             {/* left */}
             <div className="lg:max-w-[670px] w-full flex flex-col gap-6">
-              {/* Parchea la orden al elegir/crear dirección de envío */}
-              <Shipping orderId={orderId} onSelected={setShippingSelected} />
+              {/* Solo mostrar Shipping si la orden lo requiere */}
+              {order?.requiresShipping && (
+                <Shipping order={order} onSelected={setShippingSelected} />
+              )}
 
               {/* Parchea la orden al elegir/crear perfil de facturación (incluye dirección) */}
               <BillingProfileContainer
-                orderId={orderId}
+                order={order}
                 shippingAddress={shippingSelected}
                 onSelected={setBillingProfileSelected}
               />
 
               <PaymentMethod
-                orderId={orderId}
+                order={order}
                 onApplied={(method) => {
                   setPaymentMethodSelected(method);
                   setReloadOrderKey((prev) => prev + 1);
@@ -136,7 +162,7 @@ const Checkout = () => {
             <div className="max-w-[455px] w-full sticky top-24 h-fit flex flex-col gap-6">
               <ShippingMethod />
               <OrderList
-                orderId={orderId}
+                orderNumber={orderNumber}
                 reloadKey={reloadOrderKey}
                 onLoaded={handleOrderLoaded}
               />
@@ -146,18 +172,20 @@ const Checkout = () => {
               )}
 
               {(() => {
+                // isReady depende de si requiere shipping o no
+                // billingProfile es obligatorio SOLO para usuarios autenticados
                 const isReady = Boolean(
-                  orderId &&
-                  billingProfileSelected &&
-                  shippingSelected &&
+                  orderNumber &&
+                  (isAuthenticated ? billingProfileSelected : true) &&
+                  (order?.requiresShipping ? shippingSelected : true) &&
                   paymentMethodSelected
                 );
                 return (
                   <button
                     type="button"
                     onClick={onSubmit}
-                    disabled={saving || !canSubmit}
-                    className={`w-full flex justify-center font-medium py-3 px-6 rounded-md mt-7.5 ${!isReady || saving || !canSubmit
+                    disabled={saving || loadingOrder}
+                    className={`w-full flex justify-center font-medium py-3 px-6 rounded-md mt-7.5 ${!isReady || saving || loadingOrder
                       ? "text-gray-600 bg-gray-400 cursor-not-allowed border-2 border-gray-300"
                       : "text-white bg-blue hover:bg-blue-dark"
                       }`}
@@ -167,9 +195,9 @@ const Checkout = () => {
                 );
               })()}
 
-              {!orderId && (
+              {!orderNumber && (
                 <p className="text-xs text-dark-5 mt-2">
-                  Primero creá la orden desde el carrito para obtener el <code>orderId</code>.
+                  Primero creá la orden desde el carrito para obtener el <code>orderNumber</code>.
                 </p>
               )}
             </div>

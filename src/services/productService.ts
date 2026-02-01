@@ -5,12 +5,19 @@ import {
   type ProductFacetsResponse,
 } from "@/types/facets";
 // export type Product = { id: number; title: string; reviews: number; price: number; discountedPrice: number; imgs?: { thumbnails: string[]; previews: string[] } };
-export type ListParams = { page?: number; limit?: number; sort?: string; q?:  string; categoryId?: number; minPrice?: number, maxPrice?: number, sinceDays?: number, brandIds?: number[], inStockOnly?: boolean; };
+export type ListParams = { page?: number; limit?: number; sort?: string; q?: string; categoryId?: number; minPrice?: number, maxPrice?: number, sinceDays?: number, brandIds?: number[], inStockOnly?: boolean; };
 export type CreateProductDto = { name: string; description?: string; price: number; sku?: string; brandId?: number; categoryId?: number; };
 export type UpdateProductDto = Partial<CreateProductDto>;
 
+export type DigitalProduct = {
+  id: number;
+  name: string;
+  slug: string;
+  imageUrl?: string;
+};
+
 const basePublic = "/products";
-const baseAdmin  = "/products";
+const baseAdmin = "/products";
 
 export const productService = {
   list(params: ListParams) {
@@ -21,6 +28,9 @@ export const productService = {
   },
   getOne(id: number) {
     return api.get<Product>(`${basePublic}/${id}`);
+  },
+  getDigitalProducts() {
+    return api.get<DigitalProduct[]>(`${basePublic}/digital`);
   },
   create(body: CreateProductDto) {
     return api.post<Product>(baseAdmin, body);

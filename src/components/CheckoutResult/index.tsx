@@ -134,7 +134,7 @@ export default function CheckoutResult({ mode }: Props) {
 
     setConfirming(true);
     try {
-      const updatedOrder = await paymentService.confirmBankTransfer(order.id);
+      const updatedOrder = await paymentService.confirmBankTransfer(order.orderNumber);
       setOrder(updatedOrder);
       setShowConfirmModal(false);
       toast.success("Confirmación enviada. El pago está en revisión por el administrador.");

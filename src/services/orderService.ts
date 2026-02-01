@@ -121,6 +121,9 @@ export type OrderResponse = {
   discountTotal: number;
   totalAmount: number;
 
+  // Flag calculado por el backend
+  requiresShipping: boolean;
+
   // Shipping snapshot
   shippingStreet?: string | null;
   shippingStreetNumber?: string | null;
@@ -138,11 +141,11 @@ export type OrderResponse = {
   billingDocumentType?: "CUIT" | "CUIL" | "DNI" | "PAS" | null;
   billingDocumentNumber?: string | null;
   billingTaxCondition?:
-    | "CONSUMIDOR_FINAL"
-    | "MONOTRIBUTO"
-    | "RESPONSABLE_INSCRIPTO"
-    | "EXENTO"
-    | null;
+  | "CONSUMIDOR_FINAL"
+  | "MONOTRIBUTO"
+  | "RESPONSABLE_INSCRIPTO"
+  | "EXENTO"
+  | null;
   billingBusinessName?: string | null;
   billingEmailForInvoices?: string | null;
   billingPhone?: string | null;
@@ -187,9 +190,10 @@ export const orderService = {
   },
 
 
-  /** === Crear orden desde el carrito del usuario (SIN body) === */
-  create() {
-    return api.post<OrderResponse>(`${base}`);
+  /** === Crear orden desde el carrito (guests envían sessionId, autenticados no) === */
+  create(sessionId?: string) {
+    const body = sessionId ? { sessionId } : {};
+    return api.post<OrderResponse>(`${base}`, body);
   },
 
   /** === Listar mis órdenes (detalle completo) — legacy/compat === */
@@ -198,22 +202,22 @@ export const orderService = {
   },
 
   /** === Setear/actualizar shipping === */
-  patchShippingAddress(id: number, payload: UpdateShippingAddressRequest) {
-    return api.patch<OrderResponse>(`${base}/${id}/shipping-address`, payload);
+  patchShippingAddress(orderNumber: string, payload: UpdateShippingAddressRequest) {
+    return api.patch<OrderResponse>(`${base}/${orderNumber}/shipping-address`, payload);
   },
 
   /** === Setear/actualizar billing === */
-  patchBillingProfile(id: number, payload: UpdateBillingProfileRequest) {
-    return api.patch<OrderResponse>(`${base}/${id}/billing-profile`, payload);
+  patchBillingProfile(orderNumber: string, payload: UpdateBillingProfileRequest) {
+    return api.patch<OrderResponse>(`${base}/${orderNumber}/billing-profile`, payload);
   },
 
   /** === Elegir método de pago === */
-  patchPaymentMethod(id: number, payload: UpdatePaymentMethodRequest) {
-    return api.patch<OrderResponse>(`${base}/${id}/payment-method`, payload);
+  patchPaymentMethod(orderNumber: string, payload: UpdatePaymentMethodRequest) {
+    return api.patch<OrderResponse>(`${base}/${orderNumber}/payment-method`, payload);
   },
 
   /** === Confirmar orden (crea Payment y congela edición) === */
-  confirm(id: number, payload?: ConfirmOrderRequest) {
-    return api.post<OrderResponse>(`${base}/${id}/confirm`, payload ?? {});
+  confirm(orderNumber: string, payload?: ConfirmOrderRequest) {
+    return api.post<OrderResponse>(`${base}/${orderNumber}/confirm`, payload ?? {});
   },
 };

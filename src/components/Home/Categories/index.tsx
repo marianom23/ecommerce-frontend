@@ -181,9 +181,9 @@ const Categories = () => {
               ref={sliderRef}
               slidesPerView={6}
               breakpoints={{
-                0: { slidesPerView: 2 },
-                1000: { slidesPerView: 4 },
-                1200: { slidesPerView: 6 },
+                0: { slidesPerView: 2.5 },
+                640: { slidesPerView: 4.5 },
+                1024: { slidesPerView: 6 },
               }}
             >
               {items.map((item) => (

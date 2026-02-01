@@ -9,6 +9,7 @@ import AddressModal from "./AddressModal";
 import Orders from "../Orders";
 import ManageAddresses from "./ManageAddresses";
 import AccountDetails from "./AccountDetails";
+import Modal from "@/components/Common/Modal";
 
 type MyAccountProps = {
   current:
@@ -40,8 +41,16 @@ const TabLink = ({
 );
 
 export default function MyAccount({ current }: MyAccountProps) {
-  const { user } = useAuth();
+  /* eslint-disable react-hooks/exhaustive-deps */
+  const { user, loading, isAuthenticated } = useAuth();
   const router = useRouter();
+  const [showGuestModal, setShowGuestModal] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      setShowGuestModal(true);
+    }
+  }, [loading, isAuthenticated]);
 
   const handleLogout = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -159,6 +168,53 @@ export default function MyAccount({ current }: MyAccountProps) {
           </div>
         </div>
       </section>
+
+      {/* Guest Modal */}
+      <Modal
+        isOpen={showGuestModal}
+        onClose={() => router.push("/")}
+        title="Acceso Restringido"
+        className="max-w-md"
+      >
+        <div className="text-center">
+          <div className="mb-6 flex justify-center">
+            <div className="w-16 h-16 bg-blue/10 rounded-full flex items-center justify-center">
+              <svg
+                className="w-8 h-8 text-blue"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                />
+              </svg>
+            </div>
+          </div>
+
+          <p className="mb-8 text-gray-600">
+            Debes crear una cuenta o iniciar sesión para acceder a este espacio y ver tus pedidos, direcciones y más.
+          </p>
+
+          <div className="flex flex-col gap-3">
+            <Link
+              href="/signin"
+              className="w-full inline-flex justify-center items-center gap-2 bg-blue text-white py-3 px-6 rounded-md hover:bg-blue-dark transition font-medium"
+            >
+              Iniciar Sesión
+            </Link>
+            <Link
+              href="/signup"
+              className="w-full inline-flex justify-center items-center gap-2 border border-blue text-blue py-3 px-6 rounded-md hover:bg-blue/5 transition font-medium"
+            >
+              Crear Cuenta
+            </Link>
+          </div>
+        </div>
+      </Modal>
     </>
   );
 };

@@ -17,7 +17,7 @@ type MobileSidebarProps = {
 
 const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onOpenChange }) => {
     const menuItems = [
-        { label: "Inicio", href: "/" },
+        { label: "Destacados", href: "/#destacados" },
         { label: "Productos", href: "/productos" },
         { label: "Cómo Funciona", href: "/como-funciona" },
         { label: "Mi Cuenta", href: "/mi-cuenta" },

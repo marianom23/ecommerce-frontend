@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import type { Product } from "@/types/product";
 import type { PaginatedResponse } from "@/lib/api";
-import SingleItem from "./SingleItem";
+import ProductItem from "@/components/Common/ProductItem";
 import { productService } from "@/services/productService";
 
 const BestSeller = () => {
@@ -38,7 +38,7 @@ const BestSeller = () => {
   }, []);
 
   return (
-    <section className="overflow-hidden">
+    <section id="destacados" className="overflow-hidden">
       <div className="max-w-[1170px] w-full mx-auto px-4 sm:px-8 xl:px-0">
         {/* Título */}
         <div className="mb-10 flex items-center justify-between">
@@ -67,13 +67,13 @@ const BestSeller = () => {
         )}
 
         {!loading && !error && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-7.5">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-7.5">
             {items.length === 0 ? (
               <div className="col-span-full text-center text-gray-500 py-10">
                 No hay productos más vendidos por ahora.
               </div>
             ) : (
-              items.map((item) => <SingleItem item={item} key={item.id ?? JSON.stringify(item)} />)
+              items.map((item) => <ProductItem item={item} key={item.id ?? JSON.stringify(item)} />)
             )}
           </div>
         )}

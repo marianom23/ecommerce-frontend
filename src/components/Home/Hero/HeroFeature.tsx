@@ -28,9 +28,9 @@ const featureData = [
 const HeroFeature = () => {
   return (
     <div className="max-w-[1060px] w-full mx-auto px-4 sm:px-8 xl:px-0">
-      <div className="flex flex-wrap items-center gap-7.5 xl:gap-12.5 mt-10">
+      <div className="flex flex-wrap items-center justify-center sm:justify-between gap-7.5 xl:gap-12.5 mt-10">
         {featureData.map((item, key) => (
-          <div className="flex items-center gap-4" key={key}>
+          <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-center sm:text-left" key={key}>
             <Image src={item.img} alt="icons" width={40} height={41} />
 
             <div>

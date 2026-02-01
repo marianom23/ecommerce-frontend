@@ -65,7 +65,7 @@ const ShippingForm: React.FC<{
   };
 
   return (
-    <div className="bg-gray-1 rounded-[10px] p-4 sm:p-6">
+    <div className="bg-white shadow-1 rounded-[10px] p-4 sm:p-8.5">
       <h3 className="font-medium text-dark mb-4">
         {initialData ? "Editar dirección" : "Nueva dirección"}
       </h3>
@@ -148,6 +148,7 @@ const ShippingForm: React.FC<{
               Cancelar
             </button>
           )}
+
           <button
             type="submit"
             disabled={isSubmitting}

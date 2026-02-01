@@ -1,15 +1,15 @@
 "use client";
 import React, { useState } from "react";
 import Image from "next/image";
-import { orderService, type PaymentMethod as PM } from "@/services/orderService";
+import { orderService, type PaymentMethod as PM, type OrderResponse } from "@/services/orderService";
 import toast from "react-hot-toast";
 
 type Props = {
-  orderId?: number | null;
+  order?: OrderResponse | null;
   onApplied?: (method: PM) => void; // opcional para avisar al padre
 };
 
-const PaymentMethod: React.FC<Props> = ({ orderId, onApplied }) => {
+const PaymentMethod: React.FC<Props> = ({ order, onApplied }) => {
   const [payment, setPayment] = useState<PM | null>(null);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -32,11 +32,11 @@ const PaymentMethod: React.FC<Props> = ({ orderId, onApplied }) => {
     setErr(null);
 
     setPayment(method);
-    if (!orderId) return;
+    if (!order?.orderNumber) return;
 
     setSaving(true);
     try {
-      await orderService.patchPaymentMethod(orderId, { paymentMethod: method });
+      await orderService.patchPaymentMethod(order.orderNumber, { paymentMethod: method });
       toast.success("Método de pago aplicado a la orden ✓");
       onApplied?.(method);
     } catch (e: any) {

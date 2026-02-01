@@ -139,7 +139,7 @@ const BillingProfileForm: React.FC<{
   };
 
   return (
-    <div className="bg-gray-1 rounded-[10px] p-4 sm:p-6 relative">
+    <div className="bg-white shadow-1 rounded-[10px] p-4 sm:p-8.5 relative">
       <h3 className="font-medium text-dark mb-4">
         {initialData ? "Editar perfil de facturación" : "Nuevo perfil de facturación"}
       </h3>
@@ -268,6 +268,7 @@ const BillingProfileForm: React.FC<{
             Cancelar
           </button>
         )}
+
         <button
           onClick={save}
           disabled={loading || !form.documentNumber || !form.fullName || !form.billingAddressId}

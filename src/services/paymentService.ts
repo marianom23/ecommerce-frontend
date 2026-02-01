@@ -16,7 +16,7 @@ export const paymentService = {
      * @param orderId - ID de la orden
      * @param payload - (Opcional) Datos adicionales como referencia y URL del comprobante
      */
-    confirmBankTransfer(orderId: number, payload?: ConfirmBankTransferRequest) {
-        return api.post<OrderResponse>(`${base}/orders/${orderId}/bank-transfer/confirm`, payload ?? {});
+    confirmBankTransfer(orderNumber: string, payload?: ConfirmBankTransferRequest) {
+        return api.post<OrderResponse>(`${base}/orders/${orderNumber}/bank-transfer/confirm`, payload ?? {});
     },
 };

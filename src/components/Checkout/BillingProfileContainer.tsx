@@ -5,21 +5,25 @@ import {
   billingProfileService,
   BillingProfileResponse,
 } from "@/services/billingProfileService";
-import { addressService, AddressResponse } from "@/services/addressService"; // ⬅️ import
+import { addressService, AddressResponse } from "@/services/addressService";
 import BillingProfileList from "./BillingProfileList";
 import BillingProfileForm from "./BillingProfileForm";
-import { orderService } from "@/services/orderService";
+import GuestBillingForm from "./GuestBillingForm";
+import { orderService, type OrderResponse } from "@/services/orderService";
 import toast from "react-hot-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 const BillingProfileContainer: React.FC<{
-  orderId: number | null;
-  shippingAddress?: AddressResponse | null; // ⬅️ nuevo prop
+  order: OrderResponse | null;
+  shippingAddress?: AddressResponse | null;
   onSelected?: (bp: BillingProfileResponse | null) => void;
-}> = ({ orderId, shippingAddress, onSelected }) => {
+}> = ({ order, shippingAddress, onSelected }) => {
+  const { isAuthenticated, loading: authLoading } = useAuth();
+
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [profiles, setProfiles] = useState<BillingProfileResponse[]>([]);
-  const [addresses, setAddresses] = useState<AddressResponse[]>([]); // ⬅️ estado para direcciones
+  const [addresses, setAddresses] = useState<AddressResponse[]>([]);
   const [mode, setMode] = useState<"list" | "form">("list");
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -35,23 +39,19 @@ const BillingProfileContainer: React.FC<{
 
       setProfiles(resProfiles);
       setAddresses(resAddresses);
-
-      // No auto-seleccionar, dejar que el usuario elija
       setSelectedId(null);
-
       setMode(resProfiles.length ? "list" : "form");
     } finally {
       setLoading(false);
     }
   }
 
-  // ⬇️ Aplica el perfil elegido a la orden con PATCH /api/orders/{id}/billing-profile
   async function applyToOrder(bp: BillingProfileResponse, showToast: boolean = true) {
-    if (!orderId) return;
+    if (!order?.orderNumber) return;
     setErr(null);
     setSaving(true);
     try {
-      await orderService.patchBillingProfile(orderId, { billingProfileId: bp.id });
+      await orderService.patchBillingProfile(order.orderNumber, { billingProfileId: bp.id });
       if (showToast) {
         toast.success("Perfil de facturación aplicado a la orden ✓");
       }
@@ -63,9 +63,35 @@ const BillingProfileContainer: React.FC<{
     }
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    if (authLoading) return;
+    if (isAuthenticated) load();
+  }, [isAuthenticated, authLoading]);
 
+  // Si no está autenticado -> Guest Billing Form
+  if (!isAuthenticated && !authLoading) {
+    return (
+      <GuestBillingForm
+        order={order}
+        shippingAddress={shippingAddress}
+        onSelected={(data) => {
+          onSelected?.(data as any);
+        }}
+      />
+    );
+  }
 
+  // Loading state
+  if (authLoading || loading) {
+    return (
+      <div className="mt-7.5">
+        <h2 className="font-medium text-dark text-xl sm:text-2xl mb-5.5">
+          Perfil de Facturación
+        </h2>
+        <p className="text-dark">Cargando...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="mt-7.5">
@@ -80,7 +106,7 @@ const BillingProfileContainer: React.FC<{
           selectedId={selectedId}
           onSelect={async (bp) => {
             setSelectedId(bp?.id ?? null);
-            if (bp) await applyToOrder(bp);   // ⬅️ acá se usa el método de actualizar billing
+            if (bp) await applyToOrder(bp);
           }}
           onAddNew={() => setMode("form")}
         />
@@ -91,20 +117,16 @@ const BillingProfileContainer: React.FC<{
           billingAddresses={addresses}
           shippingAddress={shippingAddress}
           onSaved={async (created) => {
-            // recargamos, seleccionamos y aplicamos a la orden
             await load();
             setSelectedId(created.id);
-            await applyToOrder(created, true);       // ⬅️ también al crear, con toast
+            await applyToOrder(created, true);
             setMode("list");
           }}
           onCancel={() => setMode(profiles.length ? "list" : "form")}
         />
       )}
-
-      {/* confirmación via toast; no mostramos banner */}
     </div>
   );
 };
 
 export default BillingProfileContainer;
-

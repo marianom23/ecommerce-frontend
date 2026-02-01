@@ -491,7 +491,7 @@ const ShopWithSidebar: React.FC = () => {
               {/* Products Grid/List */}
               <div
                 className={`${productStyle === "grid"
-                  ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-7.5 gap-y-9"
+                  ? "grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-x-7.5 gap-y-9"
                   : "flex flex-col gap-7.5"
                   }`}
               >
@@ -604,7 +604,7 @@ const ShopWithSidebar: React.FC = () => {
             {/* Content End */}
           </div>
         </div>
-      </section>
+      </section >
     </>
   );
 };

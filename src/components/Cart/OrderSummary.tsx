@@ -3,11 +3,11 @@
 import React from "react";
 import { useSelector } from "react-redux";
 import { useRouter } from "next/navigation";
-import { selectCartItems, selectTotalPrice } from "@/redux/features/cart-slice";
+import { selectCartItems, selectTotalPrice, selectCart } from "@/redux/features/cart-slice";
 import { orderService } from "@/services/orderService";
 import toast from "react-hot-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { QuickSignInModal } from "../Common/QuickSignInModal";
+import { useCart } from "@/hooks/useCart";
 
 const formatter = new Intl.NumberFormat("es-AR", {
   style: "currency",
@@ -16,21 +16,17 @@ const formatter = new Intl.NumberFormat("es-AR", {
 });
 
 const OrderSummary = () => {
+  const cart = useSelector(selectCart);
   const cartItems = useSelector(selectCartItems);
   const totalPrice = useSelector(selectTotalPrice);
   const router = useRouter();
   const [isLoading, setIsLoading] = React.useState(false);
-  const [signInModalOpen, setSignInModalOpen] = React.useState(false);
+  const { clear } = useCart();
 
   const { user, loading, isAuthenticated } = useAuth();
 
   const handleProceedToCheckout = async () => {
     if (loading) return;
-
-    if (!isAuthenticated) {
-      setSignInModalOpen(true);
-      return;
-    }
 
     if (!cartItems || cartItems.length === 0) {
       alert("Tu carrito está vacío.");
@@ -40,14 +36,17 @@ const OrderSummary = () => {
     try {
       setIsLoading(true);
 
-      const res = await orderService.create();
+      // Si no está autenticado, enviar sessionId del carrito
+      const sessionId = !isAuthenticated && cart?.sessionId ? cart.sessionId : undefined;
+      const res = await orderService.create(sessionId);
       const order = res;
 
       if (!order?.id) {
         throw new Error("No se recibió el ID de la orden.");
       }
 
-      router.push(`/checkout?orderId=${order.id}`);
+      clear();
+      router.push(`/checkout?orderNumber=${order.orderNumber}`);
     } catch (err: any) {
       const msg =
         err?.response?.data?.message ||
@@ -115,20 +114,12 @@ const OrderSummary = () => {
           <button
             onClick={handleProceedToCheckout}
             disabled={isLoading || cartItems.length === 0}
-            className={`w-full mt-7.5 inline-flex justify-center font-medium py-3 px-6 rounded-md ease-out duration-200 ${!isAuthenticated
-              ? "text-gray-600 bg-gray-400 cursor-not-allowed border-2 border-gray-300"
-              : "text-white bg-blue hover:bg-blue-dark"
-              } disabled:opacity-60 disabled:cursor-not-allowed`}
+            className="w-full mt-7.5 inline-flex justify-center font-medium py-3 px-6 rounded-md ease-out duration-200 text-white bg-blue hover:bg-blue-dark disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {isLoading ? "Creando orden..." : "Proceder a checkout"}
           </button>
         </div>
       </div>
-
-      <QuickSignInModal
-        isOpen={signInModalOpen}
-        onClose={() => setSignInModalOpen(false)}
-      />
     </div>
   );
 };

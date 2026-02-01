@@ -1,22 +1,19 @@
-"use client";
-
 import React, { useEffect, useState } from "react";
 import { AddressResponse, addressService } from "@/services/addressService";
 import ShippingForm from "./ShippingForm";
 import ShippingList from "./ShippingList";
-import { orderService } from "@/services/orderService";
+import GuestShippingForm from "./GuestShippingForm";
+import { orderService, type OrderResponse } from "@/services/orderService";
 import toast from "react-hot-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { useRouter } from "next/navigation";
 
 type Props = {
-  orderId?: number | null;
+  order?: OrderResponse | null;
   onSelected?: (addr: AddressResponse | null) => void;
 };
 
-const ShippingContainer: React.FC<Props> = ({ orderId, onSelected }) => {
+const ShippingContainer: React.FC<Props> = ({ order, onSelected }) => {
   const { isAuthenticated, loading } = useAuth();
-  const router = useRouter();
 
   const [loadingList, setLoadingList] = useState(false);
   const [saving, setSaving] = useState(false); // mientras parcheamos en la orden
@@ -42,11 +39,11 @@ const ShippingContainer: React.FC<Props> = ({ orderId, onSelected }) => {
   }
 
   async function applyToOrder(addr: AddressResponse, silent = false) {
-    if (!orderId) return; // todavía no hay orderId
+    if (!order?.orderNumber) return; // todavía no hay order
     setErr(null);
     setSaving(true);
     try {
-      await orderService.patchShippingAddress(orderId, {
+      await orderService.patchShippingAddress(order.orderNumber, {
         shippingAddressId: addr.id,
         // si más adelante pedís recipientName/phone, los mandás acá
       });
@@ -72,26 +69,16 @@ const ShippingContainer: React.FC<Props> = ({ orderId, onSelected }) => {
 
 
 
-  // Si ya sabemos que NO está autenticado
+  // Si ya sabemos que NO está autenticado -> Guest Shipping Form
   if (!isAuthenticated && !loading) {
     return (
-      <div className="mt-9">
-        <h2 className="font-medium text-dark text-xl sm:text-2xl mb-5.5">
-          Detalles de envío
-        </h2>
-        <div className="bg-white shadow-1 rounded-[10px] p-4 sm:p-8.5">
-          <p className="text-dark mb-4">
-            Iniciá sesión para cargar tu dirección de envío.
-          </p>
-          <button
-            type="button"
-            onClick={() => router.push("/login?next=/checkout")}
-            className="inline-flex items-center justify-center font-medium text-white bg-blue px-4 py-2 rounded-md hover:bg-blue-dark"
-          >
-            Iniciar sesión
-          </button>
-        </div>
-      </div>
+      <GuestShippingForm
+        order={order}
+        onSelected={(data) => {
+          // Guardar como "selected" aunque sea data temporal
+          onSelected?.(data as any);
+        }}
+      />
     );
   }
 

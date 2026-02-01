@@ -45,7 +45,8 @@ const OrderList: React.FC<{
   /** Callback opcional por si arriba querés enterarte del cart fresco */
   onLoaded?: (cart: Cart) => void;
   orderId?: number | null;
-}> = ({ className, reloadKey, onLoaded, orderId }) => {
+  orderNumber?: string | null;
+}> = ({ className, reloadKey, onLoaded, orderId, orderNumber }) => {
   const [loading, setLoading] = useState(false);
   const [cart, setCart] = useState<Cart | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -55,8 +56,29 @@ const OrderList: React.FC<{
     setErr(null);
     try {
       let data: any;
-      if (orderId) {
-        // Fetch order details
+      if (orderNumber) {
+        // Fetch order details by orderNumber
+        const order = await orderService.getOneByNumber(orderNumber);
+        data = {
+          items: order.items.map((i) => ({
+            id: i.productId, // mapping productId to id for display
+            productId: i.productId,
+            name: i.productName,
+            sku: i.sku,
+            quantity: i.quantity,
+            unitPrice: i.unitPrice,
+            lineTotal: i.lineTotal,
+          })),
+          currency: "ARS", // Order response might not have currency, default to ARS
+          subtotal: order.subTotal,
+          discountTotal: order.discountTotal,
+          shippingFee: order.shippingCost,
+          taxTotal: order.taxAmount,
+          total: order.totalAmount,
+          couponCode: null, // Order might not have coupon code explicitly in summary
+        };
+      } else if (orderId) {
+        // Fetch order details by orderId
         const order = await orderService.getOne(orderId);
         data = {
           items: order.items.map((i) => ({
