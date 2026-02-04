@@ -322,6 +322,8 @@ class App {
         });
         this.gl = this.renderer.gl;
         this.gl.clearColor(0, 0, 0, 0);
+        // Important: optimize touch actions for mobile
+        this.gl.canvas.style.touchAction = 'pan-y'; // Allow vertical scroll, handle horizontal in JS
         this.container.appendChild(this.gl.canvas);
     }
     createCamera() {
@@ -334,8 +336,8 @@ class App {
     }
     createGeometry() {
         this.planeGeometry = new Plane(this.gl, {
-            heightSegments: 50,
-            widthSegments: 100
+            heightSegments: 20,
+            widthSegments: 40
         });
     }
     createMedias(items, bend = 1, textColor, borderRadius, font) {
@@ -375,6 +377,9 @@ class App {
         });
     }
     onTouchDown(e) {
+        // Ensure user is actually touching the canvas
+        if (e.target !== this.gl.canvas) return;
+
         this.isDown = true;
         this.scroll.position = this.scroll.current;
         this.start = e.touches ? e.touches[0].clientX : e.clientX;
@@ -382,6 +387,7 @@ class App {
     }
     onTouchMove(e) {
         if (!this.isDown) return;
+
         const x = e.touches ? e.touches[0].clientX : e.clientX;
         const distance = (this.start - x) * (this.scrollSpeed * 0.025);
         this.scroll.target = this.scroll.position + distance;
@@ -409,8 +415,11 @@ class App {
         this.onCheck();
     }
     onWheel(e) {
-        const delta = e.deltaY || e.wheelDelta || e.detail;
-        this.scroll.target += (delta > 0 ? this.scrollSpeed : -this.scrollSpeed) * 1;
+        let delta = e.deltaY;
+        if (e.deltaMode === 1) {
+            delta *= 40;
+        }
+        this.scroll.target += delta * 0.05 * this.scrollSpeed;
         this.onCheckDebounce();
     }
     onCheck() {
