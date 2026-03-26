@@ -19,6 +19,7 @@ export default function RootLayout({
       <head>
         <title>HorneroTech | Tienda de tecnología de confianza</title>
         <meta name="description" content="Tu tienda de tecnología de confianza" />
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
       </head>
       <body>
         <GoogleOAuthProvider clientId={googleClientId}>
