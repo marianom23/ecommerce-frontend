@@ -14,4 +14,6 @@ export type Product = {
   defaultVariantId: number | null;
   fulfillmentType: FulfillmentType;
   priceWithTransfer?: number;
+  consoleName?: string;
+  productType?: "GAME" | "DLC" | "CONSOLE" | "ACCESSORY" | "OTHER";
 };

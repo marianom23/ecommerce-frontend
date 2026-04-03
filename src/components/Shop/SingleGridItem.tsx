@@ -91,7 +91,15 @@ const SingleGridItem = ({ item }: { item: Product }) => {
 
   return (
     <div className="group">
-      <div className="relative overflow-hidden flex items-center justify-center rounded-lg bg-white shadow-1 aspect-[2/3] mb-4">
+      <div className="relative overflow-hidden flex items-center justify-center rounded-lg bg-white shadow-1 aspect-[2/3] mb-4 group-hover:shadow-lg transition-shadow duration-300">
+        {/* Cinta Diagonal de Descuento */}
+        {item.price > item.discountedPrice && (
+          <div className="absolute top-0 left-0 w-24 h-24 overflow-hidden z-20 pointer-events-none">
+            <div className="absolute top-0 left-0 bg-red text-white text-[10px] font-bold py-1 px-10 -rotate-45 -translate-x-[35%] translate-y-[25%] shadow-md whitespace-nowrap">
+              {Math.round(((item.price - item.discountedPrice) / item.price) * 100)}% OFF
+            </div>
+          </div>
+        )}
         <CloudinaryImage
           src={imgSrc}
           alt={item.title}
@@ -175,9 +183,18 @@ const SingleGridItem = ({ item }: { item: Product }) => {
 
       <StarRating rating={item.averageRating} totalReviews={item.totalReviews} />
 
-      <h3 className="font-medium text-dark ease-out duration-200 hover:text-blue mb-1.5">
-        <Link href={generateProductUrl(item.id, item.title)} onClick={handleProductDetails}> {item.title} </Link>
-      </h3>
+      <div className="flex justify-between items-center mb-1.5">
+        <h3 className="font-medium text-dark ease-out duration-200 hover:text-blue">
+          <Link href={generateProductUrl(item.id, item.title)} onClick={handleProductDetails}> {item.title} </Link>
+        </h3>
+        {item.productType === 'DLC' && (
+          <span className="text-[10px] bg-blue/10 text-blue px-1.5 py-0.5 rounded uppercase font-bold">DLC</span>
+        )}
+      </div>
+
+      {item.consoleName && (
+        <p className="text-xs text-gray-500 mb-1.5">{item.consoleName}</p>
+      )}
 
       <PriceDisplay
         price={item.price}

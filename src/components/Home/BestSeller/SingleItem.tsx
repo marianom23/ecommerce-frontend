@@ -86,7 +86,15 @@ const SingleItem = ({ item }: { item: Product }) => {
           />
         </div>
 
-        <div className="relative w-full h-full flex-1">
+        <div className="relative w-full h-full flex-1 overflow-hidden">
+          {/* Cinta Diagonal de Descuento */}
+          {item.price > item.discountedPrice && (
+            <div className="absolute top-0 left-0 w-24 h-24 overflow-hidden z-20 pointer-events-none">
+              <div className="absolute top-0 left-0 bg-red text-white text-[10px] font-bold py-1 px-10 -rotate-45 -translate-x-[35%] translate-y-[25%] shadow-md whitespace-nowrap">
+                {Math.round(((item.price - item.discountedPrice) / item.price) * 100)}% OFF
+              </div>
+            </div>
+          )}
           <CloudinaryImage
             src={item.imgs?.urls?.[0] ?? "/placeholder.png"}
             alt={item.title ?? ""}

@@ -64,6 +64,14 @@ const SingleListItem = ({ item }: { item: Product }) => {
     <div className="group rounded-lg bg-white shadow-1">
       <div className="flex">
         <div className="shadow-list relative overflow-hidden flex items-center justify-center max-w-[270px] w-full sm:min-h-[270px] p-4">
+          {/* Cinta Diagonal de Descuento */}
+          {item.price > item.discountedPrice && (
+            <div className="absolute top-0 left-0 w-24 h-24 overflow-hidden z-20 pointer-events-none">
+              <div className="absolute top-0 left-0 bg-red text-white text-[10px] font-bold py-1 px-10 -rotate-45 -translate-x-[35%] translate-y-[25%] shadow-md whitespace-nowrap">
+                {Math.round(((item.price - item.discountedPrice) / item.price) * 100)}% OFF
+              </div>
+            </div>
+          )}
           {item.imgs?.urls?.[0] ? (
             <CloudinaryImage
               src={item.imgs.urls[0]}

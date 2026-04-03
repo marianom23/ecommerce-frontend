@@ -1,5 +1,6 @@
 import React from "react";
 import ShopDetails from "@/components/ShopDetails";
+import ProductJsonLd from "@/components/Common/ProductJsonLd";
 import { Metadata } from "next";
 
 type DetalleProductoPageProps = {
@@ -9,28 +10,29 @@ type DetalleProductoPageProps = {
   searchParams?: Promise<Record<string, unknown>>;
 };
 
-export async function generateMetadata({ params }: DetalleProductoPageProps): Promise<Metadata> {
-  const resolvedParams = (await params) ?? { id: "" };
-  // The id param is in the format "ID-slug" (e.g., "5-zelda-breath-of-the-wild")
-  // We extract only the numeric ID at the beginning
-  const numericId = resolvedParams.id.split("-")[0];
-
+async function getProductData(id: string) {
+  const numericId = id.split("-")[0];
   try {
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
     const res = await fetch(`${backendUrl}/api/products/${numericId}`, {
-      next: { revalidate: 3600 }, // cache for 1 hour
+      next: { revalidate: 3600 },
     });
     const result = await res.json();
-    const product = result?.data ?? result;
-
-    if (product?.title) {
-      return {
-        title: `${product.title} | HorneroTech`,
-        description: product.description || `Comprá ${product.title} en HorneroTech. Entrega digital inmediata.`,
-      };
-    }
+    return result?.data ?? result;
   } catch {
-    // fallback to default if API is unreachable
+    return null;
+  }
+}
+
+export async function generateMetadata({ params }: DetalleProductoPageProps): Promise<Metadata> {
+  const resolvedParams = (await params) ?? { id: "" };
+  const product = await getProductData(resolvedParams.id);
+
+  if (product?.title) {
+    return {
+      title: `${product.title} | HorneroTech`,
+      description: product.description || `Comprá ${product.title} en HorneroTech. Entrega digital inmediata.`,
+    };
   }
 
   return {
@@ -42,12 +44,21 @@ export async function generateMetadata({ params }: DetalleProductoPageProps): Pr
 const DetalleProductoPage = async ({ params }: DetalleProductoPageProps) => {
   const resolvedParams = (await params) ?? { id: "" };
   const { id } = resolvedParams;
+  const product = await getProductData(id);
+  const siteUrl = process.env.NEXTAUTH_URL || "https://hornerotech.com.ar";
 
   return (
     <main>
+      {product && (
+        <ProductJsonLd 
+          product={product} 
+          url={`${siteUrl}/detalle-producto/${id}`} 
+        />
+      )}
       <ShopDetails productId={id} />
     </main>
   );
 };
 
 export default DetalleProductoPage;
+

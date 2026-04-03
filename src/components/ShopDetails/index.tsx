@@ -22,6 +22,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { StarRating } from "@/components/Common/StarRating";
 import { PriceDisplay } from "@/components/Common/PriceDisplay";
 import * as pixel from "@/utils/pixel";
+import { cn } from "@/lib/utils";
+import { Check } from "lucide-react";
 
 interface ShopDetailsProps {
   productId?: string;
@@ -44,6 +46,7 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
   const currentUserId = user?.id;
 
   const [selectedVariantId, setSelectedVariantId] = useState<number | null>(null);
+  const [selectedAttrs, setSelectedAttrs] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -59,6 +62,10 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
     {
       id: "tabOne",
       title: "Descripción",
+    },
+    {
+      id: "tabSpecifications",
+      title: "Especificaciones",
     },
     {
       id: "tabTwo",
@@ -97,6 +104,7 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
         if (details.hasVariants && details.variants.length > 0) {
           const defaultVariant = details.variants.find(v => v.stock > 0) ?? details.variants[0];
           setSelectedVariantId(defaultVariant?.id ?? null);
+          setSelectedAttrs(defaultVariant?.attrs ?? {});
         }
 
         // Update Redux store with full details
@@ -162,13 +170,19 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
     ? productDetails.variants.find(v => v.id === selectedVariantId) ?? null
     : null;
 
-  // Combinar imágenes base y de variante para galería
+  // Lógica de imágenes: Priorizar las de la variante pero mostrar TODAS (híbrido)
   const currentImages = React.useMemo(() => {
+    const variantImages = selectedVariant?.images ?? [];
     const baseImages = productDetails?.images ?? product?.imgs?.urls ?? [];
-    const variantImages = selectedVariant?.images?.length ? selectedVariant.images : [];
-    // "basese primero" => base primero, luego variant, unicos
-    return Array.from(new Set([...baseImages, ...variantImages]));
+
+    // Unir todas las imágenes, poniendo las de la variante al principio y quitando duplicados
+    return Array.from(new Set([...variantImages, ...baseImages]));
   }, [productDetails, product, selectedVariant]);
+
+  // Resetear el índice de previsualización al cambiar de variante
+  useEffect(() => {
+    setPreviewImg(0);
+  }, [selectedVariantId]);
 
   const currentPrice = selectedVariant
     ? selectedVariant.discountedPrice
@@ -218,6 +232,59 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
 
   // Usar la misma lógica que el productDetailsService
   const isInStock = productDetails?.inStock ?? true;
+
+  const handleAttrChange = (key: string, value: string) => {
+    const newAttrs = { ...selectedAttrs, [key]: value };
+    setSelectedAttrs(newAttrs);
+
+    // Intentar encontrar una variante que coincida con TODOS los atributos seleccionados
+    const variant = productDetails?.variants.find(v =>
+      Object.entries(newAttrs).every(([k, val]) => v.attrs[k] === val)
+    );
+    if (variant) {
+      setSelectedVariantId(variant.id);
+    } else {
+      // Si no hay match perfecto (posible si combinaciones no son válidas), 
+      // buscar la primera que coincida con el atributo recién cambiado.
+      const partialMatch = productDetails?.variants.find(v => v.attrs[key] === value);
+      if (partialMatch) {
+        setSelectedVariantId(partialMatch.id);
+        setSelectedAttrs(partialMatch.attrs);
+      }
+    }
+  };
+
+  const isLightColor = (color?: string) => {
+    if (!color) return true;
+    const hex = color.replace('#', '');
+    if (hex.length < 6) return true;
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+    return brightness > 155;
+  };
+
+  const getColorHex = (value: string) => {
+    if (value.startsWith('#')) return value;
+    const colorMap: Record<string, string> = {
+      'Rojo': '#FF0000',
+      'Azul': '#0000FF',
+      'Verde': '#008000',
+      'Amarillo': '#FFFF00',
+      'Negro': '#000000',
+      'Blanco': '#FFFFFF',
+      'Gris': '#808080',
+      'Rosa': '#FFC0CB',
+      'Naranja': '#FFA500',
+      'Violeta': '#EE82EE',
+      'Marrón': '#A52A2A',
+      'Celeste': '#ADD8E6',
+      'Plata': '#C0C0C0',
+      'Oro': '#FFD700',
+    };
+    return colorMap[value] || '#000000';
+  };
 
   const handlePreviewSlider = () => {
     // Pass the full product details to the preview modal with merged images
@@ -333,12 +400,20 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
             <div className="max-w-[1170px] w-full mx-auto px-4 sm:px-8 xl:px-0">
               <div className="flex flex-col lg:flex-row gap-7.5 xl:gap-17.5">
                 <div className="lg:max-w-[570px] w-full">
-                  <div className="lg:min-h-[512px] rounded-lg shadow-1 bg-gray-2 p-4 sm:p-7.5 relative flex items-center justify-center">
-                    <div>
+                  <div className="h-[350px] lg:h-[512px] w-full rounded-lg shadow-1 bg-gray-2 p-4 sm:p-7.5 relative flex items-center justify-center overflow-hidden">
+                    {/* Cinta Diagonal de Descuento */}
+                    {originalPrice > currentPrice && (
+                      <div className="absolute top-0 left-0 w-32 h-32 overflow-hidden z-20 pointer-events-none">
+                        <div className="absolute top-0 left-0 bg-red text-white text-[12px] font-bold py-1 px-12 -rotate-45 -translate-x-[30%] translate-y-[40%] shadow-md whitespace-nowrap">
+                          {Math.round(((originalPrice - currentPrice) / originalPrice) * 100)}% OFF
+                        </div>
+                      </div>
+                    )}
+                    <div className="relative w-full h-full flex items-center justify-center">
                       <button
                         onClick={handlePreviewSlider}
                         aria-label="button for zoom"
-                        className="gallery__Image w-11 h-11 rounded-[5px] bg-gray-1 shadow-1 flex items-center justify-center ease-out duration-200 text-dark hover:text-blue absolute top-4 lg:top-6 right-4 lg:right-6 z-50"
+                        className="gallery__Image w-11 h-11 rounded-[5px] bg-gray-1 shadow-1 flex items-center justify-center ease-out duration-200 text-dark hover:text-blue absolute top-0 lg:top-0 right-0 lg:right-0 z-50"
                       >
                         <svg
                           className="fill-current"
@@ -360,9 +435,9 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
                       <CloudinaryImage
                         src={currentImages[previewImg] || "/placeholder.png"}
                         alt="products-details"
-                        width={400}
-                        height={400}
-                        className="object-contain"
+                        width={600}
+                        height={600}
+                        className="w-full h-full object-contain"
                       />
                     </div>
                   </div>
@@ -487,86 +562,98 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
                   <form onSubmit={(e) => e.preventDefault()}>
                     <div className="flex flex-col gap-4.5 border-y border-gray-3 mt-7.5 mb-9 py-9">
                       {/* Dynamic Variant Selector */}
-                      {productDetails?.hasVariants && productDetails.variants.length > 0 && (
-                        <div className="flex items-center gap-4">
-                          <div className="min-w-[65px]">
-                            <h4 className="font-medium text-dark">Variantes:</h4>
-                          </div>
-                          <div className="flex flex-wrap items-center gap-4">
-                            {productDetails.variants.map((variant) => {
-                              const isSelected = selectedVariantId === variant.id;
-                              const isOutOfStock = productDetails?.fulfillmentType !== 'DIGITAL_ON_DEMAND' && !productDetails.inStock;
-
-                              return (
-                                <label
-                                  key={variant.id}
-                                  htmlFor={`variant-${variant.id}`}
-                                  className={`flex cursor-pointer select-none items-center p-2 rounded border ${isSelected
-                                    ? "border-blue bg-blue/10"
-                                    : "border-gray-3 hover:border-gray-4"
-                                    } ${isOutOfStock ? "opacity-50 cursor-not-allowed" : ""}`}
-                                >
-                                  <div className="relative">
-                                    <input
-                                      type="radio"
-                                      name="variant"
-                                      id={`variant-${variant.id}`}
-                                      className="sr-only"
-                                      checked={isSelected}
-                                      onChange={() => setSelectedVariantId(variant.id)}
-                                      disabled={isOutOfStock}
-                                    />
-                                    <div
-                                      className={`mr-2 flex h-4 w-4 items-center justify-center rounded border ${isSelected
-                                        ? "border-blue bg-blue"
-                                        : "border-gray-4"
-                                        }`}
-                                    >
-                                      <span
-                                        className={
-                                          isSelected
-                                            ? "opacity-100"
-                                            : "opacity-0"
-                                        }
-                                      >
-                                        <svg
-                                          width="12"
-                                          height="12"
-                                          viewBox="0 0 24 24"
-                                          fill="none"
-                                          xmlns="http://www.w3.org/2000/svg"
-                                        >
-                                          <rect
-                                            x="4"
-                                            y="4.00006"
-                                            width="16"
-                                            height="16"
-                                            rx="4"
-                                            fill="#3C50E0"
-                                          />
-                                          <path
-                                            fillRule="evenodd"
-                                            clipRule="evenodd"
-                                            d="M16.3103 9.25104C16.471 9.41178 16.5612 9.62978 16.5612 9.85707C16.5612 10.0844 16.471 10.3024 16.3103 10.4631L12.0243 14.7491C11.8635 14.9098 11.6455 15.0001 11.4182 15.0001C11.191 15.0001 10.973 14.9098 10.8122 14.7491L8.24062 12.1775C8.08448 12.0158 7.99808 11.7993 8.00003 11.5745C8.00199 11.3498 8.09214 11.1348 8.25107 10.9759C8.41 10.8169 8.62499 10.7268 8.84975 10.7248C9.0745 10.7229 9.29103 10.8093 9.4527 10.9654L11.4182 12.931L15.0982 9.25104C15.2589 9.09034 15.4769 9.00006 15.7042 9.00006C15.9315 9.00006 16.1495 9.09034 16.3103 9.25104Z"
-                                            fill="white"
-                                          />
-                                        </svg>
-                                      </span>
-                                    </div>
-                                  </div>
-                                  <div className="flex flex-col">
-                                    <span className="text-sm font-medium">
-                                      {Object.entries(variant.attrs).map(([key, value]) => `${key}: ${value}`).join(", ") || `Variant ${variant.id}`}
-                                    </span>
-                                    <span className="text-xs text-gray-5">
-                                      {isOutOfStock && <span className="text-red ml-1">(Sin Stock)</span>}
-                                      {productDetails?.fulfillmentType === 'DIGITAL_ON_DEMAND' && <span className="text-green ml-1">(Digital)</span>}
-                                    </span>
-                                  </div>
+                      {productDetails?.hasVariants && productDetails.options && Object.keys(productDetails.options).length > 0 && (
+                        <div className="flex flex-col gap-6">
+                          {Object.entries(productDetails.options).map(([optionName, values]) => {
+                            const isColor = optionName.toLowerCase().includes('color');
+                            return (
+                              <div key={optionName} className="flex flex-col gap-3">
+                                <label className="text-xs font-bold uppercase tracking-wider text-dark/70">
+                                  {optionName}
                                 </label>
-                              );
-                            })}
-                          </div>
+                                <div className="flex flex-wrap items-center gap-3">
+                                  {values.map((value) => {
+                                    const isSelected = selectedAttrs[optionName] === value;
+                                    const colorHex = isColor ? getColorHex(value) : null;
+                                    const isDisabled = false; // Implement stock logic if needed
+
+                                    if (isColor) {
+                                      return (
+                                        <button
+                                          key={value}
+                                          type="button"
+                                          onClick={() => handleAttrChange(optionName, value)}
+                                          className={cn(
+                                            "group relative flex h-10 w-10 items-center justify-center rounded-full",
+                                            "transition-all duration-200 ease-out",
+                                            "focus:outline-none focus-visible:ring-2 focus-visible:ring-blue focus-visible:ring-offset-2",
+                                            isDisabled && "cursor-not-allowed opacity-40"
+                                          )}
+                                          title={value}
+                                        >
+                                          {/* Anillo exterior para seleccion */}
+                                          <span
+                                            className={cn(
+                                              "absolute inset-[-4px] rounded-full border-2 transition-all duration-200",
+                                              isSelected
+                                                ? "border-blue scale-100"
+                                                : "border-transparent scale-90 group-hover:scale-95 group-hover:border-gray-3"
+                                            )}
+                                          />
+
+                                          {/* Circulo de color */}
+                                          <span
+                                            className={cn(
+                                              "relative h-8 w-8 rounded-full shadow-sm transition-transform duration-200",
+                                              "ring-1 ring-black/10",
+                                              !isDisabled && "group-hover:scale-105"
+                                            )}
+                                            style={{ backgroundColor: colorHex || "#000" }}
+                                          />
+
+                                          {/* Checkmark cuando esta seleccionado */}
+                                          {isSelected && (
+                                            <Check
+                                              className={cn(
+                                                "h-4 w-4 drop-shadow-md absolute z-10",
+                                                isLightColor(colorHex || undefined) ? "text-dark" : "text-white"
+                                              )}
+                                              strokeWidth={3}
+                                            />
+                                          )}
+
+                                          {/* Linea diagonal para deshabilitado */}
+                                          {isDisabled && (
+                                            <span className="h-[2px] w-8 rotate-45 bg-dark/60 rounded-full absolute z-20" />
+                                          )}
+                                        </button>
+                                      );
+                                    }
+
+                                    return (
+                                      <button
+                                        key={value}
+                                        type="button"
+                                        onClick={() => handleAttrChange(optionName, value)}
+                                        className={cn(
+                                          "relative px-4 py-2.5 rounded-lg text-sm font-medium",
+                                          "border transition-all duration-200 ease-out",
+                                          "focus:outline-none focus-visible:ring-2 focus-visible:ring-blue focus-visible:ring-offset-2",
+                                          isSelected
+                                            ? "bg-blue text-white border-blue shadow-sm"
+                                            : "bg-white text-dark border-gray-3 hover:border-dark/30 hover:bg-gray-2",
+                                          isDisabled && "cursor-not-allowed opacity-40 hover:bg-white hover:border-gray-3",
+                                          !isDisabled && !isSelected && "active:scale-[0.98]"
+                                        )}
+                                      >
+                                        {value}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
@@ -724,12 +811,8 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
                     }`}
                 >
                   <div className="max-w-[670px] w-full">
-                    <h2 className="font-medium text-2xl text-dark mb-7">
-                      Especificaciones:
-                    </h2>
-
                     {productDetails?.description ? (
-                      <div className="whitespace-pre-line">
+                      <div className="whitespace-pre-line text-lg leading-relaxed text-gray-600">
                         {productDetails.description}
                       </div>
                     ) : (
@@ -772,6 +855,43 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
                 </div>
               </div>
               {/* <!-- tab content one end --> */}
+
+              {/* <!-- tab content specifications start --> */}
+              <div>
+                <div
+                  className={`rounded-xl bg-white shadow-1 p-4 sm:p-6 mt-10 ${activeTab === "tabSpecifications" ? "block" : "hidden"
+                    }`}
+                >
+                  <h2 className="font-semibold text-2xl text-dark mb-8 px-4 flex items-center gap-3">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-blue">
+                      <path d="M9 5H7C5.89543 5 5 5.89543 5 7V19C5 20.1046 5.89543 21 7 21H17C18.1046 21 19 20.1046 19 19V7C19 5.89543 18.1046 5 17 5H15M9 5C9 6.10457 9.89543 7 11 7H13C14.1046 7 15 6.10457 15 5M9 5C9 3.89543 9.89543 3 11 3H13C14.1046 3 15 3.89543 15 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    Especificaciones Técnicas
+                  </h2>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
+                    {productDetails?.specifications && Object.entries(productDetails.specifications).length > 0 ? (
+                      Object.entries(productDetails.specifications).map(([key, value]) => (
+                        <div key={key} className="flex border-b border-gray-50 py-4 px-4 hover:bg-gray-50/50 transition-colors">
+                          <div className="w-1/2">
+                            <p className="text-sm sm:text-base text-gray-500 font-medium">{key}</p>
+                          </div>
+                          <div className="w-1/2">
+                            <p className="text-sm sm:text-base text-dark font-semibold">
+                              {value}
+                            </p>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="col-span-2 py-10 text-center text-gray-400 italic">
+                        No hay especificaciones técnicas detalladas.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+              {/* <!-- tab content specifications end --> */}
 
               {/* <!-- tab content two start --> */}
               <div>

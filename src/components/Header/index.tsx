@@ -19,6 +19,7 @@ const Header = () => {
   const { user, isAuthenticated } = useAuth();
   const router = useRouter();
   const [brandFacets, setBrandFacets] = useState<CategoryFacet[]>([]);
+  const [consoleFacets, setConsoleFacets] = useState<CategoryFacet[]>([]);
   const [brandsLoading, setBrandsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("0"); // "0" = Todas
@@ -37,20 +38,8 @@ const Header = () => {
   const handleOpenCartModal = () => openCartModal();
 
   const computedMenu = useMemo(() => {
-    return menuData.map((item) => {
-      if (item.title === "Marcas") {
-        return {
-          ...item,
-          // submenu con mismas props que el resto y SIN cantidad
-          submenu: (brandFacets ?? []).map((b) => ({
-            title: b.name,
-            path: `/productos?brandIds=${b.id}`,
-          })),
-        };
-      }
-      return item;
-    });
-  }, [brandFacets]);
+    return menuData;
+  }, []);
 
   // Sticky menu
   useEffect(() => {
@@ -78,6 +67,7 @@ const Header = () => {
         ];
         if (!cancelled) {
           setBrandFacets(facets?.brandFacets ?? []);
+          setConsoleFacets(facets?.consoleFacets ?? []);
           setCatOptions(mapped)
         }
       } catch {

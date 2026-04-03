@@ -40,12 +40,17 @@ export const PriceDisplay: React.FC<PriceDisplayProps> = ({
     if (hasTransferPrice && hasDiscount) {
         return (
             <div className={`flex flex-col ${alignment} ${className}`}>
-                <span className={`text-green-600 font-bold ${mainTextClass}`}>
-                    {format(priceWithTransfer!)} <span className="text-xs font-normal text-gray-500">(Transferencia)</span>
-                </span>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 mb-0.5">
                     <span className={`text-dark font-medium ${size === "xl" ? "text-lg" : "text-base"}`}>{format(discountedPrice)}</span>
                     <span className={`text-gray-400 line-through ${subTextClass}`}>{format(price)}</span>
+                </div>
+                <div className="flex flex-col lg:flex-row lg:items-center items-start lg:gap-2">
+                    <span className={`text-green font-bold ${mainTextClass} leading-none`}>
+                        {format(priceWithTransfer!)}
+                    </span>
+                    <span className="text-[9px] bg-green/10 text-green px-1.5 py-0.5 rounded leading-none font-semibold uppercase tracking-wider mt-1 lg:mt-0">
+                        Transferencia
+                    </span>
                 </div>
             </div>
         );
@@ -55,10 +60,15 @@ export const PriceDisplay: React.FC<PriceDisplayProps> = ({
     if (hasTransferPrice && !hasDiscount) {
         return (
             <div className={`flex flex-col ${alignment} ${className}`}>
-                <span className={`text-green-600 font-bold ${mainTextClass}`}>
-                    {format(priceWithTransfer!)} <span className="text-xs font-normal text-gray-500">(Transferencia)</span>
-                </span>
-                <span className={`text-dark font-medium ${size === "xl" ? "text-lg" : "text-base"}`}>{format(price)}</span>
+                <span className={`text-dark font-medium ${size === "xl" ? "text-lg" : "text-base"} mb-0.5`}>{format(price)}</span>
+                <div className="flex flex-col lg:flex-row lg:items-center items-start lg:gap-2">
+                    <span className={`text-green font-bold ${mainTextClass} leading-none`}>
+                        {format(priceWithTransfer!)}
+                    </span>
+                    <span className="text-[9px] bg-green/10 text-green px-1.5 py-0.5 rounded leading-none font-semibold uppercase tracking-wider mt-1 lg:mt-0">
+                        Transferencia
+                    </span>
+                </div>
             </div>
         );
     }

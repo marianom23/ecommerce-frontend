@@ -6,5 +6,6 @@ export type PriceRange = { minPrice: number | null; maxPrice: number | null };
 export type ProductFacetsResponse = {
   categoryFacets: CategoryFacet[];
   brandFacets: BrandFacet[];
+  consoleFacets: CategoryFacet[]; // Reusamos CategoryFacet que es id, name, count
   priceRange: PriceRange;
 };

@@ -19,6 +19,8 @@ import {
 import { PriceDisplay } from "@/components/Common/PriceDisplay";
 import * as pixel from "@/utils/pixel";
 import { useAuth } from "@/hooks/useAuth";
+import { cn } from "@/lib/utils";
+import { Check } from "lucide-react";
 
 const currency = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" });
 
@@ -52,6 +54,7 @@ const QuickViewModal = () => {
 
   // Variante seleccionada (si hay variantes)
   const [selectedVariantId, setSelectedVariantId] = useState<number | null>(null);
+  const [selectedAttrs, setSelectedAttrs] = useState<Record<string, string>>({});
 
   const [showFullDesc, setShowFullDesc] = useState(false);
 
@@ -60,13 +63,7 @@ const QuickViewModal = () => {
   const isInWishlist = product ? wishlistItems.some((p) => p.id === product.id) : false;
 
   const description = details?.description ?? ""; // el "light" no suele traer description
-  const shownDesc = useMemo(() => {
-    if (!description) return "";
-    const limit = 220; // caracteres
-    return showFullDesc || description.length <= limit
-      ? description
-      : description.slice(0, limit) + "…";
-  }, [description, showFullDesc]);
+  const shownDesc = description;
 
 
   // ------- Helpers -------
@@ -139,8 +136,10 @@ const QuickViewModal = () => {
         if (d.hasVariants) {
           const def = pickDefaultVariant(d);
           setSelectedVariantId(def?.id ?? null);
+          setSelectedAttrs(def?.attrs ?? {});
         } else {
           setSelectedVariantId(null);
+          setSelectedAttrs({});
         }
         // Track ViewContent
         pixel.event("ViewContent", {
@@ -171,13 +170,13 @@ const QuickViewModal = () => {
     return details.variants.find(v => v.id === selectedVariantId) ?? null;
   }, [details, selectedVariantId]);
 
-  // Imágenes para galería: combinar base + variante para no perder las fotos generales
+  // Imágenes para galería: combinar base + variante priorizando variante (híbrido)
   const galleryImages: string[] = useMemo(() => {
     const baseImages = details?.images?.length ? details.images : (product?.imgs?.urls ?? []);
-    const variantImages = selectedVariant?.images?.length ? selectedVariant.images : [];
+    const variantImages = selectedVariant?.images ?? [];
 
-    // Unificar y quitar duplicados. "basese primero" => base primero
-    return Array.from(new Set([...baseImages, ...variantImages]));
+    // Unificar y quitar duplicados. Variante primero
+    return Array.from(new Set([...variantImages, ...baseImages]));
   }, [selectedVariant, details, product]);
 
   // preview modal
@@ -241,6 +240,52 @@ const QuickViewModal = () => {
       setActivePreview(0);
     };
   }, [isModalOpen, closeModal]);
+
+  const handleAttrChange = (key: string, value: string) => {
+    const newAttrs = { ...selectedAttrs, [key]: value };
+    setSelectedAttrs(newAttrs);
+
+    // Intentar encontrar una variante que coincida con TODOS los atributos seleccionados
+    const variant = details?.variants.find(v =>
+      Object.entries(newAttrs).every(([k, val]) => v.attrs[k] === val)
+    );
+
+    if (variant) {
+      setSelectedVariantId(variant.id);
+      setActivePreview(0); // Reset preview to first image of variant
+    } else {
+      // Búsqueda parcial si la combinación completa no existe
+      const partialMatch = details?.variants.find(v => v.attrs[key] === value);
+      if (partialMatch) {
+        setSelectedVariantId(partialMatch.id);
+        setSelectedAttrs(partialMatch.attrs);
+        setActivePreview(0);
+      }
+    }
+  };
+
+  const isLightColor = (color?: string) => {
+    if (!color) return true;
+    const hex = color.replace('#', '');
+    if (hex.length < 6) return true;
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+    return brightness > 155;
+  };
+
+  const getColorHex = (value: string) => {
+    if (value.startsWith('#')) return value;
+    const colorMap: Record<string, string> = {
+      'Rojo': '#FF0000', 'Azul': '#0000FF', 'Verde': '#008000',
+      'Amarillo': '#FFFF00', 'Negro': '#000000', 'Blanco': '#FFFFFF',
+      'Gris': '#808080', 'Rosa': '#FFC0CB', 'Naranja': '#FFA500',
+      'Violeta': '#EE82EE', 'Marrón': '#A52A2A', 'Celeste': '#ADD8E6',
+      'Plata': '#C0C0C0', 'Oro': '#FFD700', 'Negro Mate': '#1a1a1a',
+    };
+    return colorMap[value] || '#000000';
+  };
 
   if (!isModalOpen) return null;
   if (!product && !details) return null;
@@ -343,14 +388,14 @@ const QuickViewModal = () => {
 
           <div className="flex flex-wrap items-center gap-12.5">
             {/* ===== GALERÍA ===== */}
-            <div className="max-w-[526px] w-full">
-              <div className="flex gap-5">
-                <div className="flex flex-col gap-5">
+            <div className="max-w-[526px] w-full h-[350px] sm:h-[508px]">
+              <div className="flex gap-5 h-full"> 
+                <div className="flex flex-col gap-5 overflow-y-auto no-scrollbar pr-1">
                   {galleryImages.map((img, key) => (
                     <button
                       onClick={() => setActivePreview(key)}
                       key={key}
-                      className={`flex items-center justify-center w-20 h-20 overflow-hidden rounded-lg bg-gray-1 ease-out duration-200 hover:border-2 hover:border-blue ${activePreview === key && "border-2 border-blue"
+                      className={`flex-shrink-0 flex items-center justify-center w-20 h-20 overflow-hidden rounded-lg bg-gray-1 ease-out duration-200 hover:border-2 hover:border-blue ${activePreview === key && "border-2 border-blue"
                         }`}
                     >
                       <CloudinaryImage
@@ -364,7 +409,15 @@ const QuickViewModal = () => {
                   ))}
                 </div>
 
-                <div className="relative z-1 overflow-hidden flex items-center justify-center w-full sm:min-h-[508px] bg-gray-1 rounded-lg border border-gray-3">
+                <div className="relative z-1 overflow-hidden flex items-center justify-center w-full h-full bg-gray-1 rounded-lg border border-gray-3">
+                  {/* Cinta Diagonal de Descuento */}
+                  {showDiscountBadge && (
+                    <div className="absolute top-0 left-0 w-24 h-24 overflow-hidden z-20 pointer-events-none">
+                      <div className="absolute top-0 left-0 bg-red text-white text-[10px] font-bold py-1 px-10 -rotate-45 -translate-x-[35%] translate-y-[25%] shadow-md whitespace-nowrap">
+                        {discountPercentage}% OFF
+                      </div>
+                    </div>
+                  )}
                   <div>
                     <button
                       onClick={handlePreviewSlider}
@@ -403,11 +456,6 @@ const QuickViewModal = () => {
 
             {/* ===== INFO ===== */}
             <div className="max-w-[445px] w-full">
-              {showDiscountBadge && (
-                <span className="inline-block text-custom-xs font-medium text-white py-1 px-3 bg-green mb-6.5">
-                  OFERTA {discountPercentage}% OFF
-                </span>
-              )}
 
               <h3 className="font-semibold text-xl xl:text-heading-5 text-dark mb-4">
                 {title}
@@ -416,16 +464,11 @@ const QuickViewModal = () => {
               {/* Descripción */}
               {description && (
                 <div className="mb-5">
-                  <p className="text-dark-2 whitespace-pre-line">{shownDesc}</p>
-                  {description.length > 220 && (
-                    <button
-                      type="button"
-                      onClick={() => setShowFullDesc(v => !v)}
-                      className="mt-2 text-blue hover:underline"
-                    >
-                      {showFullDesc ? "Ver menos" : "Ver más"}
-                    </button>
-                  )}
+                  <div className="max-h-[150px] overflow-y-auto pr-2 custom-scrollbar">
+                    <p className="text-dark-2 whitespace-pre-line text-sm leading-relaxed">
+                      {description}
+                    </p>
+                  </div>
                 </div>
               )}
 
@@ -463,33 +506,89 @@ const QuickViewModal = () => {
                 </span>
               </div>
 
-              {/* Selector de variante (si aplica) */}
-              {details?.hasVariants && details.variants.length > 0 && (
-                <div className="mb-5">
-                  <label className="block text-sm text-dark mb-2">Variante</label>
-                  <select
-                    className="border border-gray-300 rounded-md px-3 py-2 w-full"
-                    value={selectedVariantId ?? undefined}
-                    onChange={(e) => {
-                      const id = Number(e.target.value);
-                      setSelectedVariantId(Number.isNaN(id) ? null : id);
-                      setActivePreview(0);
-                    }}
-                  >
-                    {details.variants.map(v => {
-                      // Label amigable: combina attrs si existen
-                      const attrLabel = Object.entries(v.attrs ?? {})
-                        .map(([k, val]) => `${k}: ${val}`)
-                        .join(" · ");
-                      const label = attrLabel || `Variante #${v.id}`;
-                      const sfx = (v.stock > 0 || fulfillmentType === 'DIGITAL_ON_DEMAND') ? "" : " — (Sin stock)";
-                      return (
-                        <option key={v.id} value={v.id}>
-                          {label}{sfx}
-                        </option>
-                      );
-                    })}
-                  </select>
+              {/* Selector de variantes (Multidimensional Premium) */}
+              {details?.hasVariants && details.options && Object.keys(details.options).length > 0 && (
+                <div className="flex flex-col gap-5 mb-7.5">
+                  {Object.entries(details.options).map(([optionName, values]) => {
+                    const isColor = optionName.toLowerCase().includes('color');
+                    return (
+                      <div key={optionName} className="flex flex-col gap-2.5">
+                        <label className="text-xs font-bold uppercase tracking-wider text-dark/70">
+                          {optionName}
+                        </label>
+                        <div className="flex flex-wrap items-center gap-2.5">
+                          {values.map((value) => {
+                            const isSelected = selectedAttrs[optionName] === value;
+                            const colorHex = isColor ? getColorHex(value) : null;
+                            const isDisabled = false; // Sin stock logic aquí por ahora
+
+                            if (isColor) {
+                              return (
+                                <button
+                                  key={value}
+                                  type="button"
+                                  onClick={() => handleAttrChange(optionName, value)}
+                                  className={cn(
+                                    "group relative flex h-9 w-9 items-center justify-center rounded-full",
+                                    "transition-all duration-200 ease-out",
+                                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-blue focus-visible:ring-offset-2",
+                                    isDisabled && "cursor-not-allowed opacity-40"
+                                  )}
+                                  title={value}
+                                >
+                                  <span
+                                    className={cn(
+                                      "absolute inset-[-3px] rounded-full border-2 transition-all duration-200",
+                                      isSelected
+                                        ? "border-blue scale-100"
+                                        : "border-transparent scale-90 group-hover:scale-95 group-hover:border-gray-300"
+                                    )}
+                                  />
+                                  <span
+                                    className={cn(
+                                      "relative h-7 w-7 rounded-full shadow-sm transition-transform duration-200",
+                                      "ring-1 ring-black/10",
+                                      !isDisabled && "group-hover:scale-105"
+                                    )}
+                                    style={{ backgroundColor: colorHex || "#000" }}
+                                  />
+                                  {isSelected && (
+                                    <Check
+                                      className={cn(
+                                        "h-3.5 w-3.5 drop-shadow-md absolute z-10",
+                                        isLightColor(colorHex || undefined) ? "text-dark" : "text-white"
+                                      )}
+                                      strokeWidth={3}
+                                    />
+                                  )}
+                                </button>
+                              );
+                            }
+
+                            return (
+                              <button
+                                key={value}
+                                type="button"
+                                onClick={() => handleAttrChange(optionName, value)}
+                                className={cn(
+                                  "relative px-3 py-2 rounded-lg text-xs font-medium",
+                                  "border transition-all duration-200 ease-out",
+                                  "focus:outline-none focus-visible:ring-2 focus-visible:ring-blue focus-visible:ring-offset-2",
+                                  isSelected
+                                    ? "bg-blue text-white border-blue shadow-sm"
+                                    : "bg-white text-dark border-gray-300 hover:border-dark/30 hover:bg-gray-100",
+                                  isDisabled && "cursor-not-allowed opacity-40",
+                                  !isDisabled && !isSelected && "active:scale-[0.98]"
+                                )}
+                              >
+                                {value}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 

@@ -76,7 +76,16 @@ const ProductItem = ({ item }: { item: Product }) => {
 
   return (
     <div className="group">
-      <div className="relative overflow-hidden flex items-center justify-center rounded-lg bg-[#F6F7FB] aspect-[2/3] mb-4">
+      <div className="relative overflow-hidden flex items-center justify-center rounded-lg bg-[#F6F7FB] aspect-[2/3] mb-4 group-hover:shadow-lg transition-shadow duration-300">
+        {/* Cinta Diagonal de Descuento */}
+        {item.price > item.discountedPrice && (
+          <div className="absolute top-0 left-0 w-24 h-24 overflow-hidden z-20 pointer-events-none">
+            <div className="absolute top-0 left-0 bg-red text-white text-[10px] font-bold py-1 px-10 -rotate-45 -translate-x-[35%] translate-y-[25%] shadow-md whitespace-nowrap">
+              {Math.round(((item.price - item.discountedPrice) / item.price) * 100)}% OFF
+            </div>
+          </div>
+        )}
+
         <CloudinaryImage
           src={item.imgs?.urls?.[0] ?? "/placeholder.png"}
           alt={item.title}
@@ -86,7 +95,7 @@ const ProductItem = ({ item }: { item: Product }) => {
         />
 
         {(item.fulfillmentType === 'DIGITAL_ON_DEMAND' || item.fulfillmentType === 'DIGITAL_INSTANT') && (
-          <span className="absolute top-3 right-3 z-10 inline-flex items-center justify-center rounded-full bg-[#22AD5C] px-2.5 py-0.5 text-xs font-medium text-white">
+          <span className="absolute top-3 right-3 z-10 inline-flex items-center justify-center rounded-full bg-[#22AD5C] px-2.5 py-0.5 text-xs font-medium text-white shadow-sm">
             Digital
           </span>
         )}
