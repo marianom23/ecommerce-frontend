@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import type { Product } from "@/types/product";
 import type { PaginatedResponse } from "@/lib/api";
-import ProductItem from "@/components/Common/ProductItem";
+import SingleGridItem from "@/components/Shop/SingleGridItem";
 import { productService } from "@/services/productService";
 
 const BestSeller = () => {
@@ -21,9 +21,9 @@ const BestSeller = () => {
 
         const res = await productService.list({
           page: 1,
-          limit: 6,          // muestra 6 best sellers
+          limit: 8,          // muestra 8 best sellers
           sort: "bestselling",
-          inStockOnly: true, // opcional
+          inStockOnly: true,
         });
 
         const payload = res as PaginatedResponse<Product>;
@@ -67,13 +67,13 @@ const BestSeller = () => {
         )}
 
         {!loading && !error && (
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-7.5">
+          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-7.5">
             {items.length === 0 ? (
               <div className="col-span-full text-center text-gray-500 py-10">
                 No hay productos más vendidos por ahora.
               </div>
             ) : (
-              items.map((item) => <ProductItem item={item} key={item.id ?? JSON.stringify(item)} />)
+              items.map((item) => <SingleGridItem item={item} variant="cover" key={item.id ?? JSON.stringify(item)} />)
             )}
           </div>
         )}

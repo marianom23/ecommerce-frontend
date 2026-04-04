@@ -10,15 +10,17 @@ import { AppDispatch } from "@/redux/store";
 import { useAppSelector } from "@/redux/store";
 import toast from "react-hot-toast";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import CloudinaryImage from "@/components/Common/CloudinaryImage";
 import { updateproductDetails } from "@/redux/features/product-details";
 import { generateProductUrl } from "@/utils/slug";
-import { StarRating } from "@/components/Common/StarRating";
-import { PriceDisplay } from "@/components/Common/PriceDisplay";
 import { useAuth } from "@/hooks/useAuth";
 import * as pixel from "@/utils/pixel";
+import { Heart, Eye, Star, ShoppingCart } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-const SingleGridItem = ({ item }: { item: Product }) => {
+const SingleGridItem = ({ item, variant = "default" }: { item: Product; variant?: "default" | "cover" }) => {
+  const router = useRouter();
   const { isAuthenticated } = useAuth();
   const { openModal } = useModalContext();
   const dispatch = useDispatch<AppDispatch>();
@@ -39,16 +41,7 @@ const SingleGridItem = ({ item }: { item: Product }) => {
       toast("Debes elegir una variante del producto", { icon: "👈" });
       return;
     }
-
-    // Producto simple o con variante por defecto conocida
-    await addItem({
-      productId: item.id,
-      variantId: item.defaultVariantId,
-
-      quantity: 1,
-    });
-
-    // Pixel event now fired in Redux slice with eventId for deduplication
+    await addItem({ productId: item.id, variantId: item.defaultVariantId, quantity: 1 });
   };
 
   const handleItemToWishList = async () => {
@@ -61,7 +54,6 @@ const SingleGridItem = ({ item }: { item: Product }) => {
     if (products) {
       const isIn = products.some((p) => p.id === item.id);
       toast(isIn ? "Añadido a tu wishlist" : "Quitado de tu wishlist");
-
       if (isIn) {
         pixel.event("AddToWishlist", {
           content_name: item.title,
@@ -75,137 +67,171 @@ const SingleGridItem = ({ item }: { item: Product }) => {
   };
 
   const handleProductDetails = () => {
-    // Store the product in Redux for the details page
     dispatch(updateproductDetails({ ...item }));
   };
 
-  const imgSrc =
-    item.imgs?.urls?.[0] ??
-    "/placeholder.png";
+  const imgSrc = item.imgs?.urls?.[0] ?? "/placeholder.png";
+  const hasDiscount = item.discountedPrice && item.price > item.discountedPrice;
+  const productUrl = generateProductUrl(item.id, item.title);
 
-  // 👇 CLASES DINÁMICAS ajustadas para asegurar el relleno
-  const wishlistButtonClasses = `
-    flex items-center justify-center w-9 h-9 rounded-[5px] shadow-1 ease-out duration-200
-    ${isInWishlist ? "bg-blue text-white" : "bg-white text-dark hover:text-blue"}
-  `;
+  const goToProductDetails = () => {
+    const selectedText = window.getSelection?.()?.toString().trim();
+    if (selectedText) return;
+    handleProductDetails();
+    router.push(productUrl);
+  };
 
   return (
-    <div className="group">
-      <div className="relative overflow-hidden flex items-center justify-center rounded-lg bg-white shadow-1 aspect-[2/3] mb-4 group-hover:shadow-lg transition-shadow duration-300">
-        {/* Cinta Diagonal de Descuento */}
-        {item.price > item.discountedPrice && (
-          <div className="absolute top-0 left-0 w-24 h-24 overflow-hidden z-20 pointer-events-none">
-            <div className="absolute top-0 left-0 bg-red text-white text-[10px] font-bold py-1 px-10 -rotate-45 -translate-x-[35%] translate-y-[25%] shadow-md whitespace-nowrap">
-              {Math.round(((item.price - item.discountedPrice) / item.price) * 100)}% OFF
-            </div>
-          </div>
-        )}
+    <div
+      className="group font-sans flex cursor-pointer flex-col overflow-hidden rounded-xl border border-gray-3 bg-white transition-shadow duration-200 hover:shadow-3"
+      onClick={goToProductDetails}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          goToProductDetails();
+        }
+      }}
+      role="link"
+      tabIndex={0}
+    >
+
+      {/* Zona de imagen */}
+      <div className={cn(
+        "relative w-full overflow-hidden bg-gray-1",
+        variant === "cover" ? "aspect-[3/4]" : "aspect-square"
+      )}>
+
+        {/* Imagen */}
         <CloudinaryImage
           src={imgSrc}
           alt={item.title}
           fill
-          className="object-contain p-5"
+          className={cn(
+            "transition-transform duration-300 group-hover:scale-105",
+            variant === "cover" ? "object-cover" : "object-contain p-4"
+          )}
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
         />
 
-        <div className="absolute top-3 right-3 z-10 flex flex-col items-end gap-1">
+        {/* Badge descuento */}
+        {hasDiscount && (
+          <div className="absolute left-0 top-4 z-10 pointer-events-none">
+            <span className="rounded-r-full bg-red px-3 py-1 text-xs font-bold text-white shadow-1">
+              {Math.round(((item.price - (item.discountedPrice || item.price)) / item.price) * 100)}% OFF
+            </span>
+          </div>
+        )}
+
+        {/* Tags: Digital, DLC, Consola */}
+        <div className="absolute right-3 top-3 z-10 flex flex-col gap-1.5 pointer-events-none">
           {(item.fulfillmentType === 'DIGITAL_ON_DEMAND' || item.fulfillmentType === 'DIGITAL_INSTANT') && (
-            <span className="inline-flex items-center justify-center rounded-full bg-[#22AD5C] px-2.5 py-0.5 text-xs font-medium text-white shadow-sm">
+            <span className="rounded-md bg-dark px-2.5 py-1 text-xs font-semibold text-white shadow-1">
               Digital
             </span>
           )}
           {item.productType === 'DLC' && (
-             <span className="inline-flex items-center justify-center rounded-full bg-blue px-2.5 py-0.5 text-xs font-medium text-white shadow-sm uppercase">
-               DLC
-             </span>
+            <span className="rounded-md bg-dark px-2.5 py-1 text-xs font-semibold text-white shadow-1">
+              DLC
+            </span>
+          )}
+
+        </div>
+
+        {/* Botones — aparecen al hacer hover, suben desde abajo */}
+        <div className="absolute bottom-0 left-0 right-0 z-20 flex translate-y-full items-center justify-center gap-2.5 bg-gradient-to-t from-black/20 to-transparent px-4 pb-5 pt-8 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleQuickViewUpdate();
+              openModal();
+            }}
+            aria-label="Vista rápida"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white shadow-1 transition-colors duration-200 hover:text-blue"
+          >
+            <Eye className="h-4 w-4" />
+          </button>
+
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleAddToCart();
+            }}
+            aria-label="Agregar al carrito"
+            className="flex h-10 w-10 sm:w-auto sm:px-6 shrink-0 items-center justify-center gap-2 rounded-full bg-dark text-white shadow-1 transition-colors duration-200 hover:bg-dark-2 text-sm font-medium"
+          >
+            <ShoppingCart className="h-4 w-4 shrink-0" />
+            <span className="hidden sm:inline">Agregar</span>
+          </button>
+
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleItemToWishList();
+            }}
+            aria-label="Wishlist"
+            className={cn(
+              "flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white shadow-1 transition-colors duration-200",
+              isInWishlist ? "text-red" : "hover:text-blue"
+            )}
+          >
+            <Heart className={cn("h-4 w-4 transition-colors", isInWishlist && "fill-red text-red")} />
+          </button>
+        </div>
+      </div>
+
+      {/* Contenido textual */}
+      <div className="flex flex-1 flex-col gap-2 p-4 bg-white">
+
+        {/* Rating */}
+        <div className="flex items-center gap-1.5">
+          <div className="flex">
+            {[...Array(5)].map((_, i) => (
+              <Star
+                key={i}
+                className={cn(
+                  "h-3.5 w-3.5",
+                  i < (item.averageRating || 0) ? "fill-yellow text-yellow" : "fill-gray-4 text-gray-4"
+                )}
+              />
+            ))}
+          </div>
+          <span className="text-xs text-gray-5">({item.totalReviews})</span>
+        </div>
+
+        {/* Nombre */}
+        <h3 className="line-clamp-2 text-sm font-semibold leading-tight text-dark ease-out duration-200 hover:text-blue">
+          <Link
+            href={productUrl}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleProductDetails();
+            }}
+          >
+            {item.title}
+          </Link>
+        </h3>
+
+        {/* Precios */}
+        <div className="mt-auto flex flex-col gap-0.5 pt-1">
+          {item.discountedPrice && item.discountedPrice < item.price ? (
+            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+              <span className="whitespace-nowrap text-lg font-bold text-dark">$ {item.discountedPrice.toLocaleString("es-AR")}</span>
+              <span className="whitespace-nowrap text-sm text-gray-4 line-through">$ {item.price.toLocaleString("es-AR")}</span>
+            </div>
+          ) : (
+            <span className="whitespace-nowrap text-lg font-bold text-dark">$ {item.price.toLocaleString("es-AR")}</span>
+          )}
+
+          {item.priceWithTransfer && (
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <span className="whitespace-nowrap text-base font-bold text-green">$ {item.priceWithTransfer.toLocaleString("es-AR")}</span>
+              <span className="rounded bg-green-light-6 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-green-dark whitespace-nowrap">
+                Transferencia
+              </span>
+            </div>
           )}
         </div>
-
-        <div className="absolute left-0 bottom-0 translate-y-full w-full flex items-center justify-center gap-2.5 pb-5 ease-linear duration-200 group-hover:translate-y-0">
-          <button
-            onClick={() => {
-              openModal();
-              handleQuickViewUpdate();
-            }}
-            aria-label="button for quick view"
-            className="flex items-center justify-center w-9 h-9 rounded-[5px] shadow-1 ease-out duration-200 text-dark bg-white hover:text-blue"
-          >
-            {/* icono ojo */}
-            <svg
-              className="fill-current"
-              width="16"
-              height="16"
-              viewBox="0 0 16 16"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                fillRule="evenodd"
-                clipRule="evenodd"
-                d="M8.00016 5.5C6.61945 5.5 5.50016 6.61929 5.50016 8C5.50016 9.38071 6.61945 10.5 8.00016 10.5C9.38087 10.5 10.5002 9.38071 10.5002 8C10.5002 6.61929 9.38087 5.5 8.00016 5.5ZM6.50016 8C6.50016 7.17157 7.17174 6.5 8.00016 6.5C8.82859 6.5 9.50016 7.17157 9.50016 8C9.50016 8.82842 8.82859 9.5 8.00016 9.5C7.17174 9.5 6.50016 8.82842 6.50016 8Z"
-                fill=""
-              />
-              <path
-                fillRule="evenodd"
-                clipRule="evenodd"
-                d="M8.00016 2.16666C4.99074 2.16666 2.96369 3.96946 1.78721 5.49791L1.76599 5.52546C1.49992 5.87102 1.25487 6.18928 1.08862 6.5656C0.910592 6.96858 0.833496 7.40779 0.833496 8C0.833496 8.5922 0.910592 9.03142 1.08862 9.4344C1.25487 9.81072 1.49992 10.129 1.76599 10.4745L1.78721 10.5021C2.96369 12.0305 4.99074 13.8333 8.00016 13.8333C11.0096 13.8333 13.0366 12.0305 14.2131 10.5021L14.2343 10.4745C14.5004 10.129 14.7455 9.81072 14.9117 9.4344C15.0897 9.03142 15.1668 8.5922 15.1668 8C15.1668 7.40779 15.0897 6.96858 14.9117 6.5656C14.7455 6.18927 14.5004 5.87101 14.2343 5.52545L14.2131 5.49791C13.0366 3.96946 11.0096 2.16666 8.00016 2.16666ZM2.57964 6.10786C3.66592 4.69661 5.43374 3.16666 8.00016 3.16666C10.5666 3.16666 12.3344 4.69661 13.4207 6.10786C13.7131 6.48772 13.8843 6.7147 13.997 6.9697C14.1023 7.20801 14.1668 7.49929 14.1668 8C14.1668 8.50071 14.1023 8.79199 13.997 9.0303C13.8843 9.28529 13.7131 9.51227 13.4207 9.89213C12.3344 11.3034 10.5666 12.8333 8.00016 12.8333C5.43374 12.8333 3.66592 11.3034 2.57964 9.89213C2.28725 9.51227 2.11599 9.28529 2.00334 9.0303C1.89805 8.79199 1.8335 8.50071 1.8335 8C1.8335 7.49929 1.89805 7.20801 2.00334 6.9697C2.11599 6.7147 2.28725 6.48772 2.57964 6.10786Z"
-                fill=""
-              />
-            </svg>
-          </button>
-
-          <button
-            onClick={handleAddToCart}
-            className="inline-flex font-medium text-custom-sm py-[7px] px-5 rounded-[5px] bg-blue text-white ease-out duration-200 hover:bg-blue-dark"
-          >
-            Agregar
-          </button>
-
-          <button
-            onClick={handleItemToWishList}
-            aria-label="button for favorite select"
-            id="favOne"
-            // 👇 Aplicamos las clases dinámicas aquí
-            className={wishlistButtonClasses}
-          >
-            {/* icono corazón */}
-            <svg
-              className="fill-current"
-              width="16"
-              height="16"
-              viewBox="0 0 16 16"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                fillRule="evenodd"
-                clipRule="evenodd"
-                d="M3.74949 2.94946C2.6435 3.45502 1.83325 4.65749 1.83325 6.0914C1.83325 7.55633 2.43273 8.68549 3.29211 9.65318C4.0004 10.4507 4.85781 11.1118 5.694 11.7564C5.89261 11.9095 6.09002 12.0617 6.28395 12.2146C6.63464 12.491 6.94747 12.7337 7.24899 12.9099C7.55068 13.0862 7.79352 13.1667 7.99992 13.1667C8.20632 13.1667 8.44916 13.0862 8.75085 12.9099C9.05237 12.7337 9.3652 12.491 9.71589 12.2146C9.90982 12.0617 10.1072 11.9095 10.3058 11.7564C11.142 11.1118 11.9994 10.4507 12.7077 9.65318C13.5671 8.68549 14.1666 7.55633 14.1666 6.0914C14.1666 4.65749 13.3563 3.45502 12.2503 2.94946C11.1759 2.45832 9.73214 2.58839 8.36016 4.01382C8.2659 4.11175 8.13584 4.16709 7.99992 4.16709C7.864 4.16709 7.73393 4.11175 7.63967 4.01382C6.26769 2.58839 4.82396 2.45832 3.74949 2.94946ZM7.99992 2.97255C6.45855 1.5935 4.73256 1.40058 3.33376 2.03998C1.85639 2.71528 0.833252 4.28336 0.833252 6.0914C0.833252 7.86842 1.57358 9.22404 2.5444 10.3172C3.32183 11.1926 4.2734 11.9253 5.1138 12.5724C5.30431 12.7191 5.48911 12.8614 5.66486 12.9999C6.00636 13.2691 6.37295 13.5562 6.74447 13.7733C7.11582 13.9903 7.53965 14.1667 7.99992 14.1667C8.46018 14.1667 8.88401 13.9903 9.25537 13.7733C9.62689 13.5562 9.99348 13.2691 10.335 12.9999C10.5107 12.8614 10.6955 12.7191 10.886 12.5724C11.7264 11.9253 12.678 11.1926 13.4554 10.3172C14.4263 9.22404 15.1666 7.86842 15.1666 6.0914C15.1666 4.28336 14.1434 2.71528 12.6661 2.03998C11.2673 1.40058 9.54129 1.5935 7.99992 2.97255Z"
-                fill=""
-              />
-            </svg>
-          </button>
-        </div>
       </div>
-
-      <StarRating rating={item.averageRating} totalReviews={item.totalReviews} />
-
-      <div className="flex justify-between items-center mb-1.5">
-        <h3 className="font-medium text-dark ease-out duration-200 hover:text-blue">
-          <Link href={generateProductUrl(item.id, item.title)} onClick={handleProductDetails}> {item.title} </Link>
-        </h3>
-      </div>
-
-      {item.consoleName && (
-        <p className="text-xs text-gray-500 mb-1.5">{item.consoleName}</p>
-      )}
-
-      <PriceDisplay
-        price={item.price}
-        discountedPrice={item.discountedPrice}
-        priceWithTransfer={item.priceWithTransfer}
-        size="lg"
-      />
     </div>
   );
 };

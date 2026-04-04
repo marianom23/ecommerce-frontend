@@ -1,820 +1,658 @@
 "use client";
-import React, { useEffect, useMemo, useState } from "react";
 
+import React, { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useDispatch } from "react-redux";
+import toast from "react-hot-toast";
+import {
+  X,
+  Minus,
+  Plus,
+  Heart,
+  Star,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Expand,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import CloudinaryImage from "@/components/Common/CloudinaryImage";
 import { useModalContext } from "@/app/context/QuickViewModalContext";
+import { usePreviewSlider } from "@/app/context/PreviewSliderContext";
 import { AppDispatch, useAppSelector } from "@/redux/store";
 import { useCart } from "@/hooks/useCart";
-import { useDispatch } from "react-redux";
-import Image from "next/image";
-import CloudinaryImage from "@/components/Common/CloudinaryImage";
-import { usePreviewSlider } from "@/app/context/PreviewSliderContext";
-import { updateproductDetails } from "@/redux/features/product-details";
-import { toggleWishlist } from "@/redux/features/wishlist-slice";
-import toast from "react-hot-toast";
+import { useAuth } from "@/hooks/useAuth";
 import {
   productDetailsPublicService,
   type NormalizedProduct,
   type NormalizedVariant,
 } from "@/services/productDetailsService";
-import { PriceDisplay } from "@/components/Common/PriceDisplay";
+import { updateproductDetails } from "@/redux/features/product-details";
+import { toggleWishlist } from "@/redux/features/wishlist-slice";
+import { generateProductUrl } from "@/utils/slug";
 import * as pixel from "@/utils/pixel";
-import { useAuth } from "@/hooks/useAuth";
-import { cn } from "@/lib/utils";
-import { Check } from "lucide-react";
 
-const currency = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" });
+type QuickViewProductLight = {
+  id: number;
+  title: string;
+  averageRating: number | null;
+  totalReviews: number;
+  price: number;
+  discountedPrice: number;
+  imgs?: { urls: string[] };
+  fulfillmentType?: "PHYSICAL" | "DIGITAL_ON_DEMAND" | "DIGITAL_INSTANT";
+  priceWithTransfer?: number;
+  isPresale?: boolean;
+  releaseDate?: string | null;
+  productType?: "GAME" | "DLC" | "CONSOLE" | "ACCESSORY" | "OTHER";
+};
 
+const formatCurrency = (value?: number) =>
+  new Intl.NumberFormat("es-AR", {
+    style: "currency",
+    currency: "ARS",
+    maximumFractionDigits: 2,
+  }).format(value ?? 0);
+
+const getFulfillmentLabel = (type?: NormalizedProduct["fulfillmentType"]) => {
+  switch (type) {
+    case "DIGITAL_ON_DEMAND":
+      return "Digital bajo demanda";
+    case "DIGITAL_INSTANT":
+      return "Digital instantaneo";
+    case "PHYSICAL":
+    default:
+      return "Fisico";
+  }
+};
+
+const formatDisplayValue = (value?: string) => {
+  if (!value) return "";
+
+  const normalized = value.trim();
+  const mappedValues: Record<string, string> = {
+    DIGITAL: "Digital",
+    PHYSICAL: "Fisico",
+    DIGITAL_ON_DEMAND: "Digital bajo demanda",
+    DIGITAL_INSTANT: "Digital instantaneo",
+  };
+
+  if (mappedValues[normalized]) return mappedValues[normalized];
+
+  return normalized
+    .toLowerCase()
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+};
+
+const getProductTypeLabel = (type?: NormalizedProduct["productType"]) => {
+  switch (type) {
+    case "GAME":
+      return "Juego";
+    case "DLC":
+      return "DLC";
+    case "CONSOLE":
+      return "Consola";
+    case "ACCESSORY":
+      return "Accesorio";
+    case "OTHER":
+      return "Otro";
+    default:
+      return null;
+  }
+};
 
 const QuickViewModal = () => {
-  const { isAuthenticated } = useAuth();
+  const router = useRouter();
+  const dispatch = useDispatch<AppDispatch>();
   const { isModalOpen, closeModal } = useModalContext();
   const { openPreviewModal } = usePreviewSlider();
-  const dispatch = useDispatch<AppDispatch>();
-  const { addItem } = useCart(); // 👈
-  // Producto "light" (del listado) — trae price/discountedPrice/imgs
-  const product = useAppSelector((state) => state.quickViewReducer.value as {
-    id: number;
-    title: string;
-    averageRating: number | null;
-    totalReviews: number;
-    price: number;
-    discountedPrice: number;
-    imgs?: { urls: string[] };
-    fulfillmentType?: 'PHYSICAL' | 'DIGITAL_ON_DEMAND' | 'DIGITAL_INSTANT';
-    priceWithTransfer?: number;
-    isPresale?: boolean;
-    releaseDate?: string | null;
-  } | null);
+  const { addItem } = useCart();
+  const { isAuthenticated } = useAuth();
 
+  const product = useAppSelector((state) => state.quickViewReducer.value as QuickViewProductLight | null);
+  const wishlistItems = useAppSelector((state) => state.wishlistReducer.items);
 
-  // Estado local
+  const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
-  const [activePreview, setActivePreview] = useState(0);
+  const [selectedVariantId, setSelectedVariantId] = useState<number | null>(null);
+  const [selectedAttrs, setSelectedAttrs] = useState<Record<string, string>>({});
   const [details, setDetails] = useState<NormalizedProduct | null>(null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [shouldRender, setShouldRender] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
 
-  // Variante seleccionada (si hay variantes)
-  const [selectedVariantId, setSelectedVariantId] = useState<number | null>(null);
-  const [selectedAttrs, setSelectedAttrs] = useState<Record<string, string>>({});
-
-  const [showFullDesc, setShowFullDesc] = useState(false);
-
-  // Wishlist state
-  const wishlistItems = useAppSelector((s) => s.wishlistReducer.items);
-  const isInWishlist = product ? wishlistItems.some((p) => p.id === product.id) : false;
-
-  const description = details?.description ?? ""; // el "light" no suele traer description
-  const shownDesc = description;
-
-
-  // ------- Helpers -------
-  const pickDefaultVariant = (d: NormalizedProduct): NormalizedVariant | undefined =>
-    d.variants.find(v => v.stock > 0) ?? d.variants[0];
-
-  // Construye SIEMPRE el payload que espera el carrito (incluye variante si corresponde)
-  const buildCartItem = (
-    d: NormalizedProduct | null,
-    p: any, // product light
-    qty: number,
-    variant?: NormalizedVariant | null
-  ) => {
-    if (d) {
-      if (d.hasVariants) {
-        const v = variant ?? pickDefaultVariant(d);
-        const price = v?.price ?? 0;
-        const discountedPrice = v?.discountedPrice ?? price;
-
-        return {
-          id: d.id,
-          title: d.title,
-          price,
-          discountedPrice,
-          imgs: { urls: (v?.images ?? d.images) ?? [] },
-          quantity: qty,
-          variantId: v?.id,
-          variantAttrs: v?.attrs ?? {},
-        };
-      } else {
-        const price = d.price ?? 0;
-        const discountedPrice = d.discountedPrice ?? price;
-
-        return {
-          id: d.id,
-          title: d.title,
-          price,
-          discountedPrice,
-          imgs: { urls: d.images ?? [] },
-          quantity: qty,
-        };
-      }
+  useEffect(() => {
+    if (isModalOpen) {
+      setShouldRender(true);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => setIsAnimating(true));
+      });
+      return;
     }
-    // fallback: usar objeto “light”
-    return {
-      id: p.id,
-      title: p.title,
-      price: p.price,
-      discountedPrice: p.discountedPrice ?? p.price,
-      imgs: p.imgs ?? { urls: [] },
-      quantity: qty,
-    };
-  };
 
-  // ------- Fetch de DETAILS cuando abre el modal -------
+    setIsAnimating(false);
+    const timer = window.setTimeout(() => setShouldRender(false), 300);
+    return () => window.clearTimeout(timer);
+  }, [isModalOpen]);
+
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closeModal();
+    };
+
+    if (isModalOpen) {
+      document.addEventListener("keydown", handleEscape);
+      document.body.style.overflow = "hidden";
+      document.documentElement.style.overflow = "hidden";
+    }
+
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
+    };
+  }, [closeModal, isModalOpen]);
+
   useEffect(() => {
     if (!isModalOpen || !product?.id) return;
 
     let cancelled = false;
     setLoading(true);
     setErr(null);
-    setActivePreview(0);
+    setSelectedImage(0);
+    setQuantity(1);
 
-    (async () => {
+    const fetchDetails = async () => {
       try {
-        const d = await productDetailsPublicService.getNormalized(product.id);
+        const fetchedDetails = await productDetailsPublicService.getNormalized(product.id);
         if (cancelled) return;
-        setDetails(d);
-        // Preseleccionar variante por defecto si aplica
-        if (d.hasVariants) {
-          const def = pickDefaultVariant(d);
-          setSelectedVariantId(def?.id ?? null);
-          setSelectedAttrs(def?.attrs ?? {});
+
+        setDetails(fetchedDetails);
+
+        if (fetchedDetails.hasVariants && fetchedDetails.variants.length > 0) {
+          const defaultVariant = fetchedDetails.variants.find((variant) => variant.stock > 0) ?? fetchedDetails.variants[0];
+          setSelectedVariantId(defaultVariant?.id ?? null);
+          setSelectedAttrs(defaultVariant?.attrs ?? {});
         } else {
           setSelectedVariantId(null);
           setSelectedAttrs({});
         }
-        // Track ViewContent
+
         pixel.event("ViewContent", {
-          content_name: d.title,
-          content_ids: [d.id],
-          content_type: "product",
-          value: d.discountedPrice || d.price,
+          content_name: fetchedDetails.title,
+          content_ids: [fetchedDetails.id],
+          content_type: fetchedDetails.productType?.toLowerCase() || "product",
+          value:
+            fetchedDetails.discountedPrice ||
+            fetchedDetails.price ||
+            fetchedDetails.priceRange.minDiscounted,
           currency: "USD",
         });
-      } catch (e) {
-        console.error(e);
+      } catch (error) {
+        console.error(error);
         if (!cancelled) setErr("No se pudo cargar el producto.");
       } finally {
         if (!cancelled) setLoading(false);
       }
-    })();
+    };
+
+    fetchDetails();
 
     return () => {
       cancelled = true;
       setDetails(null);
       setSelectedVariantId(null);
+      setSelectedAttrs({});
     };
   }, [isModalOpen, product?.id]);
 
-  // Variante activa (objeto)
   const selectedVariant: NormalizedVariant | null = useMemo(() => {
     if (!details?.hasVariants) return null;
-    return details.variants.find(v => v.id === selectedVariantId) ?? null;
+    return details.variants.find((variant) => variant.id === selectedVariantId) ?? null;
   }, [details, selectedVariantId]);
 
-  // Imágenes para galería: combinar base + variante priorizando variante (híbrido)
-  const galleryImages: string[] = useMemo(() => {
-    const baseImages = details?.images?.length ? details.images : (product?.imgs?.urls ?? []);
+  const galleryImages = useMemo(() => {
     const variantImages = selectedVariant?.images ?? [];
+    const baseImages = details?.images ?? product?.imgs?.urls ?? [];
+    return Array.from(new Set([...variantImages, ...baseImages])).filter(Boolean);
+  }, [details?.images, product?.imgs?.urls, selectedVariant?.images]);
 
-    // Unificar y quitar duplicados. Variante primero
-    return Array.from(new Set([...variantImages, ...baseImages]));
-  }, [selectedVariant, details, product]);
+  const currentPrice = selectedVariant
+    ? selectedVariant.discountedPrice
+    : details?.discountedPrice ?? product?.discountedPrice ?? details?.priceRange.minDiscounted ?? 0;
 
-  // preview modal
-  const handlePreviewSlider = () => {
-    // Pasamos el detalle con las imágenes YA COMBINADAS para que el slider
-    // muestre exactamente lo mismo que la galería (incluyendo variantes y base).
-    const payload = details
-      ? { ...details, images: galleryImages }
-      : { ...product, imgs: { ...product?.imgs, urls: galleryImages } };
+  const originalPrice = selectedVariant
+    ? selectedVariant.price
+    : details?.price ?? product?.price ?? details?.priceRange.min ?? currentPrice;
 
-    dispatch(updateproductDetails(payload));
-    openPreviewModal();
-  };
+  const basePriceWithTransfer = details?.priceWithTransfer ?? product?.priceWithTransfer;
+  const basePriceRef = details?.price ?? product?.price ?? details?.priceRange.min ?? 0;
 
-  // add to cart
-  const handleAddToCart = async () => {
-    const productDetails = details ?? product;
-    if (!productDetails) return;
-
-    const productId = productDetails.id;
-    // Si el producto tiene variantes, necesitamos una seleccionada
-    const variantId = details?.hasVariants ? (selectedVariantId ?? undefined) : undefined;
-
-    if (details?.hasVariants && !variantId) {
-      return;
+  let transferPrice: number | undefined;
+  if (selectedVariant) {
+    if (selectedVariant.priceWithTransfer) {
+      transferPrice = selectedVariant.priceWithTransfer;
+    } else if (basePriceWithTransfer && basePriceRef > 0) {
+      transferPrice = selectedVariant.discountedPrice * (basePriceWithTransfer / basePriceRef);
     }
+  } else {
+    transferPrice = basePriceWithTransfer;
+  }
 
-    try {
-      await addItem({
-        productId,
-        variantId,
-        quantity, // del estado local
-      });
-
-      // Pixel event now fired in Redux slice with eventId for deduplication
-    } catch (err) {
-      console.error("Error adding to cart:", err);
-      toast.error("No se pudo agregar el producto al carrito.");
-    }
-  };
-
-
-  // Bloquear scroll del body y html al abrir el modal (Compensa el ancho del scrollbar)
-  useEffect(() => {
-    if (isModalOpen) {
-      const scrollBarWidth = window.innerWidth - document.documentElement.clientWidth;
-      document.body.style.overflow = "hidden";
-      document.body.style.paddingRight = `${scrollBarWidth}px`;
-      document.documentElement.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-      document.body.style.paddingRight = "0px";
-      document.documentElement.style.overflow = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-      document.body.style.paddingRight = "0px";
-      document.documentElement.style.overflow = "";
-    };
-  }, [isModalOpen]);
-
-  // cerrar por click afuera
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      const target = event.target as HTMLElement | null;
-      if (!target?.closest(".modal-content")) closeModal();
-    }
-    function handleEscape(event: KeyboardEvent) {
-      if (event.key === "Escape") closeModal();
-    }
-
-    if (isModalOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      document.addEventListener("keydown", handleEscape);
-    }
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("keydown", handleEscape);
-      setQuantity(1);
-      setActivePreview(0);
-    };
-  }, [isModalOpen, closeModal]);
-
-  const handleAttrChange = (key: string, value: string) => {
-    const newAttrs = { ...selectedAttrs, [key]: value };
-    setSelectedAttrs(newAttrs);
-
-    // Intentar encontrar una variante que coincida con TODOS los atributos seleccionados
-    const variant = details?.variants.find(v =>
-      Object.entries(newAttrs).every(([k, val]) => v.attrs[k] === val)
-    );
-
-    if (variant) {
-      setSelectedVariantId(variant.id);
-      setActivePreview(0); // Reset preview to first image of variant
-    } else {
-      // Búsqueda parcial si la combinación completa no existe
-      const partialMatch = details?.variants.find(v => v.attrs[key] === value);
-      if (partialMatch) {
-        setSelectedVariantId(partialMatch.id);
-        setSelectedAttrs(partialMatch.attrs);
-        setActivePreview(0);
-      }
-    }
-  };
-
-  const isLightColor = (color?: string) => {
-    if (!color) return true;
-    const hex = color.replace('#', '');
-    if (hex.length < 6) return true;
-    const r = parseInt(hex.substring(0, 2), 16);
-    const g = parseInt(hex.substring(2, 4), 16);
-    const b = parseInt(hex.substring(4, 6), 16);
-    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
-    return brightness > 155;
-  };
-
-  const getColorHex = (value: string) => {
-    if (value.startsWith('#')) return value;
-    const colorMap: Record<string, string> = {
-      'Rojo': '#FF0000', 'Azul': '#0000FF', 'Verde': '#008000',
-      'Amarillo': '#FFFF00', 'Negro': '#000000', 'Blanco': '#FFFFFF',
-      'Gris': '#808080', 'Rosa': '#FFC0CB', 'Naranja': '#FFA500',
-      'Violeta': '#EE82EE', 'Marrón': '#A52A2A', 'Celeste': '#ADD8E6',
-      'Plata': '#C0C0C0', 'Oro': '#FFD700', 'Negro Mate': '#1a1a1a',
-    };
-    return colorMap[value] || '#000000';
-  };
-
-  if (!isModalOpen) return null;
-  if (!product && !details) return null;
-
-  const title = (details ?? product)?.title ?? "";
-
-  // Stock UI: si hay variante seleccionada, usar su stock; sino el general
   const variantStock = selectedVariant
     ? selectedVariant.stock
     : details?.hasVariants
       ? undefined
       : details?.stockTotal;
 
-  // Para productos digitales, no mostrar "out of stock" si es DIGITAL_ON_DEMAND
-  // Priorizar el fulfillmentType del product (listado) sobre el details (API)
-  const fulfillmentType = (product as any)?.fulfillmentType || (details as any)?.fulfillmentType;
-  const isDigitalOnDemand = fulfillmentType === 'DIGITAL_ON_DEMAND';
+  const fulfillmentType = product?.fulfillmentType || details?.fulfillmentType;
+  const isDigitalOnDemand = fulfillmentType === "DIGITAL_ON_DEMAND";
+  const inStock = isDigitalOnDemand ? true : variantStock !== undefined ? variantStock > 0 : (details?.inStock ?? true);
+  const hasDiscount = originalPrice > currentPrice;
+  const discountPercent = hasDiscount ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100) : 0;
+  const title = details?.title || product?.title || "";
+  const rating = details?.averageRating ?? product?.averageRating ?? 0;
+  const reviewCount = details?.totalReviews ?? product?.totalReviews ?? 0;
+  const description = details?.description ?? "";
+  const isWishlisted = product ? wishlistItems.some((item) => item.id === product.id) : false;
 
-  const inStock = isDigitalOnDemand
-    ? true // Los productos DIGITAL_ON_DEMAND siempre están disponibles
-    : variantStock !== undefined
-      ? variantStock > 0
-      : details?.inStock ?? true;
+  const tags = useMemo(() => {
+    if (!details && !product) return [];
 
-  // Lógica de precio con transferencia (Consistente con ShopDetails)
-  let variantPriceWithTransfer: number | undefined;
+    const collected = [
+      details?.category,
+      details?.brand,
+      details ? getProductTypeLabel(details.productType) : getProductTypeLabel(product?.productType),
+      fulfillmentType ? getFulfillmentLabel(fulfillmentType) : null,
+    ];
 
-  // 1. Precio base con transferencia del producto/detalles
-  const basePriceWithTransfer = details?.priceWithTransfer ?? product?.priceWithTransfer;
+    return Array.from(new Set(collected.filter(Boolean))) as string[];
+  }, [details, fulfillmentType, product?.productType]);
 
-  // 2. Precio de referencia para ratio (usando priceRange si price es null)
-  const basePriceRef = details?.price
-    ?? product?.price
-    ?? details?.priceRange?.min
-    ?? 0;
+  const handleAttrChange = (key: string, value: string) => {
+    const newAttrs = { ...selectedAttrs, [key]: value };
+    setSelectedAttrs(newAttrs);
 
-  // Calcular ratio globalmente para usarlo en el dropdown también
-  const transferRatio = (basePriceWithTransfer && basePriceRef > 0)
-    ? basePriceWithTransfer / basePriceRef
-    : 0;
+    const variant = details?.variants.find((item) =>
+      Object.entries(newAttrs).every(([attrKey, attrValue]) => item.attrs[attrKey] === attrValue)
+    );
 
-  if (selectedVariant) {
-    // A) Si la variante tiene su propio precio transfer explícito
-    if (selectedVariant.priceWithTransfer) {
-      variantPriceWithTransfer = selectedVariant.priceWithTransfer;
+    if (variant) {
+      setSelectedVariantId(variant.id);
+      setSelectedImage(0);
+      return;
     }
-    // B) Si no, calcularlo usando el ratio del producto padre
-    else if (transferRatio > 0) {
-      variantPriceWithTransfer = selectedVariant.discountedPrice * transferRatio;
+
+    const partialMatch = details?.variants.find((item) => item.attrs[key] === value);
+    if (partialMatch) {
+      setSelectedVariantId(partialMatch.id);
+      setSelectedAttrs(partialMatch.attrs);
+      setSelectedImage(0);
     }
-  }
+  };
 
-  // Cálculo de precios para el badge de oferta
-  let badgeOriginalPrice = product?.price ?? 0;
-  let badgeFinalPrice = product?.discountedPrice ?? 0;
+  const nextImage = () => {
+    if (galleryImages.length <= 1) return;
+    setSelectedImage((current) => (current + 1) % galleryImages.length);
+  };
 
-  if (selectedVariant) {
-    badgeOriginalPrice = selectedVariant.price;
-    badgeFinalPrice = selectedVariant.discountedPrice;
-  } else if (details && !details.hasVariants) {
-    badgeOriginalPrice = details.price ?? 0;
-    badgeFinalPrice = details.discountedPrice ?? 0;
-  }
+  const prevImage = () => {
+    if (galleryImages.length <= 1) return;
+    setSelectedImage((current) => (current - 1 + galleryImages.length) % galleryImages.length);
+  };
 
-  const showDiscountBadge = badgeFinalPrice < badgeOriginalPrice;
-  const discountPercentage = showDiscountBadge
-    ? Math.round(((badgeOriginalPrice - badgeFinalPrice) / badgeOriginalPrice) * 100)
-    : 0;
+  const handleOpenPreview = () => {
+    const payload = details
+      ? { ...details, images: galleryImages }
+      : { ...product, imgs: { ...product?.imgs, urls: galleryImages } };
 
+    dispatch(updateproductDetails(payload as never));
+    openPreviewModal();
+  };
+
+  const handleViewDetails = () => {
+    if (!product) return;
+    dispatch(updateproductDetails({ ...(details ?? product) } as never));
+    closeModal();
+    router.push(generateProductUrl(product.id, title));
+  };
+
+  const handleAddToCart = async () => {
+    const productId = details?.id ?? product?.id;
+    if (!productId) return;
+
+    if (details?.hasVariants && !selectedVariantId) {
+      toast.error("Debes elegir una variante");
+      return;
+    }
+
+    try {
+      await addItem({
+        productId,
+        variantId: details?.hasVariants ? (selectedVariantId ?? undefined) : undefined,
+        quantity,
+      });
+      closeModal();
+    } catch (error) {
+      console.error(error);
+      toast.error("No se pudo agregar el producto al carrito.");
+    }
+  };
+
+  const handleToggleWishlist = async () => {
+    if (!isAuthenticated) {
+      toast.error("Debes iniciar sesión para usar la wishlist");
+      return;
+    }
+
+    if (!product) return;
+
+    const result = await dispatch(toggleWishlist((details ?? product) as never));
+    const products = result.payload as { id: number }[] | undefined;
+
+    if (products) {
+      const isNowInWishlist = products.some((item) => item.id === product.id);
+      toast(isNowInWishlist ? "Añadido a tu wishlist" : "Quitado de tu wishlist");
+
+      if (isNowInWishlist) {
+        pixel.event("AddToWishlist", {
+          content_name: title,
+          content_ids: [product.id],
+          content_type: details?.productType?.toLowerCase() || "product",
+          value: currentPrice,
+          currency: "USD",
+        });
+      }
+    }
+  };
+
+  if (!shouldRender || (!product && !details)) return null;
 
   return (
-    <div
-      className={`${isModalOpen ? "z-99999 flex" : "hidden"
-        } fixed inset-0 items-center justify-center bg-dark/70 sm:px-8 px-4 py-5 overflow-hidden`}
-    >
-      <div className="w-full max-w-[1100px] max-h-[95vh] overflow-y-auto no-scrollbar rounded-xl shadow-3 bg-white p-7.5 relative modal-content">
-          {/* close */}
+    <>
+      <div
+        className={cn(
+          "fixed inset-0 z-[99998] bg-dark/70 backdrop-blur-sm transition-opacity duration-300",
+          isAnimating ? "opacity-100" : "opacity-0"
+        )}
+        onClick={closeModal}
+      />
+
+      <div className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-6">
+        <div
+          className={cn(
+            "relative flex w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl transition-all duration-300",
+            "max-h-[90vh] sm:max-h-[85vh]",
+            isAnimating ? "scale-100 opacity-100" : "scale-95 opacity-0"
+          )}
+        >
           <button
-            onClick={() => closeModal()}
-            aria-label="button for close modal"
-            className="absolute top-0 right-0 sm:top-6 sm:right-6 flex items-center justify-center w-10 h-10 rounded-full ease-in duration-150 bg-meta text-body hover:text-dark"
+            onClick={closeModal}
+            className="absolute right-2 top-2 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-white/80 text-dark-4 shadow-sm backdrop-blur-sm transition-colors hover:bg-white hover:text-dark sm:right-3 sm:top-3 sm:h-9 sm:w-9"
+            aria-label="Cerrar modal"
           >
-            <svg
-              className="fill-current"
-              width="26"
-              height="26"
-              viewBox="0 0 26 26"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                fillRule="evenodd"
-                clipRule="evenodd"
-                d="M14.3108 13L19.2291 8.08167C19.5866 7.72417 19.5866 7.12833 19.2291 6.77083C19.0543 6.59895 18.8189 6.50262 18.5737 6.50262C18.3285 6.50262 18.0932 6.59895 17.9183 6.77083L13 11.6892L8.08164 6.77083C7.90679 6.59895 7.67142 6.50262 7.42623 6.50262C7.18104 6.50262 6.94566 6.59895 6.77081 6.77083C6.41331 7.12833 6.41331 7.72417 6.77081 8.08167L11.6891 13L6.77081 17.9183C6.41331 18.2758 6.41331 18.8717 6.77081 19.2292C7.12831 19.5867 7.72414 19.5867 8.08164 19.2292L13 14.3108L17.9183 19.2292C18.2758 19.5867 18.8716 19.5867 19.2291 19.2292C19.5866 18.8717 19.5866 18.2758 19.2291 17.9183L14.3108 13Z"
-                fill=""
-              />
-            </svg>
+            <X className="h-4 w-4 sm:h-5 sm:w-5" />
           </button>
 
-          <div className="flex flex-wrap items-center gap-12.5">
-            {/* ===== GALERÍA ===== */}
-            <div className="max-w-[526px] w-full h-[350px] sm:h-[508px]">
-              <div className="flex gap-5 h-full"> 
-                <div className="flex flex-col gap-5 overflow-y-auto no-scrollbar pr-1">
-                  {galleryImages.map((img, key) => (
+          <div className="flex flex-1 flex-col overflow-hidden sm:flex-row">
+            <div className="relative bg-gray-1 p-4 sm:w-[45%] sm:p-5">
+              {hasDiscount && (
+                <div className="absolute left-0 top-6 z-10">
+                  <span className="rounded-r-full bg-red px-2.5 py-1 text-[10px] font-bold text-white shadow sm:px-3 sm:text-xs">
+                    {discountPercent}% OFF
+                  </span>
+                </div>
+              )}
+
+              <button
+                onClick={handleOpenPreview}
+                className="absolute right-6 top-6 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 shadow transition-all hover:bg-white"
+                aria-label="Expandir imagen"
+              >
+                <Expand className="h-4 w-4 text-dark" />
+              </button>
+
+              <div className="relative overflow-hidden rounded-xl bg-white shadow-sm">
+                <div className="aspect-[3/4]">
+                  {loading ? (
+                    <div className="flex h-full items-center justify-center text-sm text-dark-4">Cargando...</div>
+                  ) : err ? (
+                    <div className="flex h-full items-center justify-center px-6 text-center text-sm text-red">{err}</div>
+                  ) : (
+                    <CloudinaryImage
+                      src={galleryImages[selectedImage] || "/placeholder.png"}
+                      alt={title}
+                      width={500}
+                      height={700}
+                      className="h-full w-full object-contain p-4"
+                    />
+                  )}
+                </div>
+
+                {galleryImages.length > 1 && (
+                  <>
                     <button
-                      onClick={() => setActivePreview(key)}
-                      key={key}
-                      className={`flex-shrink-0 flex items-center justify-center w-20 h-20 overflow-hidden rounded-lg bg-gray-1 ease-out duration-200 hover:border-2 hover:border-blue ${activePreview === key && "border-2 border-blue"
-                        }`}
+                      onClick={prevImage}
+                      className="absolute left-2 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 shadow transition-all hover:bg-white active:scale-95"
+                      aria-label="Imagen anterior"
+                    >
+                      <ChevronLeft className="h-4 w-4 text-dark" />
+                    </button>
+                    <button
+                      onClick={nextImage}
+                      className="absolute right-2 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 shadow transition-all hover:bg-white active:scale-95"
+                      aria-label="Siguiente imagen"
+                    >
+                      <ChevronRight className="h-4 w-4 text-dark" />
+                    </button>
+                  </>
+                )}
+              </div>
+
+              {galleryImages.length > 1 && (
+                <div className="mt-3 flex justify-center gap-2">
+                  {galleryImages.map((image, index) => (
+                    <button
+                      key={`${image}-${index}`}
+                      onClick={() => setSelectedImage(index)}
+                      className={cn(
+                        "relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg border-2 bg-white transition-all sm:h-16 sm:w-16",
+                        selectedImage === index
+                          ? "border-primary ring-2 ring-primary/20"
+                          : "border-border hover:border-primary/50"
+                      )}
                     >
                       <CloudinaryImage
-                        src={img || ""}
-                        alt="thumbnail"
-                        width={61}
-                        height={61}
-                        className="aspect-square object-cover"
+                        src={image}
+                        alt={`${title} - ${index + 1}`}
+                        width={64}
+                        height={64}
+                        className="h-full w-full object-contain p-1"
                       />
                     </button>
                   ))}
                 </div>
-
-                <div className="relative z-1 overflow-hidden flex items-center justify-center w-full h-full bg-gray-1 rounded-lg border border-gray-3">
-                  {/* Cinta Diagonal de Descuento */}
-                  {showDiscountBadge && (
-                    <div className="absolute top-0 left-0 w-24 h-24 overflow-hidden z-20 pointer-events-none">
-                      <div className="absolute top-0 left-0 bg-red text-white text-[10px] font-bold py-1 px-10 -rotate-45 -translate-x-[35%] translate-y-[25%] shadow-md whitespace-nowrap">
-                        {discountPercentage}% OFF
-                      </div>
-                    </div>
-                  )}
-                  <div>
-                    <button
-                      onClick={handlePreviewSlider}
-                      aria-label="button for zoom"
-                      className="gallery__Image w-10 h-10 rounded-[5px] bg-white shadow-1 flex items-center justify-center ease-out duration-200 text-dark hover:text-blue absolute top-4 lg:top-8 right-4 lg:right-8 z-50"
-                    >
-                      {/* zoom icon... */}
-                      <svg
-                        className="fill-current"
-                        width="22"
-                        height="22"
-                        viewBox="0 0 22 22"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          clipRule="evenodd"
-                          d="M9.11493 1.14581L9.16665 1.14581C9.54634 1.14581 9.85415 1.45362 9.85415 1.83331C9.85415 2.21301 9.54634 2.52081 9.16665 2.52081C7.41873 2.52081 6.17695 2.52227 5.23492 2.64893C4.31268 2.77292 3.78133 3.00545 3.39339 3.39339C3.00545 3.78133 2.77292 4.31268 2.64893 5.23492C2.52227 6.17695 2.52081 7.41873 2.52081 9.16665C2.52081 9.54634 2.21301 9.85415 1.83331 9.85415C1.45362 9.85415 1.14581 9.54634 1.14581 9.16665L1.14581 9.11493C1.1458 7.43032 1.14579 6.09599 1.28619 5.05171C1.43068 3.97699 1.73512 3.10712 2.42112 2.42112C3.10712 1.73512 3.97699 1.43068 5.05171 1.28619C6.09599 1.14579 7.43032 1.1458 9.11493 1.14581ZM16.765 2.64893C15.823 2.52227 14.5812 2.52081 12.8333 2.52081C12.4536 2.52081 12.1458 2.21301 12.1458 1.83331C12.1458 1.45362 12.4536 1.14581 12.8333 1.14581L12.885 1.14581C14.5696 1.1458 15.904 1.14579 16.9483 1.28619C18.023 1.43068 18.8928 1.73512 19.5788 2.42112C20.2648 3.10712 20.5693 3.97699 20.7138 5.05171C20.8542 6.09599 20.8542 7.43032 20.8541 9.11494V9.16665C20.8541 9.54634 20.5463 9.85415 20.1666 9.85415C19.787 9.85415 19.4791 9.54634 19.4791 9.16665C19.4791 7.41873 19.4777 6.17695 19.351 5.23492C19.227 4.31268 18.9945 3.78133 18.6066 3.39339C18.2186 3.00545 17.6873 2.77292 16.765 2.64893ZM1.83331 12.1458C2.21301 12.1458 2.52081 12.4536 2.52081 12.8333C2.52081 14.5812 2.52227 15.823 2.64893 16.765C2.77292 17.6873 3.00545 18.2186 3.39339 18.6066C3.78133 18.9945 4.31268 19.227 5.23492 19.351C6.17695 19.4777 7.41873 19.4791 9.16665 19.4791C9.54634 19.4791 9.85415 19.787 9.85415 20.1666C9.85415 20.5463 9.54634 20.8541 9.16665 20.8541H9.11494C7.43032 20.8542 6.09599 20.8542 5.05171 20.7138C3.97699 20.5693 3.10712 20.2648 2.42112 19.5788C1.73512 18.8928 1.43068 18.023 1.28619 16.9483C1.14579 15.904 1.1458 14.5696 1.14581 12.885L1.14581 12.8333C1.14581 12.4536 1.45362 12.1458 1.83331 12.1458ZM20.1666 12.1458C20.5463 12.1458 20.8541 12.4536 20.8541 12.8333V12.885C20.8542 14.5696 20.8542 15.904 20.7138 16.9483C20.5693 18.023 20.2648 18.8928 19.5788 19.5788C18.8928 20.2648 18.023 20.5693 16.9483 20.7138C15.904 20.8542 14.5696 20.8542 12.885 20.8541H12.8333C12.4536 20.8541 12.1458 20.5463 12.1458 20.1666C12.1458 19.787 12.4536 19.4791 12.8333 19.4791C14.5812 19.4791 15.823 19.4777 16.765 19.351C17.6873 19.227 18.2186 18.9945 18.6066 18.6066C18.9945 18.2186 19.227 17.6873 19.351 16.765C19.4777 15.823 19.4791 14.5812 19.4791 12.8333C19.4791 12.4536 19.787 12.1458 20.1666 12.1458Z"
-                          fill=""
-                        />
-                      </svg>
-                    </button>
-
-                    <CloudinaryImage
-                      src={galleryImages[activePreview] || ""}
-                      alt="products-details"
-                      width={400}
-                      height={400}
-                      className="object-contain"
-                    />
-                  </div>
-                </div>
-              </div>
+              )}
             </div>
 
-            {/* ===== INFO ===== */}
-            <div className="max-w-[445px] w-full">
-
-              <h3 className="font-semibold text-xl xl:text-heading-5 text-dark mb-4">
-                {title}
-              </h3>
-
-              {(details?.isPresale || product?.isPresale) && (
-                <div className="mb-6 p-4 rounded-lg bg-amber-50 border border-amber-200 flex items-start gap-3 shadow-sm animate-fadeIn">
-                  <div className="pt-0.5">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-amber-600">
-                      <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" strokeWidth="2" />
-                      <path d="M12 6V12L16 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                    </svg>
-                  </div>
-                  <div>
-                    <span className="block font-bold text-amber-800 text-sm uppercase mb-1">Reserva Disponible</span>
-                    <p className="text-amber-700 text-sm leading-relaxed">
-                      Lanzamiento: <span className="font-bold text-base">{(details?.releaseDate || product?.releaseDate) ? new Date(details?.releaseDate || product?.releaseDate!).toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Fecha a confirmar'}</span>
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Descripción */}
-              {description && (
-                <div className="mb-5">
-                  <div className="max-h-[150px] overflow-y-auto pr-2 custom-scrollbar">
-                    <p className="text-dark-2 whitespace-pre-line text-sm leading-relaxed">
-                      {description}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Stock */}
-              <div className="flex items-center gap-2 mb-4">
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 20 20"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <g clipPath="url(#clip0_375_9221)">
-                    <path
-                      d="M10 0.5625C4.78125 0.5625 0.5625 4.78125 0.5625 10C0.5625 15.2188 4.78125 19.4688 10 19.4688C15.2188 19.4688 19.4688 15.2188 19.4688 10C19.4688 4.78125 15.2188 0.5625 10 0.5625ZM10 18.0625C5.5625 18.0625 1.96875 14.4375 1.96875 10C1.96875 5.5625 5.5625 1.96875 10 1.96875C14.4375 1.96875 18.0625 5.59375 18.0625 10.0312C18.0625 14.4375 14.4375 18.0625 10 18.0625Z"
-                      fill="#22AD5C"
-                    />
-                    <path
-                      d="M12.6875 7.09374L8.9688 10.7187L7.2813 9.06249C7.00005 8.78124 6.56255 8.81249 6.2813 9.06249C6.00005 9.34374 6.0313 9.78124 6.2813 10.0625L8.2813 12C8.4688 12.1875 8.7188 12.2812 8.9688 12.2812C9.2188 12.2812 9.4688 12.1875 9.6563 12L13.6875 8.12499C13.9688 7.84374 13.9688 7.40624 13.6875 7.12499C13.4063 6.84374 12.9688 6.84374 12.6875 7.09374Z"
-                      fill="#22AD5C"
-                    />
-                  </g>
-                  <defs>
-                    <clipPath id="clip0_375_9221">
-                      <rect width="20" height="20" fill="white" />
-                    </clipPath>
-                  </defs>
-                </svg>
-                <span className="font-medium text-dark">
-                  {isDigitalOnDemand
-                    ? "Disponible bajo demanda"
-                    : inStock
-                      ? `En Stock${typeof variantStock === "number" ? ` (${variantStock})` : ""}`
-                      : "Sin Stock"}
-                </span>
-              </div>
-
-              {/* Selector de variantes (Multidimensional Premium) */}
-              {details?.hasVariants && details.options && Object.keys(details.options).length > 0 && (
-                <div className="flex flex-col gap-5 mb-7.5">
-                  {Object.entries(details.options).map(([optionName, values]) => {
-                    const isColor = optionName.toLowerCase().includes('color');
-                    return (
-                      <div key={optionName} className="flex flex-col gap-2.5">
-                        <label className="text-xs font-bold uppercase tracking-wider text-dark/70">
-                          {optionName}
-                        </label>
-                        <div className="flex flex-wrap items-center gap-2.5">
-                          {values.map((value) => {
-                            const isSelected = selectedAttrs[optionName] === value;
-                            const colorHex = isColor ? getColorHex(value) : null;
-                            const isDisabled = false; // Sin stock logic aquí por ahora
-
-                            if (isColor) {
-                              return (
-                                <button
-                                  key={value}
-                                  type="button"
-                                  onClick={() => handleAttrChange(optionName, value)}
-                                  className={cn(
-                                    "group relative flex h-9 w-9 items-center justify-center rounded-full",
-                                    "transition-all duration-200 ease-out",
-                                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-blue focus-visible:ring-offset-2",
-                                    isDisabled && "cursor-not-allowed opacity-40"
-                                  )}
-                                  title={value}
-                                >
-                                  <span
-                                    className={cn(
-                                      "absolute inset-[-3px] rounded-full border-2 transition-all duration-200",
-                                      isSelected
-                                        ? "border-blue scale-100"
-                                        : "border-transparent scale-90 group-hover:scale-95 group-hover:border-gray-300"
-                                    )}
-                                  />
-                                  <span
-                                    className={cn(
-                                      "relative h-7 w-7 rounded-full shadow-sm transition-transform duration-200",
-                                      "ring-1 ring-black/10",
-                                      !isDisabled && "group-hover:scale-105"
-                                    )}
-                                    style={{ backgroundColor: colorHex || "#000" }}
-                                  />
-                                  {isSelected && (
-                                    <Check
-                                      className={cn(
-                                        "h-3.5 w-3.5 drop-shadow-md absolute z-10",
-                                        isLightColor(colorHex || undefined) ? "text-dark" : "text-white"
-                                      )}
-                                      strokeWidth={3}
-                                    />
-                                  )}
-                                </button>
-                              );
-                            }
-
-                            return (
-                              <button
-                                key={value}
-                                type="button"
-                                onClick={() => handleAttrChange(optionName, value)}
-                                className={cn(
-                                  "relative px-3 py-2 rounded-lg text-xs font-medium",
-                                  "border transition-all duration-200 ease-out",
-                                  "focus:outline-none focus-visible:ring-2 focus-visible:ring-blue focus-visible:ring-offset-2",
-                                  isSelected
-                                    ? "bg-blue text-white border-blue shadow-sm"
-                                    : "bg-white text-dark border-gray-300 hover:border-dark/30 hover:bg-gray-100",
-                                  isDisabled && "cursor-not-allowed opacity-40",
-                                  !isDisabled && !isSelected && "active:scale-[0.98]"
-                                )}
-                              >
-                                {value}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* Precio */}
-              <div className="flex flex-wrap justify-between gap-5 mt-4 mb-7.5">
-                <div>
-                  <h4 className="font-semibold text-lg text-dark mb-3.5">Precio</h4>
-
-                  {/* Con variante seleccionada: mostrar precio de la variante */}
-                  {details?.hasVariants ? (
-                    selectedVariant ? (
-                      <PriceDisplay
-                        price={selectedVariant.price}
-                        discountedPrice={selectedVariant.discountedPrice}
-                        priceWithTransfer={variantPriceWithTransfer}
-                        size="xl"
-                      />
-                    ) : (
-                      // Si no hay variante (raro), mostrar rango
-                      <span className="font-semibold text-dark text-xl xl:text-heading-4">
-                        {currency.format(details.priceRange.minDiscounted)} – {currency.format(details.priceRange.maxDiscounted)}
-                      </span>
-                    )
-                  ) : details ? (
-                    // Sin variantes: usar price del detalle
-                    <PriceDisplay
-                      price={details.price!}
-                      discountedPrice={details.discountedPrice ?? details.price!}
-                      priceWithTransfer={basePriceWithTransfer}
-                      size="xl"
-                    />
-                  ) : (
-                    // Fallback del “light”
-                    <PriceDisplay
-                      price={product?.price ?? 0}
-                      discountedPrice={product?.discountedPrice ?? product?.price ?? 0}
-                      priceWithTransfer={basePriceWithTransfer}
-                      size="xl"
-                    />
-                  )}
-                </div>
-
-                {/* Cantidad */}
-                <div>
-                  <h4 className="font-semibold text-lg text-dark mb-3.5">Cantidad</h4>
-                  <div className="flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setQuantity(q => Math.max(1, q - 1))}
-                      aria-label="button for remove product"
-                      className="flex items-center justify-center w-10 h-10 rounded-[5px] bg-gray-2 text-dark ease-out duration-200 hover:text-blue"
+            <div className="flex flex-1 flex-col overflow-y-auto p-4 sm:w-[55%] sm:p-6">
+              {tags.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {tags.slice(0, 3).map((tag) => (
+                    <span
+                      key={tag}
+                      className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary"
                     >
-                      <svg
-                        className="fill-current"
-                        width="16"
-                        height="2"
-                        viewBox="0 0 16 2"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          clipRule="evenodd"
-                          d="M-8.548e-08 0.977778C-3.82707e-08 0.437766 0.437766 3.82707e-08 0.977778 8.548e-08L15.0222 1.31328e-06C15.5622 1.36049e-06 16 0.437767 16 0.977779C16 1.51779 15.5622 1.95556 15.0222 1.95556L0.977778 1.95556C0.437766 1.95556 -1.32689e-07 1.51779 -8.548e-08 0.977778Z"
-                          fill=""
-                        />
-                      </svg>
-                    </button>
-
-                    <span className="flex items-center justify-center w-20 h-10 rounded-[5px] border border-gray-4 bg-white font-medium text-dark">
-                      {quantity}
+                      {tag}
                     </span>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const max = isDigitalOnDemand ? 9999 : (variantStock ?? 9999);
-                        setQuantity(q => Math.min(q + 1, max));
-                      }}
-                      aria-label="button for add product"
-                      className="flex items-center justify-center w-10 h-10 rounded-[5px] bg-gray-2 text-dark ease-out duration-200 hover:text-blue"
-                    >
-                      <svg
-                        className="fill-current"
-                        width="16"
-                        height="16"
-                        viewBox="0 0 16 16"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          clipRule="evenodd"
-                          d="M8.08889 0C8.6289 2.36047e-08 9.06667 0.437766 9.06667 0.977778L9.06667 15.0222C9.06667 15.5622 8.6289 16 8.08889 16C7.54888 16 7.11111 15.5622 7.11111 15.0222L7.11111 0.977778C7.11111 0.437766 7.54888 -2.36047e-08 8.08889 0Z"
-                          fill=""
-                        />
-                        <path
-                          fillRule="evenodd"
-                          clipRule="evenodd"
-                          d="M0 7.91111C4.72093e-08 7.3711 0.437766 6.93333 0.977778 6.93333L15.0222 6.93333C15.5622 6.93333 16 7.3711 16 7.91111C16 8.45112 15.5622 8.88889 15.0222 8.88889L0.977778 8.88889C0.437766 8.88889 -4.72093e-08 8.45112 0 7.91111Z"
-                          fill=""
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                  {typeof variantStock === "number" && (
-                    <p className="text-xs text-dark-4 mt-1">Stock variante: {variantStock}</p>
-                  )}
+                  ))}
                 </div>
+              )}
+
+              <h2 className="mt-3 text-lg font-bold leading-snug text-dark sm:text-xl">{title}</h2>
+
+              <div className="mt-2 flex flex-wrap items-center gap-4">
+                <div className="flex items-center gap-1.5">
+                  <div className="flex">
+                    {Array.from({ length: 5 }).map((_, index) => {
+                      const filled = rating >= index + 1;
+                      const partial = !filled && rating > index && rating < index + 1;
+
+                      return (
+                        <Star
+                          key={index}
+                          className={cn(
+                            "h-4 w-4",
+                            filled || partial ? "fill-yellow text-yellow" : "fill-gray-3 text-gray-3"
+                          )}
+                          style={partial ? { fillOpacity: rating - index } : undefined}
+                        />
+                      );
+                    })}
+                  </div>
+                  <span className="text-sm text-dark-4">({reviewCount})</span>
+                </div>
+
+                {inStock && (
+                  <div className="flex items-center gap-1.5 text-green">
+                    <Check className="h-4 w-4" />
+                    <span className="text-sm font-medium">Disponible</span>
+                  </div>
+                )}
               </div>
 
-              {/* Acciones */}
-              <div className="flex flex-wrap items-center gap-4">
-                <button
-                  disabled={!inStock || quantity === 0}
-                  onClick={handleAddToCart}
-                  className="inline-flex font-medium text-white bg-blue py-3 px-7 rounded-md ease-out duration-200 hover:bg-blue-dark disabled:opacity-60"
-                >
-                  {inStock 
-                    ? ((details?.isPresale || product?.isPresale) ? "Reservar" : "Agregar")
-                    : "Sin Stock"}
-                </button>
+              {description && (
+                <div className="mt-4 max-h-24 overflow-y-auto rounded-lg border border-gray-3 bg-gray-1/40 p-3">
+                  <p className="text-sm leading-relaxed text-dark-4">{description}</p>
+                </div>
+              )}
+
+              <div className="mt-4 rounded-xl bg-gray-1/60 p-4">
+                <div className="flex flex-wrap items-baseline gap-3">
+                  <span className="text-2xl font-bold text-dark">{formatCurrency(currentPrice)}</span>
+                  {hasDiscount && (
+                    <span className="text-base text-dark-4 line-through">{formatCurrency(originalPrice)}</span>
+                  )}
+                </div>
+                {transferPrice && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <span className="text-xl font-bold text-green">{formatCurrency(transferPrice)}</span>
+                    <span className="rounded-full bg-green-light-6 px-2 py-0.5 text-xs font-semibold uppercase text-green-dark">
+                      Transferencia
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div className="my-4 h-px bg-gray-3" />
+
+              <div className="mt-auto space-y-4">
+                {(details?.hasVariants && Object.keys(details.options).length > 0) || fulfillmentType ? (
+                  <div>
+                    <span className="mb-2 block text-xs font-medium text-dark-4">Formato</span>
+                    <div className="flex flex-wrap gap-2">
+                      {details?.hasVariants && Object.keys(details.options).length > 0 ? (
+                        Object.entries(details.options).map(([optionName, values]) => (
+                          <div key={optionName} className="w-full">
+                            {Object.keys(details.options).length > 1 && (
+                              <span className="mb-2 block text-[11px] font-semibold uppercase tracking-wide text-dark-4">
+                                {optionName}
+                              </span>
+                            )}
+                            <div className="flex flex-wrap gap-2">
+                              {values.map((value) => {
+                                const isSelected = selectedAttrs[optionName] === value;
+                                return (
+                                  <button
+                                    key={value}
+                                    onClick={() => handleAttrChange(optionName, value)}
+                                    className={cn(
+                                      "rounded-lg border-2 px-4 py-2 text-sm font-medium transition-all",
+                                      isSelected
+                                        ? "border-primary bg-primary text-primary-foreground"
+                                        : "border-gray-3 bg-white text-dark hover:border-primary/50"
+                                    )}
+                                  >
+                                    {formatDisplayValue(value)}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <span className="rounded-lg border-2 border-primary bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
+                          {getFulfillmentLabel(fulfillmentType)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ) : null}
+
+                <div className="flex items-end gap-4">
+                  <div>
+                    <span className="mb-2 block text-xs font-medium text-dark-4">Cantidad</span>
+                    <div className="flex items-center rounded-lg border border-gray-3">
+                      <button
+                        onClick={() => setQuantity((current) => Math.max(1, current - 1))}
+                        className="flex h-10 w-10 items-center justify-center text-dark-4 transition-colors hover:bg-gray-2 hover:text-dark disabled:opacity-50"
+                        disabled={quantity <= 1}
+                      >
+                        <Minus className="h-4 w-4" />
+                      </button>
+                      <span className="w-10 text-center text-sm font-medium text-dark">{quantity}</span>
+                      <button
+                        onClick={() => {
+                          const max = isDigitalOnDemand ? 9999 : variantStock ?? 9999;
+                          setQuantity((current) => Math.min(current + 1, max));
+                        }}
+                        className="flex h-10 w-10 items-center justify-center text-dark-4 transition-colors hover:bg-gray-2 hover:text-dark"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {typeof variantStock === "number" && !isDigitalOnDemand && (
+                    <span className="mb-2 text-xs text-dark-4">Stock: {variantStock} unidades</span>
+                  )}
+                </div>
+
+                <div className="flex gap-3">
+                  <Button size="lg" className="flex-1 rounded-xl" onClick={handleAddToCart} disabled={!inStock}>
+                    {inStock ? "Agregar al carrito" : "Sin stock"}
+                  </Button>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className={cn("gap-2 rounded-xl px-4", isWishlisted && "border-red-light-4 bg-red-light-6")}
+                    onClick={handleToggleWishlist}
+                  >
+                    <Heart
+                      className={cn(
+                        "h-5 w-5 transition-colors",
+                        isWishlisted ? "fill-red text-red" : "text-dark"
+                      )}
+                    />
+                    <span className="hidden sm:inline">Favoritos</span>
+                  </Button>
+                </div>
 
                 <button
-                  onClick={async () => {
-                    if (!isAuthenticated) {
-                      toast.error("Debes iniciar sesión para usar la wishlist");
-                      return;
-                    }
-                    if (product) {
-                      const res = await dispatch(toggleWishlist(product as any));
-                      const products = res.payload as any[] | undefined;
-                      if (products) {
-                        const isIn = products.some((p) => p.id === product.id);
-                        toast(isIn ? "Añadido a tu wishlist" : "Quitado de tu wishlist");
-                        if (!isIn) { // If it was added to wishlist
-                          const productDetails = details ?? product;
-                          if (productDetails) {
-                            pixel.event("AddToWishlist", {
-                              content_name: productDetails.title,
-                              content_ids: [productDetails.id],
-                              content_type: "product",
-                              value: productDetails.discountedPrice || productDetails.price,
-                              currency: "USD",
-                            });
-                          }
-                        }
-                      }
-                    }
-                  }}
-                  className={`inline-flex items-center gap-2 font-medium py-3 px-6 rounded-md ease-out duration-200 ${isInWishlist
-                    ? "bg-blue text-white hover:bg-blue-dark"
-                    : "bg-dark text-white hover:bg-opacity-95"
-                    }`}
+                  onClick={handleViewDetails}
+                  className="w-full text-center text-sm font-medium text-blue underline-offset-2 hover:underline"
                 >
-                  {/* heart icon */}
-                  <svg
-                    className="fill-current"
-                    width="20"
-                    height="20"
-                    viewBox="0 0 20 20"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      clipRule="evenodd"
-                      d="M4.68698 3.68688C3.30449 4.31882 2.29169 5.82191 2.29169 7.6143C2.29169 9.44546 3.04103 10.8569 4.11526 12.0665C5.00062 13.0635 6.07238 13.8897 7.11763 14.6956C7.36588 14.8869 7.61265 15.0772 7.85506 15.2683C8.29342 15.6139 8.68445 15.9172 9.06136 16.1374C9.43847 16.3578 9.74202 16.4584 10 16.4584C10.258 16.4584 10.5616 16.3578 10.9387 16.1374C11.3156 15.9172 11.7066 15.6139 12.145 15.2683C12.3874 15.0772 12.6342 14.8869 12.8824 14.6956C13.9277 13.8897 14.9994 13.0635 15.8848 12.0665C16.959 10.8569 17.7084 9.44546 17.7084 7.6143C17.7084 5.82191 16.6955 4.31882 15.3131 3.68688C13.97 3.07295 12.1653 3.23553 10.4503 5.01733C10.3325 5.13974 10.1699 5.20891 10 5.20891C9.83012 5.20891 9.66754 5.13974 9.54972 5.01733C7.83474 3.23553 6.03008 3.07295 4.68698 3.68688ZM10 3.71573C8.07331 1.99192 5.91582 1.75077 4.16732 2.55002C2.32061 3.39415 1.04169 5.35424 1.04169 7.6143C1.04169 9.83557 1.9671 11.5301 3.18062 12.8966C4.15241 13.9908 5.34187 14.9067 6.39237 15.7155C6.63051 15.8989 6.8615 16.0767 7.0812 16.2499C7.50807 16.5864 7.96631 16.9453 8.43071 17.2166C8.8949 17.4879 9.42469 17.7084 10 17.7084C10.5754 17.7084 11.1051 17.4879 11.5693 17.2166C12.0337 16.9453 12.492 16.5864 12.9188 16.2499C13.1385 16.0767 13.3695 15.8989 13.6077 15.7155C14.6582 14.9067 15.8476 13.9908 16.8194 12.8966C18.0329 11.5301 18.9584 9.83557 18.9584 7.6143C18.9584 5.35424 17.6794 3.39415 15.8327 2.55002C14.0842 1.75077 11.9267 1.99192 10 3.71573Z"
-                      fill=""
-                    />
-                  </svg>
-                  {isInWishlist ? "En Lista de Deseos" : "Agregar a Lista de Deseos"}
+                  Ver todos los detalles
                 </button>
               </div>
             </div>
           </div>
-
-          {loading && (
-            <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-xl">
-              Cargando…
-            </div>
-          )}
-          {err && (
-            <div className="absolute bottom-4 left-0 right-0 text-center text-red-600">
-              {err}
-            </div>
-          )}
         </div>
       </div>
+    </>
   );
 };
 

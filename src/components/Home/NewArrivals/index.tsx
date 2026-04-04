@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import type { Product } from "@/types/product";
 import type { PaginatedResponse } from "@/lib/api";
-import ProductItem from "@/components/Common/ProductItem";
+import SingleGridItem from "@/components/Shop/SingleGridItem";
 import { productService } from "@/services/productService";
 
 const NewArrival = () => {
@@ -89,7 +89,7 @@ const NewArrival = () => {
               </div>
             ) : (
               items.map((item) => (
-                <ProductItem item={item} key={item.id ?? JSON.stringify(item)} />
+                <SingleGridItem item={item} key={item.id ?? JSON.stringify(item)} />
               ))
             )}
           </div>
