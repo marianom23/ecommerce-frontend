@@ -31,6 +31,8 @@ type APIProductBase = {
   category: string;
   priceWithTransfer?: number;
   specificationsJson?: string;
+  presale?: boolean;
+  releaseDate?: string | null;
 };
 
 type APIProductWithVariants = APIProductBase & {
@@ -84,7 +86,9 @@ export type NormalizedProduct = {
   inStock: boolean;
   fulfillmentType: 'PHYSICAL' | 'DIGITAL_ON_DEMAND' | 'DIGITAL_INSTANT';
   priceWithTransfer?: number;
-  specifications: Record<string, string>;
+  specifications?: Record<string, string>;
+  isPresale?: boolean;
+  releaseDate?: string | null;
 };
 
 /** ===== Fetchers ===== */
@@ -146,6 +150,8 @@ function normalize(p: ProductDetailsRaw): NormalizedProduct {
       fulfillmentType: (pv as any).fulfillmentType || 'PHYSICAL',
       priceWithTransfer: pv.priceWithTransfer,
       specifications: pv.specificationsJson ? JSON.parse(pv.specificationsJson) : {},
+      isPresale: pv.presale,
+      releaseDate: pv.releaseDate,
     };
   } else {
     const ps = p as APIProductSimple;
@@ -180,6 +186,8 @@ function normalize(p: ProductDetailsRaw): NormalizedProduct {
       fulfillmentType: (ps as any).fulfillmentType || 'PHYSICAL',
       priceWithTransfer: ps.priceWithTransfer,
       specifications: ps.specificationsJson ? JSON.parse(ps.specificationsJson) : {},
+      isPresale: ps.presale,
+      releaseDate: ps.releaseDate,
     };
   }
 }

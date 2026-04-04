@@ -21,6 +21,7 @@ const ShippingContainer: React.FC<Props> = ({ order, onSelected }) => {
   const [mode, setMode] = useState<"list" | "form">("list");
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [hasLoaded, setHasLoaded] = useState(false);
 
   async function load() {
     setErr(null);
@@ -29,10 +30,14 @@ const ShippingContainer: React.FC<Props> = ({ order, onSelected }) => {
       const res = await addressService.list("SHIPPING");
       setList(res);
 
-      // No auto-seleccionar, dejar que el usuario elija
-      setSelectedId(null);
-
-      setMode(res.length ? "list" : "form");
+      if (res.length > 0) {
+        setMode("list");
+        const preselected = res[0];
+        setSelectedId(preselected.id ?? null);
+        await applyToOrder(preselected, true);
+      } else {
+        setMode("form");
+      }
     } finally {
       setLoadingList(false);
     }
@@ -63,9 +68,12 @@ const ShippingContainer: React.FC<Props> = ({ order, onSelected }) => {
   }
 
   useEffect(() => {
-    if (loading) return;           // todavía consultando /b/me
-    if (isAuthenticated) load();   // solo cargamos direcciones si está logueado
-  }, [isAuthenticated, loading]);
+    if (loading || !order?.orderNumber || hasLoaded) return;
+    if (isAuthenticated) {
+        setHasLoaded(true);
+        load();
+    }
+  }, [isAuthenticated, loading, order?.orderNumber, hasLoaded]);
 
 
 

@@ -94,10 +94,29 @@ const ProductItem = ({ item }: { item: Product }) => {
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
         />
 
-        {(item.fulfillmentType === 'DIGITAL_ON_DEMAND' || item.fulfillmentType === 'DIGITAL_INSTANT') && (
-          <span className="absolute top-3 right-3 z-10 inline-flex items-center justify-center rounded-full bg-[#22AD5C] px-2.5 py-0.5 text-xs font-medium text-white shadow-sm">
-            Digital
-          </span>
+        <div className="absolute top-3 right-3 z-10 flex flex-col items-end gap-1">
+          {(item.fulfillmentType === 'DIGITAL_ON_DEMAND' || item.fulfillmentType === 'DIGITAL_INSTANT') && (
+            <span className="inline-flex items-center justify-center rounded-full bg-[#22AD5C] px-2.5 py-0.5 text-xs font-medium text-white shadow-sm">
+              Digital
+            </span>
+          )}
+          {item.productType === 'DLC' && (
+             <span className="inline-flex items-center justify-center rounded-full bg-blue px-2.5 py-0.5 text-xs font-medium text-white shadow-sm uppercase">
+               DLC
+             </span>
+          )}
+        </div>
+        
+        {item.isPresale && (
+          <div className="absolute bottom-3 right-3 z-10 flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/95 backdrop-blur-md shadow-lg border border-amber-200 uppercase transition-all duration-300 group-hover:opacity-0 group-hover:translate-y-2">
+            <div className="flex items-center gap-1.5 text-[10px] font-bold text-amber-700 whitespace-nowrap">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
+              Preventa {item.releaseDate ? `- ${new Date(item.releaseDate).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' })}` : ''}
+            </div>
+          </div>
         )}
 
         <div className="absolute left-0 bottom-0 translate-y-full w-full flex items-center justify-center gap-2.5 pb-5 ease-linear duration-200 group-hover:translate-y-0">

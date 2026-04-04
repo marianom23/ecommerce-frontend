@@ -108,11 +108,18 @@ const SingleGridItem = ({ item }: { item: Product }) => {
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
         />
 
-        {(item.fulfillmentType === 'DIGITAL_ON_DEMAND' || item.fulfillmentType === 'DIGITAL_INSTANT') && (
-          <span className="absolute top-3 right-3 z-10 inline-flex items-center justify-center rounded-full bg-[#22AD5C] px-2.5 py-0.5 text-xs font-medium text-white">
-            Digital
-          </span>
-        )}
+        <div className="absolute top-3 right-3 z-10 flex flex-col items-end gap-1">
+          {(item.fulfillmentType === 'DIGITAL_ON_DEMAND' || item.fulfillmentType === 'DIGITAL_INSTANT') && (
+            <span className="inline-flex items-center justify-center rounded-full bg-[#22AD5C] px-2.5 py-0.5 text-xs font-medium text-white shadow-sm">
+              Digital
+            </span>
+          )}
+          {item.productType === 'DLC' && (
+             <span className="inline-flex items-center justify-center rounded-full bg-blue px-2.5 py-0.5 text-xs font-medium text-white shadow-sm uppercase">
+               DLC
+             </span>
+          )}
+        </div>
 
         <div className="absolute left-0 bottom-0 translate-y-full w-full flex items-center justify-center gap-2.5 pb-5 ease-linear duration-200 group-hover:translate-y-0">
           <button
@@ -187,9 +194,6 @@ const SingleGridItem = ({ item }: { item: Product }) => {
         <h3 className="font-medium text-dark ease-out duration-200 hover:text-blue">
           <Link href={generateProductUrl(item.id, item.title)} onClick={handleProductDetails}> {item.title} </Link>
         </h3>
-        {item.productType === 'DLC' && (
-          <span className="text-[10px] bg-blue/10 text-blue px-1.5 py-0.5 rounded uppercase font-bold">DLC</span>
-        )}
       </div>
 
       {item.consoleName && (

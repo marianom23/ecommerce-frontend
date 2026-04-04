@@ -20,7 +20,15 @@ export type BillingProfileRequest = {
   emailForInvoices?: string | null;
   phone?: string | null;
 
-  billingAddressId: number;
+  street?: string;
+  streetNumber?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  country?: string;
+  apartmentNumber?: string;
+  floor?: string;
+
   isDefault?: boolean | null;
 };
 
@@ -35,7 +43,15 @@ export type BillingProfileResponse = {
   emailForInvoices?: string | null;
   phone?: string | null;
 
-  billingAddressId: number;
+  street?: string;
+  streetNumber?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  country?: string;
+  apartmentNumber?: string;
+  floor?: string;
+
   defaultProfile: boolean; // expuesto así desde el backend
 };
 

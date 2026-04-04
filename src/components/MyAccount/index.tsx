@@ -98,7 +98,7 @@ export default function MyAccount({ current }: MyAccountProps) {
                   </TabLink>
 
                   <TabLink href="/mi-cuenta/addresses" active={current === "addresses"}>
-                    Direcciones
+                    Direcciones y Facturación
                   </TabLink>
 
                   <TabLink href="/mi-cuenta/account-details" active={current === "account-details"}>

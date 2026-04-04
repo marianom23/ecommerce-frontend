@@ -102,11 +102,18 @@ const SingleItem = ({ item }: { item: Product }) => {
             className="object-contain p-5"
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
-          {(item.fulfillmentType === 'DIGITAL_ON_DEMAND' || item.fulfillmentType === 'DIGITAL_INSTANT') && (
-            <span className="absolute top-3 right-3 z-10 inline-flex items-center justify-center rounded-full bg-[#22AD5C] px-2.5 py-0.5 text-xs font-medium text-white">
-              Digital
-            </span>
-          )}
+          <div className="absolute top-3 right-3 z-10 flex flex-col items-end gap-1">
+            {(item.fulfillmentType === 'DIGITAL_ON_DEMAND' || item.fulfillmentType === 'DIGITAL_INSTANT') && (
+              <span className="inline-flex items-center justify-center rounded-full bg-[#22AD5C] px-2.5 py-0.5 text-xs font-medium text-white shadow-sm">
+                Digital
+              </span>
+            )}
+            {item.productType === 'DLC' && (
+               <span className="inline-flex items-center justify-center rounded-full bg-blue px-2.5 py-0.5 text-xs font-medium text-white shadow-sm uppercase">
+                 DLC
+               </span>
+            )}
+          </div>
         </div>
 
         <div className="absolute right-0 bottom-0 translate-x-full u-w-full flex flex-col gap-2 p-5.5 ease-linear duration-300 group-hover:translate-x-0">

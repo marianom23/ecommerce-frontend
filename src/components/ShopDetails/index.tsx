@@ -471,13 +471,30 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
                     <h2 className="font-semibold text-xl sm:text-2xl xl:text-custom-3 text-dark">
                       {productDetails?.title || product?.title}
                     </h2>
-
                     {currentPrice < originalPrice && (
                       <div className="inline-flex font-medium text-custom-sm text-white bg-blue rounded py-0.5 px-2.5">
                         {Math.round(((originalPrice - currentPrice) / originalPrice) * 100)}% OFF
                       </div>
                     )}
                   </div>
+
+                  {productDetails?.isPresale && (
+                    <div className="mb-6 p-4 rounded-lg bg-amber-50 border border-amber-200 flex items-start gap-3 shadow-sm animate-fadeIn">
+                      <div className="pt-0.5">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-amber-600">
+                          <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" strokeWidth="2" />
+                          <path d="M12 6V12L16 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                        </svg>
+                      </div>
+                      <div>
+                        <span className="block font-bold text-amber-800 text-sm uppercase mb-1">Reserva Disponible</span>
+                        <p className="text-amber-700 text-sm leading-relaxed">
+                          Este producto se lanzará oficialmente el: <br/>
+                          <span className="font-bold text-base">{productDetails.releaseDate ? new Date(productDetails.releaseDate).toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Fecha a confirmar'}</span>
+                        </p>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="flex flex-wrap items-center gap-5.5 mb-4.5">
                     <div className="flex items-center gap-2.5">
@@ -513,16 +530,20 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
                         </defs>
                       </svg>
 
-                      <span className={isInStock ? "text-green" : "text-red"}>
-                        {productDetails?.fulfillmentType === 'DIGITAL_ON_DEMAND'
-                          ? "Disponible (Digital)"
-                          : isInStock
-                            ? "En Stock"
-                            : "Sin Stock"
+                      <span className={productDetails?.isPresale ? "text-amber-600 font-medium" : (isInStock ? "text-green" : "text-red")}>
+                        {productDetails?.isPresale 
+                          ? "Preventa"
+                          : productDetails?.fulfillmentType === 'DIGITAL_ON_DEMAND'
+                            ? "Disponible (Digital)"
+                            : isInStock
+                              ? "En Stock"
+                              : "Sin Stock"
                         }
                       </span>
                     </div>
                   </div>
+
+
 
                   <div className="mb-4.5">
                     <PriceDisplay
@@ -723,11 +744,13 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
                         disabled={!isInStock || quantity === 0}
                         className="inline-flex font-medium text-white bg-blue py-3 px-7 rounded-md ease-out duration-200 hover:bg-blue-dark disabled:opacity-60 disabled:cursor-not-allowed"
                       >
-                        {productDetails?.fulfillmentType === 'DIGITAL_ON_DEMAND'
-                          ? "Agregar"
-                          : isInStock
+                        {productDetails?.isPresale
+                          ? "Reservar Ahora"
+                          : productDetails?.fulfillmentType === 'DIGITAL_ON_DEMAND'
                             ? "Agregar"
-                            : "Sin Stock"
+                            : isInStock
+                              ? "Agregar"
+                              : "Sin Stock"
                         }
                       </button>
 

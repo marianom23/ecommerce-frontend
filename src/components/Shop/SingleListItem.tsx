@@ -83,11 +83,18 @@ const SingleListItem = ({ item }: { item: Product }) => {
             <Image src="/placeholder.png" alt="" width={250} height={250} className="object-contain" />
           )}
 
-          {(item.fulfillmentType === 'DIGITAL_ON_DEMAND' || item.fulfillmentType === 'DIGITAL_INSTANT') && (
-            <span className="absolute top-3 right-3 z-10 inline-flex items-center justify-center rounded-full bg-[#22AD5C] px-2.5 py-0.5 text-xs font-medium text-white">
-              Digital
-            </span>
-          )}
+          <div className="absolute top-3 right-3 z-10 flex flex-col items-end gap-1">
+            {(item.fulfillmentType === 'DIGITAL_ON_DEMAND' || item.fulfillmentType === 'DIGITAL_INSTANT') && (
+              <span className="inline-flex items-center justify-center rounded-full bg-[#22AD5C] px-2.5 py-0.5 text-xs font-medium text-white shadow-sm">
+                Digital
+              </span>
+            )}
+            {item.productType === 'DLC' && (
+               <span className="inline-flex items-center justify-center rounded-full bg-blue px-2.5 py-0.5 text-xs font-medium text-white shadow-sm uppercase">
+                 DLC
+               </span>
+            )}
+          </div>
 
           <div className="absolute left-0 bottom-0 translate-y-full w-full flex items-center justify-center gap-2.5 pb-5 ease-linear duration-200 group-hover:translate-y-0">
             <button
@@ -155,9 +162,11 @@ const SingleListItem = ({ item }: { item: Product }) => {
 
         <div className="w-full flex flex-col gap-5 sm:flex-row sm:items-center justify-center sm:justify-between py-5 px-4 sm:px-7.5 lg:pl-11 lg:pr-12">
           <div>
-            <h3 className="font-medium text-dark ease-out duration-200 hover:text-blue mb-1.5">
-              <Link href={generateProductUrl(item.id, item.title)} onClick={() => dispatch(updateproductDetails({ ...item }))}> {item.title} </Link>
-            </h3>
+            <div className="flex items-center gap-2 mb-1.5">
+              <h3 className="font-medium text-dark ease-out duration-200 hover:text-blue">
+                <Link href={generateProductUrl(item.id, item.title)} onClick={() => dispatch(updateproductDetails({ ...item }))}> {item.title} </Link>
+              </h3>
+            </div>
 
             <PriceDisplay
               price={item.price}

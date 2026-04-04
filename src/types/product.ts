@@ -16,4 +16,6 @@ export type Product = {
   priceWithTransfer?: number;
   consoleName?: string;
   productType?: "GAME" | "DLC" | "CONSOLE" | "ACCESSORY" | "OTHER";
+  isPresale?: boolean;
+  releaseDate?: string | null;
 };

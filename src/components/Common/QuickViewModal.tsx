@@ -42,6 +42,8 @@ const QuickViewModal = () => {
     imgs?: { urls: string[] };
     fulfillmentType?: 'PHYSICAL' | 'DIGITAL_ON_DEMAND' | 'DIGITAL_INSTANT';
     priceWithTransfer?: number;
+    isPresale?: boolean;
+    releaseDate?: string | null;
   } | null);
 
 
@@ -219,6 +221,25 @@ const QuickViewModal = () => {
   };
 
 
+  // Bloquear scroll del body y html al abrir el modal (Compensa el ancho del scrollbar)
+  useEffect(() => {
+    if (isModalOpen) {
+      const scrollBarWidth = window.innerWidth - document.documentElement.clientWidth;
+      document.body.style.overflow = "hidden";
+      document.body.style.paddingRight = `${scrollBarWidth}px`;
+      document.documentElement.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+      document.body.style.paddingRight = "0px";
+      document.documentElement.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+      document.body.style.paddingRight = "0px";
+      document.documentElement.style.overflow = "";
+    };
+  }, [isModalOpen]);
+
   // cerrar por click afuera
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -358,11 +379,10 @@ const QuickViewModal = () => {
 
   return (
     <div
-      className={`${isModalOpen ? "z-99999" : "hidden"
-        } fixed top-0 left-0 overflow-y-auto no-scrollbar w-full h-screen sm:py-20 xl:py-25 2xl:py-[230px] bg-dark/70 sm:px-8 px-4 py-5`}
+      className={`${isModalOpen ? "z-99999 flex" : "hidden"
+        } fixed inset-0 items-center justify-center bg-dark/70 sm:px-8 px-4 py-5 overflow-hidden`}
     >
-      <div className="flex items-center justify-center ">
-        <div className="w-full max-w-[1100px] rounded-xl shadow-3 bg-white p-7.5 relative modal-content">
+      <div className="w-full max-w-[1100px] max-h-[95vh] overflow-y-auto no-scrollbar rounded-xl shadow-3 bg-white p-7.5 relative modal-content">
           {/* close */}
           <button
             onClick={() => closeModal()}
@@ -460,6 +480,23 @@ const QuickViewModal = () => {
               <h3 className="font-semibold text-xl xl:text-heading-5 text-dark mb-4">
                 {title}
               </h3>
+
+              {(details?.isPresale || product?.isPresale) && (
+                <div className="mb-6 p-4 rounded-lg bg-amber-50 border border-amber-200 flex items-start gap-3 shadow-sm animate-fadeIn">
+                  <div className="pt-0.5">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-amber-600">
+                      <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" strokeWidth="2" />
+                      <path d="M12 6V12L16 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                  </div>
+                  <div>
+                    <span className="block font-bold text-amber-800 text-sm uppercase mb-1">Reserva Disponible</span>
+                    <p className="text-amber-700 text-sm leading-relaxed">
+                      Lanzamiento: <span className="font-bold text-base">{(details?.releaseDate || product?.releaseDate) ? new Date(details?.releaseDate || product?.releaseDate!).toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Fecha a confirmar'}</span>
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* Descripción */}
               {description && (
@@ -707,7 +744,9 @@ const QuickViewModal = () => {
                   onClick={handleAddToCart}
                   className="inline-flex font-medium text-white bg-blue py-3 px-7 rounded-md ease-out duration-200 hover:bg-blue-dark disabled:opacity-60"
                 >
-                  {inStock ? "Agregar" : "Sin Stock"}
+                  {inStock 
+                    ? ((details?.isPresale || product?.isPresale) ? "Reservar" : "Agregar")
+                    : "Sin Stock"}
                 </button>
 
                 <button
@@ -776,7 +815,7 @@ const QuickViewModal = () => {
           )}
         </div>
       </div>
-    </div >
   );
 };
+
 export default QuickViewModal;
