@@ -550,44 +550,38 @@ const QuickViewModal = () => {
               <div className="my-4 h-px bg-gray-3" />
 
               <div className="mt-auto space-y-4">
-                {(details?.hasVariants && Object.keys(details.options).length > 0) || fulfillmentType ? (
+                {details?.hasVariants && Object.keys(details.options).length > 0 ? (
                   <div>
                     <span className="mb-2 block text-xs font-medium text-dark-4">Formato</span>
                     <div className="flex flex-wrap gap-2">
-                      {details?.hasVariants && Object.keys(details.options).length > 0 ? (
-                        Object.entries(details.options).map(([optionName, values]) => (
-                          <div key={optionName} className="w-full">
-                            {Object.keys(details.options).length > 1 && (
-                              <span className="mb-2 block text-[11px] font-semibold uppercase tracking-wide text-dark-4">
-                                {optionName}
-                              </span>
-                            )}
-                            <div className="flex flex-wrap gap-2">
-                              {values.map((value) => {
-                                const isSelected = selectedAttrs[optionName] === value;
-                                return (
-                                  <button
-                                    key={value}
-                                    onClick={() => handleAttrChange(optionName, value)}
-                                    className={cn(
-                                      "rounded-lg border-2 px-4 py-2 text-sm font-medium transition-all",
-                                      isSelected
-                                        ? "border-primary bg-primary text-primary-foreground"
-                                        : "border-gray-3 bg-white text-dark hover:border-primary/50"
-                                    )}
-                                  >
-                                    {formatDisplayValue(value)}
-                                  </button>
-                                );
-                              })}
-                            </div>
+                      {Object.entries(details.options).map(([optionName, values]) => (
+                        <div key={optionName} className="w-full">
+                          {Object.keys(details.options).length > 1 && (
+                            <span className="mb-2 block text-[11px] font-semibold uppercase tracking-wide text-dark-4">
+                              {optionName}
+                            </span>
+                          )}
+                          <div className="flex flex-wrap gap-2">
+                            {values.map((value) => {
+                              const isSelected = selectedAttrs[optionName] === value;
+                              return (
+                                <button
+                                  key={value}
+                                  onClick={() => handleAttrChange(optionName, value)}
+                                  className={cn(
+                                    "rounded-lg border-2 px-4 py-2 text-sm font-medium transition-all",
+                                    isSelected
+                                      ? "border-primary bg-primary text-primary-foreground"
+                                      : "border-gray-3 bg-white text-dark hover:border-primary/50"
+                                  )}
+                                >
+                                  {formatDisplayValue(value)}
+                                </button>
+                              );
+                            })}
                           </div>
-                        ))
-                      ) : (
-                        <span className="rounded-lg border-2 border-primary bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
-                          {getFulfillmentLabel(fulfillmentType)}
-                        </span>
-                      )}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 ) : null}

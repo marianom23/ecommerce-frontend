@@ -763,16 +763,14 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
                 </div>
               )}
 
-              {!hasFormatOption && (
+              {!hasFormatOption && selectedVariant && Object.keys(selectedVariant.attrs).length > 0 && (
                 <div className="mb-4 sm:mb-6">
                   <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:mb-2 sm:text-xs">
                     Formato
                   </label>
                   <div className="flex flex-wrap gap-2">
                     <button className="rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground sm:px-4 sm:py-2.5 sm:text-sm">
-                      {selectedVariant
-                        ? Object.values(selectedVariant.attrs).map((value) => formatDisplayValue(value)).join(" / ")
-                        : getFulfillmentLabel(productDetails?.fulfillmentType)}
+                      {Object.values(selectedVariant.attrs).map((value) => formatDisplayValue(value)).join(" / ")}
                     </button>
                   </div>
                 </div>
