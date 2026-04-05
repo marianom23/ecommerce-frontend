@@ -5,8 +5,8 @@ import {
   type ProductFacetsResponse,
 } from "@/types/facets";
 // export type Product = { id: number; title: string; reviews: number; price: number; discountedPrice: number; imgs?: { thumbnails: string[]; previews: string[] } };
-export type ListParams = { page?: number; limit?: number; sort?: string; q?: string; categoryId?: number; minPrice?: number, maxPrice?: number, sinceDays?: number, brandIds?: number[], inStockOnly?: boolean; };
-export type CreateProductDto = { name: string; description?: string; price: number; sku?: string; brandId?: number; categoryId?: number; };
+export type ListParams = { page?: number; limit?: number; sort?: string; q?: string; categoryId?: number; consoleId?: number; productType?: string; excludeDLC?: boolean; minPrice?: number, maxPrice?: number, sinceDays?: number, brandIds?: number[], inStockOnly?: boolean; };
+export type CreateProductDto = { name: string; description?: string; price: number; sku?: string; brandId?: number; categoryId?: number; consoleId?: number; productType?: string; };
 export type UpdateProductDto = Partial<CreateProductDto>;
 
 export type DigitalProduct = {

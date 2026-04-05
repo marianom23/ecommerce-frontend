@@ -14,30 +14,20 @@ export default function ManageAddresses() {
     const [shippingList, setShippingList] = useState<AddressResponse[]>([]);
     const [loadingShipping, setLoadingShipping] = useState(false);
     const [shippingMode, setShippingMode] = useState<"list" | "form">("list");
-    const [selectedShipping, setSelectedShipping] = useState<number | null>(null);
     const [editingShipping, setEditingShipping] = useState<AddressResponse | undefined>(undefined);
-
-    // Estado para direcciones de facturación
-    const [billingAddresses, setBillingAddresses] = useState<AddressResponse[]>([]);
-    const [loadingBilling, setLoadingBilling] = useState(false);
-    const [billingMode, setBillingMode] = useState<"list" | "form">("list");
-    const [selectedBilling, setSelectedBilling] = useState<number | null>(null);
-    const [editingBilling, setEditingBilling] = useState<AddressResponse | undefined>(undefined);
 
     // Estado para perfiles de facturación
     const [profilesList, setProfilesList] = useState<BillingProfileResponse[]>([]);
     const [loadingProfiles, setLoadingProfiles] = useState(false);
     const [profileMode, setProfileMode] = useState<"list" | "form">("list");
-    const [selectedProfile, setSelectedProfile] = useState<number | null>(null);
     const [editingProfile, setEditingProfile] = useState<BillingProfileResponse | undefined>(undefined);
 
     // Estados para "Ver detalle"
     const [expandedShippingId, setExpandedShippingId] = useState<number | null>(null);
-    const [expandedBillingId, setExpandedBillingId] = useState<number | null>(null);
     const [expandedProfileId, setExpandedProfileId] = useState<number | null>(null);
 
     // Estado para confirmación de eliminación
-    const [deletingItem, setDeletingItem] = useState<{ id: number; type: "SHIPPING" | "BILLING" | "PROFILE" } | null>(null);
+    const [deletingItem, setDeletingItem] = useState<{ id: number; type: "SHIPPING" | "PROFILE" } | null>(null);
 
     // Cargar direcciones de envío
     async function loadShipping() {
@@ -45,30 +35,11 @@ export default function ManageAddresses() {
         try {
             const res = await addressService.list("SHIPPING");
             setShippingList(res);
-            if (res.length > 0 && !selectedShipping) {
-                setSelectedShipping(res[0].id);
-            }
         } catch (error) {
             console.error("Error loading shipping addresses:", error);
             toast.error("Error al cargar direcciones de envío");
         } finally {
             setLoadingShipping(false);
-        }
-    }
-
-    // Cargar direcciones de facturación
-    async function loadBillingAddresses() {
-        setLoadingBilling(true);
-        try {
-            const res = await addressService.list("BILLING");
-            setBillingAddresses(res);
-            if (res.length > 0 && !selectedBilling) {
-                setSelectedBilling(res[0].id);
-            }
-        } catch (error) {
-            console.error("Error loading billing addresses:", error);
-        } finally {
-            setLoadingBilling(false);
         }
     }
 
@@ -78,9 +49,6 @@ export default function ManageAddresses() {
         try {
             const res = await billingProfileService.listMine();
             setProfilesList(res);
-            if (res.length > 0 && !selectedProfile) {
-                setSelectedProfile(res[0].id);
-            }
         } catch (error) {
             console.error("Error loading billing profiles:", error);
             toast.error("Error al cargar perfiles de facturación");
@@ -91,38 +59,26 @@ export default function ManageAddresses() {
 
     useEffect(() => {
         loadShipping();
-        loadBillingAddresses();
         loadProfiles();
     }, []);
 
     // Eliminar dirección
-    async function deleteAddress(id: number, type: "SHIPPING" | "BILLING") {
-        setDeletingItem({ id, type });
+    async function deleteAddress(id: number) {
+        setDeletingItem({ id, type: "SHIPPING" });
     }
 
     async function confirmDeleteAddress() {
         if (!deletingItem) return;
-        const { id, type } = deletingItem;
+        const { id } = deletingItem;
 
         try {
             await addressService.remove(id);
             toast.success("Dirección eliminada");
-            if (type === "SHIPPING") {
-                if (selectedShipping === id) setSelectedShipping(null);
-                loadShipping();
-            } else {
-                if (selectedBilling === id) setSelectedBilling(null);
-                loadBillingAddresses();
-            }
+            loadShipping();
         } catch (error: any) {
             let msg = error?.response?.data?.message;
-            // Si el mensaje es técnico o genérico, mostramos el mensaje amigable solicitado
             if (!msg || msg.includes("constraint") || msg.includes("DataIntegrityViolation") || error?.response?.status === 409) {
-                if (type === "BILLING") {
-                    msg = "No se puede borrar porque la dirección está asociada a un perfil de facturación.";
-                } else {
-                    msg = "No se puede borrar porque la dirección está asociada a un pedido o perfil.";
-                }
+                msg = "No se puede borrar porque la dirección está asociada a un pedido o perfil.";
             }
             toast.error(msg);
         } finally {
@@ -142,9 +98,6 @@ export default function ManageAddresses() {
         try {
             await billingProfileService.remove(id);
             toast.success("Perfil eliminado");
-            if (selectedProfile === id) {
-                setSelectedProfile(null);
-            }
             loadProfiles();
         } catch (error: any) {
             const msg = error?.response?.data?.message || "No se pudo eliminar el perfil";
@@ -206,20 +159,8 @@ export default function ManageAddresses() {
                                     {shippingList.map((addr) => (
                                         <div
                                             key={addr.id}
-                                            className={`flex items-start gap-3 p-4 border rounded-lg cursor-pointer transition-all duration-200 ${selectedShipping === addr.id
-                                                ? "border-blue bg-blue/5 shadow-sm"
-                                                : "border-gray-3 hover:border-blue/40 hover:bg-gray-50"
-                                                }`}
-                                            onClick={() => setSelectedShipping(addr.id)}
+                                            className="flex items-start gap-3 p-4 border rounded-lg transition-all duration-200 border-gray-3 hover:border-blue/40"
                                         >
-                                            <div className="relative flex items-center justify-center w-5 h-5 mt-0.5 shrink-0">
-                                                <input
-                                                    type="radio"
-                                                    checked={selectedShipping === addr.id}
-                                                    onChange={() => setSelectedShipping(addr.id)}
-                                                    className="peer appearance-none w-5 h-5 border-2 border-gray-400 rounded-full checked:border-blue checked:border-4 transition-all"
-                                                />
-                                            </div>
                                             <div className="flex-1">
                                                 <div className="flex justify-between items-start">
                                                     <div className="font-medium text-dark">
@@ -246,6 +187,16 @@ export default function ManageAddresses() {
                                                         >
                                                             Editar
                                                         </button>
+                                                        <span className="text-gray-3 text-xs">|</span>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                deleteAddress(addr.id);
+                                                            }}
+                                                            className="text-red-500 text-xs hover:underline"
+                                                        >
+                                                            Eliminar
+                                                        </button>
                                                     </div>
                                                 </div>
                                                 <div className="text-sm text-dark-5">
@@ -268,151 +219,6 @@ export default function ManageAddresses() {
                                         </div>
                                     ))}
                                 </div>
-
-
-                                {selectedShipping && (
-                                    <div className="mt-4 pt-4 border-t border-gray-3">
-                                        <div className="text-sm">
-                                            <button
-                                                onClick={() => deleteAddress(selectedShipping, "SHIPPING")}
-                                                className="text-red text-sm hover:underline"
-                                            >
-                                                Eliminar seleccionada
-                                            </button>
-                                        </div>
-                                    </div>
-                                )}
-                            </>
-                        )}
-                    </div>
-                )}
-            </div>
-
-            {/* Sección de direcciones de facturación */}
-            <div className="bg-white shadow-1 rounded-[10px]">
-                <div className="flex items-center justify-between py-5 px-4 sm:px-8.5 border-b border-gray-3">
-                    <h2 className="font-medium text-lg text-dark">
-                        Direcciones de Facturación
-                    </h2>
-                </div>
-
-                {loadingBilling ? (
-                    <p className="p-4 sm:p-7.5 text-dark-5">Cargando direcciones de facturación...</p>
-                ) : billingMode === "form" ? (
-                    <div className="p-4 sm:p-7.5">
-                        <ShippingForm
-                            initialData={editingBilling}
-                            type="BILLING"
-                            onSaved={async () => {
-                                await loadBillingAddresses();
-                                setBillingMode("list");
-                                setEditingBilling(undefined);
-                                toast.success("Dirección guardada");
-                            }}
-                            onCancel={() => {
-                                setBillingMode("list");
-                                setEditingBilling(undefined);
-                            }}
-                        />
-                    </div>
-                ) : (
-                    <div className="p-4 sm:p-8.5">
-                        <div className="flex items-center justify-between mb-3">
-                            <h3 className="font-medium text-dark">Mis direcciones de facturación</h3>
-                            <button
-                                onClick={() => {
-                                    setEditingBilling(undefined);
-                                    setBillingMode("form");
-                                }}
-                                className="text-xs font-medium bg-blue/10 text-blue px-3 py-1.5 rounded-full hover:bg-blue hover:text-white transition-colors"
-                            >
-                                + Agregar nueva
-                            </button>
-                        </div>
-
-                        {billingAddresses.length === 0 ? (
-                            <p className="text-dark-5 text-sm">No hay direcciones de facturación</p>
-                        ) : (
-                            <>
-                                <div className="space-y-2">
-                                    {billingAddresses.map((addr) => (
-                                        <div
-                                            key={addr.id}
-                                            className={`flex items-start gap-3 p-4 border rounded-lg cursor-pointer transition-all duration-200 ${selectedBilling === addr.id
-                                                ? "border-blue bg-blue/5 shadow-sm"
-                                                : "border-gray-3 hover:border-blue/40 hover:bg-gray-50"
-                                                }`}
-                                            onClick={() => setSelectedBilling(addr.id)}
-                                        >
-                                            <div className="relative flex items-center justify-center w-5 h-5 mt-0.5 shrink-0">
-                                                <input
-                                                    type="radio"
-                                                    checked={selectedBilling === addr.id}
-                                                    onChange={() => setSelectedBilling(addr.id)}
-                                                    className="peer appearance-none w-5 h-5 border-2 border-gray-400 rounded-full checked:border-blue checked:border-4 transition-all"
-                                                />
-                                            </div>
-                                            <div className="flex-1">
-                                                <div className="flex justify-between items-start">
-                                                    <div className="font-medium text-dark">
-                                                        {addr.street} {addr.streetNumber} {addr.floor && `• Piso ${addr.floor}`} {addr.apartmentNumber && `• Depto ${addr.apartmentNumber}`}
-                                                    </div>
-                                                    <div className="flex items-center gap-3">
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setExpandedBillingId(expandedBillingId === addr.id ? null : addr.id);
-                                                            }}
-                                                            className="text-blue text-xs font-medium hover:underline flex items-center gap-1"
-                                                        >
-                                                            {expandedBillingId === addr.id ? "Ocultar" : "Ver detalle"}
-                                                            <svg className={`w-3 h-3 transition-transform ${expandedBillingId === addr.id ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                                                        </button>
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setEditingBilling(addr);
-                                                                setBillingMode("form");
-                                                            }}
-                                                            className="text-blue text-xs hover:underline"
-                                                        >
-                                                            Editar
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                                <div className="text-sm text-dark-5">
-                                                    {addr.city} (C.P. {addr.postalCode}), {addr.state} {addr.postalCode && `(${addr.postalCode})`} • {addr.country}
-                                                </div>
-
-                                                {expandedBillingId === addr.id && (
-                                                    <div className="mt-2 pt-2 border-t border-gray-2 text-xs text-dark-5 grid grid-cols-2 gap-2 cursor-default" onClick={(e) => e.stopPropagation()}>
-                                                        <div><span className="font-medium">Calle:</span> {addr.street}</div>
-                                                        <div><span className="font-medium">Altura:</span> {addr.streetNumber}</div>
-                                                        {addr.floor && <div><span className="font-medium">Piso:</span> {addr.floor}</div>}
-                                                        {addr.apartmentNumber && <div><span className="font-medium">Depto:</span> {addr.apartmentNumber}</div>}
-                                                        <div><span className="font-medium">Ciudad:</span> {addr.city}</div>
-                                                        <div><span className="font-medium">Provincia:</span> {addr.state}</div>
-                                                        <div><span className="font-medium">CP:</span> {addr.postalCode}</div>
-                                                        <div><span className="font-medium">País:</span> {addr.country}</div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-
-                                {selectedBilling && (
-                                    <div className="mt-4 pt-4 border-t border-gray-3">
-                                        <div className="text-sm">
-                                            <button
-                                                onClick={() => deleteAddress(selectedBilling, "BILLING")}
-                                                className="text-red text-sm hover:underline"
-                                            >
-                                                Eliminar seleccionada
-                                            </button>
-                                        </div>
-                                    </div>
-                                )}
                             </>
                         )}
                     </div>
@@ -433,12 +239,10 @@ export default function ManageAddresses() {
                     <div className="p-4 sm:p-7.5">
                         <BillingProfileForm
                             initialData={editingProfile}
-                            billingAddresses={billingAddresses}
                             onSaved={async () => {
                                 await loadProfiles();
                                 setProfileMode("list");
                                 setEditingProfile(undefined);
-                                toast.success("Perfil guardado");
                             }}
                             onCancel={() => {
                                 setProfileMode("list");
@@ -469,20 +273,8 @@ export default function ManageAddresses() {
                                     {profilesList.map((profile) => (
                                         <div
                                             key={profile.id}
-                                            className={`flex items-start gap-3 p-4 border rounded-lg cursor-pointer transition-all duration-200 ${selectedProfile === profile.id
-                                                ? "border-blue bg-blue/5 shadow-sm"
-                                                : "border-gray-3 hover:border-blue/40 hover:bg-gray-50"
-                                                }`}
-                                            onClick={() => setSelectedProfile(profile.id)}
+                                            className="flex items-start gap-3 p-4 border rounded-lg transition-all duration-200 border-gray-3 hover:border-blue/40"
                                         >
-                                            <div className="relative flex items-center justify-center w-5 h-5 mt-0.5 shrink-0">
-                                                <input
-                                                    type="radio"
-                                                    checked={selectedProfile === profile.id}
-                                                    onChange={() => setSelectedProfile(profile.id)}
-                                                    className="peer appearance-none w-5 h-5 border-2 border-gray-400 rounded-full checked:border-blue checked:border-4 transition-all"
-                                                />
-                                            </div>
                                             <div className="flex-1">
                                                 <div className="flex justify-between items-start">
                                                     <div className="font-medium text-dark">
@@ -509,6 +301,20 @@ export default function ManageAddresses() {
                                                         >
                                                             Editar
                                                         </button>
+                                                        {!profile.defaultProfile && (
+                                                            <>
+                                                                <span className="text-gray-3 text-xs">|</span>
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        deleteProfile(profile.id);
+                                                                    }}
+                                                                    className="text-red-500 text-xs hover:underline"
+                                                                >
+                                                                    Eliminar
+                                                                </button>
+                                                            </>
+                                                        )}
                                                     </div>
                                                 </div>
                                                 <div className="text-sm text-dark-5">
@@ -524,34 +330,17 @@ export default function ManageAddresses() {
                                                         <div><span className="font-medium">Doc:</span> {profile.documentType} {profile.documentNumber}</div>
                                                         {profile.emailForInvoices && <div className="sm:col-span-2"><span className="font-medium">Email Facturas:</span> {profile.emailForInvoices}</div>}
                                                         {profile.phone && <div><span className="font-medium">Teléfono:</span> {profile.phone}</div>}
-                                                        {(() => {
-                                                            const addr = billingAddresses.find(a => a.id === profile.billingAddressId);
-                                                            if (!addr) return null;
-                                                            return (
-                                                                <div className="sm:col-span-2 mt-1 pt-1 border-t border-gray-2">
-                                                                    <span className="font-medium">Dirección:</span> {addr.street} {addr.streetNumber}, {addr.city} ({addr.postalCode}) - {addr.state}
-                                                                </div>
-                                                            );
-                                                        })()}
+                                                        {profile.city && (
+                                                            <div className="sm:col-span-2 mt-1 pt-1 border-t border-gray-2">
+                                                                <span className="font-medium">Dirección:</span> {profile.street} {profile.streetNumber}, {profile.city} ({profile.postalCode}) - {profile.state}
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 )}
                                             </div>
                                         </div>
                                     ))}
                                 </div>
-
-                                {selectedProfile && (
-                                    <div className="mt-4 pt-4 border-t border-gray-3">
-                                        <div className="text-sm">
-                                            <button
-                                                onClick={() => deleteProfile(selectedProfile)}
-                                                className="text-red text-sm hover:underline"
-                                            >
-                                                Eliminar seleccionada
-                                            </button>
-                                        </div>
-                                    </div>
-                                )}
                             </>
                         )}
                     </div>

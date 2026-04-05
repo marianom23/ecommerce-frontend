@@ -13,7 +13,8 @@ const config: Config = {
   	fontFamily: {
   		'euclid-circular-a': [
   			'Euclid Circular A'
-  		]
+  		],
+  		sans: ['var(--font-inter)', ...defaultTheme.fontFamily.sans],
   	},
   	container: {
   		center: true,

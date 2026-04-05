@@ -8,6 +8,16 @@ const baseAdmin = "/products"; // pasa por app/api/b/[...path]/route.ts (con Bea
 /** ===== Tipos mínimos del endpoint /products/:id/details ===== */
 type ImageSet = { urls: string[] };
 
+type APIRelatedDlc = {
+  id: number;
+  title: string;
+  price?: number | null;
+  discountedPrice?: number | null;
+  imgs?: Partial<ImageSet>;
+};
+
+type ProductType = "GAME" | "DLC" | "CONSOLE" | "ACCESSORY" | "OTHER";
+
 type APIVariant = {
   id: number;
   sku: string;
@@ -30,6 +40,13 @@ type APIProductBase = {
   brand: string;
   category: string;
   priceWithTransfer?: number;
+  specificationsJson?: string;
+  presale?: boolean;
+  releaseDate?: string | null;
+  productType?: ProductType;
+  dlcs?: APIRelatedDlc[];
+  parentGameId?: number | null;
+  parentGameName?: string | null;
 };
 
 type APIProductWithVariants = APIProductBase & {
@@ -83,6 +100,19 @@ export type NormalizedProduct = {
   inStock: boolean;
   fulfillmentType: 'PHYSICAL' | 'DIGITAL_ON_DEMAND' | 'DIGITAL_INSTANT';
   priceWithTransfer?: number;
+  specifications?: Record<string, string>;
+  isPresale?: boolean;
+  releaseDate?: string | null;
+  productType?: ProductType;
+  dlcs: {
+    id: number;
+    title: string;
+    price?: number;
+    discountedPrice?: number;
+    image?: string;
+  }[];
+  parentGameId?: number | null;
+  parentGameName?: string | null;
 };
 
 /** ===== Fetchers ===== */
@@ -94,6 +124,14 @@ function getRawFrom(base: string, id: number) {
 function normalize(p: ProductDetailsRaw): NormalizedProduct {
   const money = (n: number | null | undefined) =>
     typeof n === "number" && !Number.isNaN(n) ? n : 0;
+  const normalizeDlcs = (dlcs?: APIRelatedDlc[]) =>
+    (dlcs ?? []).map((dlc) => ({
+      id: dlc.id,
+      title: dlc.title,
+      price: typeof dlc.price === "number" ? dlc.price : undefined,
+      discountedPrice: typeof dlc.discountedPrice === "number" ? dlc.discountedPrice : undefined,
+      image: dlc.imgs?.urls?.[0],
+    }));
 
   if (p.hasVariants) {
     const pv = p as APIProductWithVariants;
@@ -143,6 +181,13 @@ function normalize(p: ProductDetailsRaw): NormalizedProduct {
       inStock: (pv as any).fulfillmentType === 'DIGITAL_ON_DEMAND' ? true : stockTotal > 0,
       fulfillmentType: (pv as any).fulfillmentType || 'PHYSICAL',
       priceWithTransfer: pv.priceWithTransfer,
+      specifications: pv.specificationsJson ? JSON.parse(pv.specificationsJson) : {},
+      isPresale: pv.presale,
+      releaseDate: pv.releaseDate,
+      productType: pv.productType,
+      dlcs: normalizeDlcs(pv.dlcs),
+      parentGameId: pv.parentGameId ?? null,
+      parentGameName: pv.parentGameName ?? null,
     };
   } else {
     const ps = p as APIProductSimple;
@@ -176,6 +221,13 @@ function normalize(p: ProductDetailsRaw): NormalizedProduct {
       inStock: (ps as any).fulfillmentType === 'DIGITAL_ON_DEMAND' ? true : stock > 0,
       fulfillmentType: (ps as any).fulfillmentType || 'PHYSICAL',
       priceWithTransfer: ps.priceWithTransfer,
+      specifications: ps.specificationsJson ? JSON.parse(ps.specificationsJson) : {},
+      isPresale: ps.presale,
+      releaseDate: ps.releaseDate,
+      productType: ps.productType,
+      dlcs: normalizeDlcs(ps.dlcs),
+      parentGameId: ps.parentGameId ?? null,
+      parentGameName: ps.parentGameName ?? null,
     };
   }
 }

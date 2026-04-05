@@ -4,8 +4,9 @@ import { Menu } from "@/types/Menu";
 export const menuData: Menu[] = [
   { id: 101, title: "Destacados", newTab: false, path: "/#destacados" },
   { id: 2, title: "Productos", newTab: false, path: "/productos" },
+  { id: 4, title: "Switch", newTab: false, path: "/productos?consoleId=1" },
+  { id: 5, title: "Switch 2", newTab: false, path: "/productos?consoleId=2" },
   { id: 3, title: "Cómo Funciona", newTab: false, path: "/como-funciona" },
-  { id: 4, title: "Marcas", newTab: false, path: "/" },
   // {
   //   id: 6, title: "Páginas", newTab: false, path: "/",
   //   submenu: [

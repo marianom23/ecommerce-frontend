@@ -1,86 +1,159 @@
 "use client";
-import React, { use, useEffect, useState } from "react";
+
+import React, { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import Breadcrumb from "../Common/Breadcrumb";
-import Image from "next/image";
-import CloudinaryImage from "@/components/Common/CloudinaryImage";
 import Newsletter from "../Common/Newsletter";
 import RecentlyViewdItems from "./RecentlyViewd";
+import CloudinaryImage from "@/components/Common/CloudinaryImage";
 import { usePreviewSlider } from "@/app/context/PreviewSliderContext";
 import { useAppSelector } from "@/redux/store";
 import { useCart } from "@/hooks/useCart";
-import { productDetailsPublicService, type NormalizedProduct, type NormalizedVariant } from "@/services/productDetailsService";
+import {
+  productDetailsPublicService,
+  type NormalizedProduct,
+  type NormalizedVariant,
+} from "@/services/productDetailsService";
 import { updateproductDetails } from "@/redux/features/product-details";
 import { toggleWishlist } from "@/redux/features/wishlist-slice";
 import { useDispatch } from "react-redux";
-import { AppDispatch } from "@/redux/store";
+import { type AppDispatch } from "@/redux/store";
 import toast from "react-hot-toast";
 import { reviewService } from "@/services/reviewService";
-import { ReviewResponse, ReviewRequest } from "@/types/review";
+import { type ReviewRequest, type ReviewResponse } from "@/types/review";
 import { ReviewsList } from "./ReviewsList";
 import { ReviewForm } from "./ReviewForm";
 import { useAuth } from "@/hooks/useAuth";
-import { StarRating } from "@/components/Common/StarRating";
-import { PriceDisplay } from "@/components/Common/PriceDisplay";
 import * as pixel from "@/utils/pixel";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { generateProductUrl } from "@/utils/slug";
+import {
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Heart,
+  Minus,
+  Plus,
+  RotateCcw,
+  Share2,
+  ShieldCheck,
+  Star,
+  Truck,
+} from "lucide-react";
 
 interface ShopDetailsProps {
   productId?: string;
 }
 
+type StoredProduct = {
+  id?: number;
+  title?: string;
+  price?: number;
+  discountedPrice?: number;
+  priceWithTransfer?: number;
+  imgs?: { urls?: string[] };
+};
+
+const formatCurrency = (value?: number) =>
+  new Intl.NumberFormat("es-AR", {
+    style: "currency",
+    currency: "ARS",
+    maximumFractionDigits: 2,
+  }).format(value ?? 0);
+
+const getProductTypeLabel = (type?: NormalizedProduct["productType"]) => {
+  switch (type) {
+    case "GAME":
+      return "Juego";
+    case "DLC":
+      return "DLC";
+    case "CONSOLE":
+      return "Consola";
+    case "ACCESSORY":
+      return "Accesorio";
+    case "OTHER":
+      return "Otro";
+    default:
+      return null;
+  }
+};
+
+const getFulfillmentLabel = (type?: NormalizedProduct["fulfillmentType"]) => {
+  switch (type) {
+    case "DIGITAL_ON_DEMAND":
+      return "Digital bajo demanda";
+    case "DIGITAL_INSTANT":
+      return "Digital instantaneo";
+    case "PHYSICAL":
+    default:
+      return "Fisico";
+  }
+};
+
+const formatDisplayValue = (value?: string) => {
+  if (!value) return "";
+
+  const normalized = value.trim();
+  const mappedValues: Record<string, string> = {
+    DIGITAL: "Digital",
+    PHYSICAL: "Fisico",
+    DIGITAL_ON_DEMAND: "Digital bajo demanda",
+    DIGITAL_INSTANT: "Digital instantaneo",
+  };
+
+  if (mappedValues[normalized]) {
+    return mappedValues[normalized];
+  }
+
+  return normalized
+    .toLowerCase()
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+};
+
 const ShopDetails = ({ productId }: ShopDetailsProps) => {
+  const dispatch = useDispatch<AppDispatch>();
   const { openPreviewModal } = usePreviewSlider();
-  const [previewImg, setPreviewImg] = useState(0);
-  const [quantity, setQuantity] = useState(1);
-  const [activeTab, setActiveTab] = useState("tabOne");
-
-  // Dynamic variant system
-  const [productDetails, setProductDetails] = useState<NormalizedProduct | null>(null);
-
-  // Wishlist state
-  const wishlistItems = useAppSelector((s) => s.wishlistReducer.items);
-  const isInWishlist = productDetails ? wishlistItems.some((p) => p.id === productDetails.id) : false;
-
+  const { addItem } = useCart();
   const { user, isAuthenticated } = useAuth();
-  const currentUserId = user?.id;
 
+  const [selectedImage, setSelectedImage] = useState(0);
+  const [quantity, setQuantity] = useState(1);
+  const [activeTab, setActiveTab] = useState("description");
+  const [productDetails, setProductDetails] = useState<NormalizedProduct | null>(null);
   const [selectedVariantId, setSelectedVariantId] = useState<number | null>(null);
+  const [selectedAttrs, setSelectedAttrs] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Reviews state
   const [reviews, setReviews] = useState<ReviewResponse[]>([]);
   const [myReview, setMyReview] = useState<ReviewResponse | null>(null);
   const [isEditingReview, setIsEditingReview] = useState(false);
+  const [storedProduct, setStoredProduct] = useState<StoredProduct | null>(null);
 
-  const dispatch = useDispatch<AppDispatch>();
-  const { addItem } = useCart();
+  const productFromRedux = useAppSelector((state) => state.productDetailsReducer.value);
+  const wishlistItems = useAppSelector((state) => state.wishlistReducer.items);
+  const currentUserId = user?.id;
 
-  const tabs = [
-    {
-      id: "tabOne",
-      title: "Descripción",
-    },
-    {
-      id: "tabTwo",
-      title: "Información Adicional",
-    },
-    {
-      id: "tabThree",
-      title: "Reseñas",
-    },
-  ];
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem("productDetails");
+      if (raw) {
+        setStoredProduct(JSON.parse(raw));
+      }
+    } catch {
+      setStoredProduct(null);
+    }
+  }, []);
 
-  const alreadyExist = localStorage.getItem("productDetails");
-  const productFromStorage = useAppSelector(
-    (state) => state.productDetailsReducer.value
-  );
+  const product = useMemo(() => {
+    if (productId) {
+      return { id: parseInt(productId, 10) };
+    }
 
-  // Use productId from URL if available, otherwise use stored product
-  const product = productId
-    ? { id: parseInt(productId, 10) }
-    : (alreadyExist ? JSON.parse(alreadyExist) : productFromStorage);
+    return storedProduct?.id ? storedProduct : productFromRedux;
+  }, [productId, productFromRedux, storedProduct]);
 
-  // Fetch full product details with variants
   useEffect(() => {
     if (!product?.id) return;
 
@@ -89,199 +162,215 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
       setError(null);
 
       try {
-        const details = await productDetailsPublicService.getNormalized(product.id);
+        const details = await productDetailsPublicService.getNormalized(product.id as number);
         setProductDetails(details);
 
-
-        // Set default variant if product has variants
         if (details.hasVariants && details.variants.length > 0) {
-          const defaultVariant = details.variants.find(v => v.stock > 0) ?? details.variants[0];
+          const defaultVariant = details.variants.find((variant) => variant.stock > 0) ?? details.variants[0];
           setSelectedVariantId(defaultVariant?.id ?? null);
+          setSelectedAttrs(defaultVariant?.attrs ?? {});
         }
 
-        // Update Redux store with full details
         dispatch(updateproductDetails(details));
 
-        // Track ViewContent
         pixel.event("ViewContent", {
           content_name: details.title,
           content_ids: [details.id],
-          content_type: "product",
-          value: details.discountedPrice || details.price,
-          currency: "USD", // Adjust currency if needed
+          content_type: details.productType?.toLowerCase() || "product",
+          value: details.discountedPrice || details.price || details.priceRange.minDiscounted,
+          currency: "USD",
         });
       } catch (err) {
-        console.error('Error fetching product details:', err);
-        setError('Failed to load product details');
+        console.error("Error fetching product details:", err);
+        setError("No pudimos cargar este producto.");
       } finally {
         setLoading(false);
       }
     };
 
     fetchProductDetails();
-  }, [product?.id, dispatch]);
+  }, [dispatch, product?.id]);
 
-  // Fetch reviews when product loads
   useEffect(() => {
-    if (!product?.id) {
-      console.log("⚠️ No product ID available");
-      return;
-    }
+    if (!product?.id) return;
 
     const fetchReviews = async () => {
       try {
-        const reviewsData = await reviewService.getReviewsByProduct(product.id);
+        const reviewsData = await reviewService.getReviewsByProduct(product.id as number);
         setReviews(reviewsData);
       } catch (err) {
-        console.error('❌ Error fetching reviews:', err);
-        console.error('Error details:', err?.response?.data);
+        console.error("Error fetching reviews:", err);
       }
     };
 
     fetchReviews();
   }, [product?.id]);
 
-  // Fetch user's review if authenticated
   useEffect(() => {
-    if (!product?.id) return;
+    if (!product?.id || !isAuthenticated) return;
+
     const fetchMyReview = async () => {
       try {
-        const myReviewData = await reviewService.getMyReviewForProduct(product.id);
+        const myReviewData = await reviewService.getMyReviewForProduct(product.id as number);
         setMyReview(myReviewData);
       } catch (err) {
-        console.error('Error fetching my review:', err);
+        console.error("Error fetching my review:", err);
       }
     };
-    // Solo intentar si el usuario está autenticado
-    // Puedes verificar el token o el estado de autenticación aquí
-    fetchMyReview();
-  }, [product?.id]);
 
-  // Helper functions
+    fetchMyReview();
+  }, [isAuthenticated, product?.id]);
+
   const selectedVariant: NormalizedVariant | null = productDetails?.hasVariants
-    ? productDetails.variants.find(v => v.id === selectedVariantId) ?? null
+    ? productDetails.variants.find((variant) => variant.id === selectedVariantId) ?? null
     : null;
 
-  // Combinar imágenes base y de variante para galería
-  const currentImages = React.useMemo(() => {
+  const currentImages = useMemo(() => {
+    const variantImages = selectedVariant?.images ?? [];
     const baseImages = productDetails?.images ?? product?.imgs?.urls ?? [];
-    const variantImages = selectedVariant?.images?.length ? selectedVariant.images : [];
-    // "basese primero" => base primero, luego variant, unicos
-    return Array.from(new Set([...baseImages, ...variantImages]));
-  }, [productDetails, product, selectedVariant]);
+
+    return Array.from(new Set([...variantImages, ...baseImages])).filter(Boolean);
+  }, [product?.imgs?.urls, productDetails?.images, selectedVariant?.images]);
+
+  useEffect(() => {
+    setSelectedImage(0);
+  }, [selectedVariantId]);
 
   const currentPrice = selectedVariant
     ? selectedVariant.discountedPrice
-    : productDetails?.discountedPrice ?? product?.discountedPrice ?? 0;
+    : productDetails?.discountedPrice ?? product?.discountedPrice ?? productDetails?.priceRange.minDiscounted ?? 0;
 
   const originalPrice = selectedVariant
     ? selectedVariant.price
-    : productDetails?.price ?? product?.price ?? 0;
-
-  // Lógica de precio con transferencia:
-  // Usar estrictamente datos del backend.
+    : productDetails?.price ?? product?.price ?? productDetails?.priceRange.min ?? currentPrice;
 
   let currentPriceWithTransfer: number | undefined;
-
-  // 1. Intentar obtener el precio transfer base del objeto de detalles
   const basePriceWithTransfer = productDetails?.priceWithTransfer ?? product?.priceWithTransfer;
-
-  // 2. Obtener un precio de referencia para calcular el ratio (si es necesario)
-  // Si es producto variable, 'price' puede ser null, usamos el rango de precios.
-  const basePriceRef = productDetails?.price
-    ?? product?.price
-    ?? productDetails?.priceRange?.min
-    ?? 0;
+  const basePriceRef = productDetails?.price ?? product?.price ?? productDetails?.priceRange.min ?? 0;
 
   if (selectedVariant) {
-    // A) Si la variante tiene su propio precio transfer explícito, usarlo (Ideal)
     if (selectedVariant.priceWithTransfer) {
       currentPriceWithTransfer = selectedVariant.priceWithTransfer;
-    }
-    // B) Si no, calcularlo usando el ratio del producto padre (Fallback dinámico)
-    else if (basePriceWithTransfer && basePriceRef > 0) {
+    } else if (basePriceWithTransfer && basePriceRef > 0) {
       const ratio = basePriceWithTransfer / basePriceRef;
       currentPriceWithTransfer = selectedVariant.discountedPrice * ratio;
     }
   } else {
-    // C) Sin variante seleccionada: usar el precio base directo
     currentPriceWithTransfer = basePriceWithTransfer;
   }
 
-  // Debug para verificar que está tomando los datos reales
-  console.log('🔍 Transfer Price Logic:', {
-    basePriceWithTransfer,
-    basePriceRef,
-    variantTransfer: selectedVariant?.priceWithTransfer,
-    calculated: currentPriceWithTransfer
-  });
+  const isInStock =
+    productDetails?.fulfillmentType === "DIGITAL_ON_DEMAND"
+      ? true
+      : selectedVariant
+        ? selectedVariant.stock > 0
+        : (productDetails?.inStock ?? true);
 
-  // Usar la misma lógica que el productDetailsService
-  const isInStock = productDetails?.inStock ?? true;
+  const hasDiscount = originalPrice > currentPrice;
+  const discountPercent = hasDiscount ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100) : 0;
+  const reviewCount = productDetails?.totalReviews ?? reviews.length;
+  const rating = productDetails?.averageRating ?? 0;
+  const isInWishlist = productDetails ? wishlistItems.some((item) => item.id === productDetails.id) : false;
+
+  const productTags = useMemo(() => {
+    if (!productDetails) return [];
+
+    const tags = [
+      productDetails.category,
+      productDetails.brand,
+      getFulfillmentLabel(productDetails.fulfillmentType),
+      getProductTypeLabel(productDetails.productType),
+      productDetails.isPresale ? "Preventa" : null,
+    ];
+
+    return Array.from(new Set(tags.filter(Boolean))) as string[];
+  }, [productDetails]);
+
+  const breadcrumbCategory = productDetails?.category || "Productos";
+
+  const tabs = [
+    { id: "description", title: "Descripcion" },
+    { id: "specifications", title: "Especificaciones" },
+    { id: "additional", title: "Informacion adicional" },
+    { id: "reviews", title: "Reseñas" },
+  ];
+
+  const hasFormatOption =
+    !!productDetails?.hasVariants &&
+    Object.keys(productDetails.options ?? {}).some((optionName) => optionName.toLowerCase() === "formato");
+
+  const handleAttrChange = (key: string, value: string) => {
+    const newAttrs = { ...selectedAttrs, [key]: value };
+    setSelectedAttrs(newAttrs);
+
+    const variant = productDetails?.variants.find((item) =>
+      Object.entries(newAttrs).every(([attrKey, attrValue]) => item.attrs[attrKey] === attrValue)
+    );
+
+    if (variant) {
+      setSelectedVariantId(variant.id);
+      return;
+    }
+
+    const partialMatch = productDetails?.variants.find((item) => item.attrs[key] === value);
+    if (partialMatch) {
+      setSelectedVariantId(partialMatch.id);
+      setSelectedAttrs(partialMatch.attrs);
+    }
+  };
 
   const handlePreviewSlider = () => {
-    // Pass the full product details to the preview modal with merged images
     const basePayload = productDetails ?? product;
     if (basePayload) {
-      // Create a payload that explicitly overrides images with our merged list
-      // Check if it's NormalizedProduct style or "light" product style
-      const payload = {
-        ...basePayload,
-        images: currentImages, // for normalized/redux structure usually expected
-        imgs: { ...(basePayload as any).imgs, urls: currentImages } // fallback for light structure
-      };
-      dispatch(updateproductDetails(payload as any));
+      dispatch(
+        updateproductDetails({
+          ...basePayload,
+          images: currentImages,
+          imgs: { ...(basePayload as StoredProduct).imgs, urls: currentImages },
+        } as never)
+      );
     }
     openPreviewModal();
   };
 
-  // Review handlers
   const handleSubmitReview = async (request: ReviewRequest) => {
     try {
       if (myReview) {
-        // Update existing review
         const updated = await reviewService.updateReview(myReview.id, request);
         setMyReview(updated);
         setIsEditingReview(false);
         toast.success("Review actualizada exitosamente");
-
-        // Refresh reviews list
-        const reviewsData = await reviewService.getReviewsByProduct(product.id);
-        setReviews(reviewsData);
       } else {
-        // Create new review
         const created = await reviewService.createReview(request);
         setMyReview(created);
         toast.success("Review publicada exitosamente");
-
-        // Refresh reviews list
-        const reviewsData = await reviewService.getReviewsByProduct(product.id);
-        setReviews(reviewsData);
       }
-    } catch (error) {
-      console.error("Error submitting review:", error);
+
+      const reviewsData = await reviewService.getReviewsByProduct(product?.id as number);
+      setReviews(reviewsData);
+    } catch (submitError) {
+      console.error("Error submitting review:", submitError);
       toast.error("Error al publicar la review");
     }
   };
 
-  const handleEditReview = (review: ReviewResponse) => {
+  const handleEditReview = () => {
     setIsEditingReview(true);
-    setActiveTab("tabThree"); // Switch to reviews tab
+    setActiveTab("reviews");
   };
 
   const handleDeleteReview = async (reviewId: number) => {
-    if (!confirm("¿Estás seguro de eliminar tu review?")) return;
+    if (!confirm("¿Estas seguro de eliminar tu review?")) return;
 
     try {
       await reviewService.deleteReview(reviewId);
       setMyReview(null);
       toast.success("Review eliminada");
 
-      // Refresh reviews list
-      const reviewsData = await reviewService.getReviewsByProduct(product.id);
+      const reviewsData = await reviewService.getReviewsByProduct(product?.id as number);
       setReviews(reviewsData);
-    } catch (error) {
-      console.error("Error deleting review:", error);
+    } catch (deleteError) {
+      console.error("Error deleting review:", deleteError);
       toast.error("Error al eliminar la review");
     }
   };
@@ -295,617 +384,673 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
         variantId: productDetails.hasVariants && selectedVariantId ? selectedVariantId : undefined,
         quantity,
       });
-
-      // Pixel event now fired in Redux slice with eventId for deduplication
-    } catch (err) {
-      console.error('Error adding to cart:', err);
+    } catch (cartError) {
+      console.error("Error adding to cart:", cartError);
+      toast.error("No se pudo agregar al carrito");
     }
   };
-  console.log(reviews);
+
+  const handleToggleWishlist = async () => {
+    if (!isAuthenticated) {
+      toast.error("Debes iniciar sesion para usar la wishlist");
+      return;
+    }
+
+    if (!productDetails) return;
+
+    const result = await dispatch(toggleWishlist(productDetails as never));
+    const products = result.payload as { id: number }[] | undefined;
+
+    if (products) {
+      const isNowInWishlist = products.some((item) => item.id === productDetails.id);
+      toast(isNowInWishlist ? "Anadido a tu wishlist" : "Quitado de tu wishlist");
+
+      if (isNowInWishlist) {
+        pixel.event("AddToWishlist", {
+          content_name: productDetails.title,
+          content_ids: [productDetails.id],
+          content_type: "product",
+          value: productDetails.discountedPrice || productDetails.price || productDetails.priceRange.minDiscounted,
+          currency: "USD",
+        });
+      }
+    }
+  };
+
+  const handleShare = async () => {
+    const shareUrl = window.location.href;
+    const shareData = {
+      title: productDetails?.title || "Producto",
+      text: "Mira este producto",
+      url: shareUrl,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(shareUrl);
+        toast.success("Link copiado");
+      }
+    } catch (shareError) {
+      if ((shareError as Error)?.name !== "AbortError") {
+        console.error("Error sharing product:", shareError);
+        toast.error("No se pudo compartir el producto");
+      }
+    }
+  };
+
+  const nextImage = () => {
+    if (currentImages.length <= 1) return;
+    setSelectedImage((current) => (current + 1) % currentImages.length);
+  };
+
+  const prevImage = () => {
+    if (currentImages.length <= 1) return;
+    setSelectedImage((current) => (current - 1 + currentImages.length) % currentImages.length);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <div className="text-center">
+          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-primary" />
+          <p className="text-sm text-muted-foreground">Cargando detalles del producto...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <div className="text-center">
+          <p className="text-base font-medium text-destructive">{error}</p>
+          <Button className="mt-4" onClick={() => window.location.reload()}>
+            Reintentar
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!productDetails && !product?.id) {
+    return <div className="py-24 text-center text-muted-foreground">Por favor selecciona un producto.</div>;
+  }
+
   return (
     <>
-      <Breadcrumb title={"Detalle del Producto"} pages={["detalle del producto"]} />
+      <div className="hidden sm:block">
+        <Breadcrumb
+          title={productDetails?.title || "Detalle del Producto"}
+          pages={[
+            { label: "Productos", href: "/productos" },
+            breadcrumbCategory,
+          ]}
+        />
+      </div>
 
-      {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue mx-auto mb-4"></div>
-            <p>Cargando detalles del producto...</p>
-          </div>
-        </div>
-      ) : error ? (
-        <div className="flex items-center justify-center py-20">
-          <div className="text-center text-red-600">
-            <p>{error}</p>
-            <button
-              onClick={() => window.location.reload()}
-              className="mt-4 px-4 py-2 bg-blue text-white rounded hover:bg-blue-dark"
-            >
-              Retry
-            </button>
-          </div>
-        </div>
-      ) : !productDetails && !product ? (
-        "Por favor selecciona un producto"
-      ) : (
-        <>
-          <section className="overflow-hidden relative pb-10 pt-5 lg:pb-20 lg:pt-20 xl:pt-28">
-            <div className="max-w-[1170px] w-full mx-auto px-4 sm:px-8 xl:px-0">
-              <div className="flex flex-col lg:flex-row gap-7.5 xl:gap-17.5">
-                <div className="lg:max-w-[570px] w-full">
-                  <div className="lg:min-h-[512px] rounded-lg shadow-1 bg-gray-2 p-4 sm:p-7.5 relative flex items-center justify-center">
-                    <div>
-                      <button
-                        onClick={handlePreviewSlider}
-                        aria-label="button for zoom"
-                        className="gallery__Image w-11 h-11 rounded-[5px] bg-gray-1 shadow-1 flex items-center justify-center ease-out duration-200 text-dark hover:text-blue absolute top-4 lg:top-6 right-4 lg:right-6 z-50"
-                      >
-                        <svg
-                          className="fill-current"
-                          width="22"
-                          height="22"
-                          viewBox="0 0 22 22"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            clipRule="evenodd"
-                            d="M9.11493 1.14581L9.16665 1.14581C9.54634 1.14581 9.85415 1.45362 9.85415 1.83331C9.85415 2.21301 9.54634 2.52081 9.16665 2.52081C7.41873 2.52081 6.17695 2.52227 5.23492 2.64893C4.31268 2.77292 3.78133 3.00545 3.39339 3.39339C3.00545 3.78133 2.77292 4.31268 2.64893 5.23492C2.52227 6.17695 2.52081 7.41873 2.52081 9.16665C2.52081 9.54634 2.21301 9.85415 1.83331 9.85415C1.45362 9.85415 1.14581 9.54634 1.14581 9.16665L1.14581 9.11493C1.1458 7.43032 1.14579 6.09599 1.28619 5.05171C1.43068 3.97699 1.73512 3.10712 2.42112 2.42112C3.10712 1.73512 3.97699 1.43068 5.05171 1.28619C6.09599 1.14579 7.43032 1.1458 9.11493 1.14581ZM16.765 2.64893C15.823 2.52227 14.5812 2.52081 12.8333 2.52081C12.4536 2.52081 12.1458 2.21301 12.1458 1.83331C12.1458 1.45362 12.4536 1.14581 12.8333 1.14581L12.885 1.14581C14.5696 1.1458 15.904 1.14579 16.9483 1.28619C18.023 1.43068 18.8928 1.73512 19.5788 2.42112C20.2648 3.10712 20.5693 3.97699 20.7138 5.05171C20.8542 6.09599 20.8542 7.43032 20.8541 9.11494V9.16665C20.8541 9.54634 20.5463 9.85415 20.1666 9.85415C19.787 9.85415 19.4791 9.54634 19.4791 9.16665C19.4791 7.41873 19.4777 6.17695 19.351 5.23492C19.227 4.31268 18.9945 3.78133 18.6066 3.39339C18.2186 3.00545 17.6873 2.77292 16.765 2.64893ZM1.83331 12.1458C2.21301 12.1458 2.52081 12.4536 2.52081 12.8333C2.52081 14.5812 2.52227 15.823 2.64893 16.765C2.77292 17.6873 3.00545 18.2186 3.39339 18.6066C3.78133 18.9945 4.31268 19.227 5.23492 19.351C6.17695 19.4777 7.41873 19.4791 9.16665 19.4791C9.54634 19.4791 9.85415 19.787 9.85415 20.1666C9.85415 20.5463 9.54634 20.8541 9.16665 20.8541H9.11494C7.43032 20.8542 6.09599 20.8542 5.05171 20.7138C3.97699 20.5693 3.10712 20.2648 2.42112 19.5788C1.73512 18.8928 1.43068 18.023 1.28619 16.9483C1.14579 15.904 1.1458 14.5696 1.14581 12.885L1.14581 12.8333C1.14581 12.4536 1.45362 12.1458 1.83331 12.1458ZM20.1666 12.1458C20.5463 12.1458 20.8541 12.4536 20.8541 12.8333V12.885C20.8542 14.5696 20.8542 15.904 20.7138 16.9483C20.5693 18.023 20.2648 18.8928 19.5788 19.5788C18.8928 20.2648 18.023 20.5693 16.9483 20.7138C15.904 20.8542 14.5696 20.8542 12.885 20.8541H12.8333C12.4536 20.8541 12.1458 20.5463 12.1458 20.1666C12.1458 19.787 12.4536 19.4791 12.8333 19.4791C14.5812 19.4791 15.823 19.4777 16.765 19.351C17.6873 19.227 18.2186 18.9945 18.6066 18.6066C18.9945 18.2186 19.227 17.6873 19.351 16.765C19.4777 15.823 19.4791 14.5812 19.4791 12.8333C19.4791 12.4536 19.787 12.1458 20.1666 12.1458Z"
-                            fill=""
-                          />
-                        </svg>
-                      </button>
+      <div className="mx-auto max-w-7xl px-3 pb-4 pt-36 sm:px-6 sm:py-6 lg:px-8">
+        <nav className="mb-4 hidden flex-wrap items-center gap-2 text-sm text-muted-foreground sm:flex">
+          <Link href="/" className="transition-colors hover:text-foreground">
+            Inicio
+          </Link>
+          <ChevronRight className="h-4 w-4" />
+          <Link href="/productos" className="transition-colors hover:text-foreground">
+            Productos
+          </Link>
+          <ChevronRight className="h-4 w-4" />
+          <span className="max-w-[220px] truncate">{breadcrumbCategory}</span>
+        </nav>
 
+        <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm sm:rounded-2xl">
+          <div className="grid lg:grid-cols-2">
+            <div className="relative bg-gray-1 lg:p-8">
+              <div className="relative lg:flex lg:gap-4">
+                <div className="hidden lg:flex lg:max-h-[520px] lg:flex-col lg:gap-3 lg:overflow-y-auto lg:pb-1">
+                  {currentImages.map((image, index) => (
+                    <button
+                      key={`${image}-${index}`}
+                      onClick={() => setSelectedImage(index)}
+                      className={cn(
+                        "relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border-2 bg-white transition-all duration-200 lg:h-20 lg:w-20",
+                        selectedImage === index
+                          ? "border-primary ring-2 ring-primary/20"
+                          : "border-border hover:border-primary/50"
+                      )}
+                    >
                       <CloudinaryImage
-                        src={currentImages[previewImg] || "/placeholder.png"}
-                        alt="products-details"
-                        width={400}
-                        height={400}
-                        className="object-contain"
+                        src={image}
+                        alt={`${productDetails?.title || "Producto"} - imagen ${index + 1}`}
+                        width={80}
+                        height={80}
+                        className="h-full w-full object-contain p-1"
                       />
-                    </div>
-                  </div>
-
-                  {/* ?  &apos;border-blue &apos; :  &apos;border-transparent&apos; */}
-                  <div className="flex flex-nowrap overflow-x-auto gap-4.5 mt-6 pb-2 scrollbar-hide">
-                    {currentImages.map((item, key) => (
-                      <button
-                        onClick={() => setPreviewImg(key)}
-                        key={key}
-                        className={`flex items-center justify-center w-15 sm:w-25 h-15 sm:h-25 overflow-hidden rounded-lg bg-gray-2 shadow-1 ease-out duration-200 border-2 hover:border-blue ${key === previewImg
-                          ? "border-blue"
-                          : "border-transparent"
-                          }`}
-                      >
-                        <CloudinaryImage
-                          width={50}
-                          height={50}
-                          src={item}
-                          alt="thumbnail"
-                          className="object-contain"
-                        />
-                      </button>
-                    ))}
-                  </div>
+                    </button>
+                  ))}
                 </div>
 
-                {/* <!-- product content --> */}
-                <div className="max-w-[539px] w-full">
-                  <div className="flex items-center justify-between mb-3">
-                    <h2 className="font-semibold text-xl sm:text-2xl xl:text-custom-3 text-dark">
-                      {productDetails?.title || product?.title}
-                    </h2>
-
-                    {currentPrice < originalPrice && (
-                      <div className="inline-flex font-medium text-custom-sm text-white bg-blue rounded py-0.5 px-2.5">
-                        {Math.round(((originalPrice - currentPrice) / originalPrice) * 100)}% OFF
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-5.5 mb-4.5">
-                    <div className="flex items-center gap-2.5">
-                      <StarRating
-                        rating={productDetails?.averageRating ?? 0}
-                        totalReviews={reviews.length}
-                        size={18}
-                      />
-                    </div>
-
-                    <div className="flex items-center gap-1.5">
-                      <svg
-                        width="20"
-                        height="20"
-                        viewBox="0 0 20 20"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <g clipPath="url(#clip0_375_9221)">
-                          <path
-                            d="M10 0.5625C4.78125 0.5625 0.5625 4.78125 0.5625 10C0.5625 15.2188 4.78125 19.4688 10 19.4688C15.2188 19.4688 19.4688 15.2188 19.4688 10C19.4688 4.78125 15.2188 0.5625 10 0.5625ZM10 18.0625C5.5625 18.0625 1.96875 14.4375 1.96875 10C1.96875 5.5625 5.5625 1.96875 10 1.96875C14.4375 1.96875 18.0625 5.59375 18.0625 10.0312C18.0625 14.4375 14.4375 18.0625 10 18.0625Z"
-                            fill={isInStock ? "#22AD5C" : "#FF6B6B"}
-                          />
-                          <path
-                            d="M12.6875 7.09374L8.9688 10.7187L7.2813 9.06249C7.00005 8.78124 6.56255 8.81249 6.2813 9.06249C6.00005 9.34374 6.0313 9.78124 6.2813 10.0625L8.2813 12C8.4688 12.1875 8.7188 12.2812 8.9688 12.2812C9.2188 12.2812 9.4688 12.1875 9.6563 12L13.6875 8.12499C13.9688 7.84374 13.9688 7.40624 13.6875 7.12499C13.4063 6.84374 12.9688 6.84374 12.6875 7.09374Z"
-                            fill={isInStock ? "#22AD5C" : "#FF6B6B"}
-                          />
-                        </g>
-                        <defs>
-                          <clipPath id="clip0_375_9221">
-                            <rect width="20" height="20" fill="white" />
-                          </clipPath>
-                        </defs>
-                      </svg>
-
-                      <span className={isInStock ? "text-green" : "text-red"}>
-                        {productDetails?.fulfillmentType === 'DIGITAL_ON_DEMAND'
-                          ? "Disponible (Digital)"
-                          : isInStock
-                            ? "En Stock"
-                            : "Sin Stock"
-                        }
+                <div className="relative min-w-0 flex-1">
+                  {hasDiscount && (
+                    <div className="absolute left-0 top-3 z-20 sm:top-4 lg:-left-2">
+                      <span className="rounded-r-full bg-red px-3 py-1 text-xs font-bold text-white shadow-lg sm:px-4 sm:py-1.5 sm:text-sm">
+                        {discountPercent}% OFF
                       </span>
                     </div>
-                  </div>
+                  )}
 
-                  <div className="mb-4.5">
-                    <PriceDisplay
-                      price={originalPrice}
-                      discountedPrice={currentPrice}
-                      priceWithTransfer={currentPriceWithTransfer}
-                      size="xl"
+                  <div className="relative aspect-square w-full overflow-hidden bg-white sm:aspect-[4/5] lg:rounded-xl lg:shadow-sm">
+                    <button
+                      onClick={handlePreviewSlider}
+                      className="absolute right-3 top-3 z-10 rounded-full border border-border bg-background/90 px-3 py-1.5 text-xs font-medium text-foreground shadow-sm transition hover:bg-background"
+                    >
+                      Ampliar
+                    </button>
+                    <CloudinaryImage
+                      src={currentImages[selectedImage] || "/placeholder.png"}
+                      alt={productDetails?.title || "Producto"}
+                      width={700}
+                      height={900}
+                      className="absolute inset-0 h-full w-full object-contain p-6 sm:p-8 lg:p-4"
                     />
                   </div>
 
-                  <ul className="flex flex-col gap-2">
-                    <li className="flex items-center gap-2.5">
-                      <svg
-                        width="20"
-                        height="20"
-                        viewBox="0 0 20 20"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          d="M13.3589 8.35863C13.603 8.11455 13.603 7.71882 13.3589 7.47475C13.1149 7.23067 12.7191 7.23067 12.4751 7.47475L8.75033 11.1995L7.5256 9.97474C7.28152 9.73067 6.8858 9.73067 6.64172 9.97474C6.39764 10.2188 6.39764 10.6146 6.64172 10.8586L8.30838 12.5253C8.55246 12.7694 8.94819 12.7694 9.19227 12.5253L13.3589 8.35863Z"
-                          fill="#3C50E0"
-                        />
-                        <path
-                          fillRule="evenodd"
-                          clipRule="evenodd"
-                          d="M10.0003 1.04169C5.05277 1.04169 1.04199 5.05247 1.04199 10C1.04199 14.9476 5.05277 18.9584 10.0003 18.9584C14.9479 18.9584 18.9587 14.9476 18.9587 10C18.9587 5.05247 14.9479 1.04169 10.0003 1.04169ZM2.29199 10C2.29199 5.74283 5.74313 2.29169 10.0003 2.29169C14.2575 2.29169 17.7087 5.74283 17.7087 10C17.7087 14.2572 14.2575 17.7084 10.0003 17.7084C5.74313 17.7084 2.29199 14.2572 2.29199 10Z"
-                          fill="#3C50E0"
-                        />
-                      </svg>
-                      Envío gratuito disponible
-                    </li>
-
-
-                  </ul>
-
-                  <form onSubmit={(e) => e.preventDefault()}>
-                    <div className="flex flex-col gap-4.5 border-y border-gray-3 mt-7.5 mb-9 py-9">
-                      {/* Dynamic Variant Selector */}
-                      {productDetails?.hasVariants && productDetails.variants.length > 0 && (
-                        <div className="flex items-center gap-4">
-                          <div className="min-w-[65px]">
-                            <h4 className="font-medium text-dark">Variantes:</h4>
-                          </div>
-                          <div className="flex flex-wrap items-center gap-4">
-                            {productDetails.variants.map((variant) => {
-                              const isSelected = selectedVariantId === variant.id;
-                              const isOutOfStock = productDetails?.fulfillmentType !== 'DIGITAL_ON_DEMAND' && !productDetails.inStock;
-
-                              return (
-                                <label
-                                  key={variant.id}
-                                  htmlFor={`variant-${variant.id}`}
-                                  className={`flex cursor-pointer select-none items-center p-2 rounded border ${isSelected
-                                    ? "border-blue bg-blue/10"
-                                    : "border-gray-3 hover:border-gray-4"
-                                    } ${isOutOfStock ? "opacity-50 cursor-not-allowed" : ""}`}
-                                >
-                                  <div className="relative">
-                                    <input
-                                      type="radio"
-                                      name="variant"
-                                      id={`variant-${variant.id}`}
-                                      className="sr-only"
-                                      checked={isSelected}
-                                      onChange={() => setSelectedVariantId(variant.id)}
-                                      disabled={isOutOfStock}
-                                    />
-                                    <div
-                                      className={`mr-2 flex h-4 w-4 items-center justify-center rounded border ${isSelected
-                                        ? "border-blue bg-blue"
-                                        : "border-gray-4"
-                                        }`}
-                                    >
-                                      <span
-                                        className={
-                                          isSelected
-                                            ? "opacity-100"
-                                            : "opacity-0"
-                                        }
-                                      >
-                                        <svg
-                                          width="12"
-                                          height="12"
-                                          viewBox="0 0 24 24"
-                                          fill="none"
-                                          xmlns="http://www.w3.org/2000/svg"
-                                        >
-                                          <rect
-                                            x="4"
-                                            y="4.00006"
-                                            width="16"
-                                            height="16"
-                                            rx="4"
-                                            fill="#3C50E0"
-                                          />
-                                          <path
-                                            fillRule="evenodd"
-                                            clipRule="evenodd"
-                                            d="M16.3103 9.25104C16.471 9.41178 16.5612 9.62978 16.5612 9.85707C16.5612 10.0844 16.471 10.3024 16.3103 10.4631L12.0243 14.7491C11.8635 14.9098 11.6455 15.0001 11.4182 15.0001C11.191 15.0001 10.973 14.9098 10.8122 14.7491L8.24062 12.1775C8.08448 12.0158 7.99808 11.7993 8.00003 11.5745C8.00199 11.3498 8.09214 11.1348 8.25107 10.9759C8.41 10.8169 8.62499 10.7268 8.84975 10.7248C9.0745 10.7229 9.29103 10.8093 9.4527 10.9654L11.4182 12.931L15.0982 9.25104C15.2589 9.09034 15.4769 9.00006 15.7042 9.00006C15.9315 9.00006 16.1495 9.09034 16.3103 9.25104Z"
-                                            fill="white"
-                                          />
-                                        </svg>
-                                      </span>
-                                    </div>
-                                  </div>
-                                  <div className="flex flex-col">
-                                    <span className="text-sm font-medium">
-                                      {Object.entries(variant.attrs).map(([key, value]) => `${key}: ${value}`).join(", ") || `Variant ${variant.id}`}
-                                    </span>
-                                    <span className="text-xs text-gray-5">
-                                      {isOutOfStock && <span className="text-red ml-1">(Sin Stock)</span>}
-                                      {productDetails?.fulfillmentType === 'DIGITAL_ON_DEMAND' && <span className="text-green ml-1">(Digital)</span>}
-                                    </span>
-                                  </div>
-                                </label>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-4.5">
-                      <div className="flex items-center rounded-md border border-gray-3">
-                        <button
-                          type="button"
-                          aria-label="button for remove product"
-                          className="flex items-center justify-center w-12 h-12 ease-out duration-200 hover:text-blue"
-                          onClick={() =>
-                            quantity > 1 && setQuantity(quantity - 1)
-                          }
-                        >
-                          <svg
-                            className="fill-current"
-                            width="20"
-                            height="20"
-                            viewBox="0 0 20 20"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <path
-                              d="M3.33301 10.0001C3.33301 9.53984 3.7061 9.16675 4.16634 9.16675H15.833C16.2932 9.16675 16.6663 9.53984 16.6663 10.0001C16.6663 10.4603 16.2932 10.8334 15.833 10.8334H4.16634C3.7061 10.8334 3.33301 10.4603 3.33301 10.0001Z"
-                              fill=""
-                            />
-                          </svg>
-                        </button>
-
-                        <span className="flex items-center justify-center w-16 h-12 border-x border-gray-4">
-                          {quantity}
-                        </span>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const isDigital = productDetails?.fulfillmentType === 'DIGITAL_ON_DEMAND';
-                            const max = isDigital ? 9999 : (selectedVariant?.stock ?? productDetails?.stockTotal ?? 9999);
-                            setQuantity(q => Math.min(q + 1, max));
-                          }}
-                          aria-label="button for add product"
-                          className="flex items-center justify-center w-12 h-12 ease-out duration-200 hover:text-blue"
-                        >
-                          <svg
-                            className="fill-current"
-                            width="20"
-                            height="20"
-                            viewBox="0 0 20 20"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <path
-                              d="M3.33301 10C3.33301 9.5398 3.7061 9.16671 4.16634 9.16671H15.833C16.2932 9.16671 16.6663 9.5398 16.6663 10C16.6663 10.4603 16.2932 10.8334 15.833 10.8334H4.16634C3.7061 10.8334 3.33301 10.4603 3.33301 10Z"
-                              fill=""
-                            />
-                            <path
-                              d="M9.99967 16.6667C9.53944 16.6667 9.16634 16.2936 9.16634 15.8334L9.16634 4.16671C9.16634 3.70647 9.53944 3.33337 9.99967 3.33337C10.4599 3.33337 10.833 3.70647 10.833 4.16671L10.833 15.8334C10.833 16.2936 10.4599 16.6667 9.99967 16.6667Z"
-                              fill=""
-                            />
-                          </svg>
-                        </button>
-                      </div>
-
+                  {currentImages.length > 1 && (
+                    <>
                       <button
-                        type="button"
-                        onClick={handleAddToCart}
-                        disabled={!isInStock || quantity === 0}
-                        className="inline-flex font-medium text-white bg-blue py-3 px-7 rounded-md ease-out duration-200 hover:bg-blue-dark disabled:opacity-60 disabled:cursor-not-allowed"
+                        onClick={prevImage}
+                        className="absolute left-2 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 shadow-md backdrop-blur-sm transition-all active:scale-95 sm:hidden"
+                        aria-label="Imagen anterior"
                       >
-                        {productDetails?.fulfillmentType === 'DIGITAL_ON_DEMAND'
-                          ? "Agregar"
-                          : isInStock
-                            ? "Agregar"
-                            : "Sin Stock"
-                        }
+                        <ChevronLeft className="h-5 w-5 text-foreground" />
                       </button>
-
                       <button
-                        type="button"
-                        onClick={async () => {
-                          if (!isAuthenticated) {
-                            toast.error("Debes iniciar sesión para usar la wishlist");
-                            return;
-                          }
-                          if (productDetails) {
-                            const res = await dispatch(toggleWishlist(productDetails as any));
-                            const products = res.payload as any[] | undefined;
-                            if (products) {
-                              const isIn = products.some((p) => p.id === productDetails.id);
-                              toast(isIn ? "Añadido a tu wishlist" : "Quitado de tu wishlist");
-                              if (!isIn) {
-                                pixel.event("AddToWishlist", {
-                                  content_name: productDetails.title,
-                                  content_ids: [productDetails.id],
-                                  content_type: "product",
-                                  value: productDetails.discountedPrice || productDetails.price,
-                                  currency: "USD",
-                                });
-                              }
-                            }
-                          }
-                        }}
-                        className={`flex items-center justify-center w-12 h-12 rounded-md border ease-out duration-200 ${isInWishlist
-                          ? "bg-blue border-blue text-white hover:bg-blue-dark"
-                          : "bg-white border-gray-3 text-dark hover:text-white hover:bg-dark hover:border-transparent"
-                          }`}
+                        onClick={nextImage}
+                        className="absolute right-2 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 shadow-md backdrop-blur-sm transition-all active:scale-95 sm:hidden"
+                        aria-label="Siguiente imagen"
                       >
-                        <svg
-                          className="fill-current"
-                          width="24"
-                          height="24"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            clipRule="evenodd"
-                            d="M5.62436 4.42423C3.96537 5.18256 2.75 6.98626 2.75 9.13713C2.75 11.3345 3.64922 13.0283 4.93829 14.4798C6.00072 15.6761 7.28684 16.6677 8.54113 17.6346C8.83904 17.8643 9.13515 18.0926 9.42605 18.3219C9.95208 18.7366 10.4213 19.1006 10.8736 19.3649C11.3261 19.6293 11.6904 19.75 12 19.75C12.3096 19.75 12.6739 19.6293 13.1264 19.3649C13.5787 19.1006 14.0479 18.7366 14.574 18.3219C14.8649 18.0926 15.161 17.8643 15.4589 17.6346C16.7132 16.6677 17.9993 15.6761 19.0617 14.4798C20.3508 13.0283 21.25 11.3345 21.25 9.13713C21.25 6.98626 20.0346 5.18256 18.3756 4.42423C16.7639 3.68751 14.5983 3.88261 12.5404 6.02077C12.399 6.16766 12.2039 6.25067 12 6.25067C11.7961 6.25067 11.601 6.16766 11.4596 6.02077C9.40166 3.88261 7.23607 3.68751 5.62436 4.42423ZM12 4.45885C9.68795 2.39027 7.09896 2.1009 5.00076 3.05999C2.78471 4.07296 1.25 6.42506 1.25 9.13713C1.25 11.8027 2.3605 13.8361 3.81672 15.4758C4.98287 16.789 6.41022 17.888 7.67083 18.8586C7.95659 19.0786 8.23378 19.2921 8.49742 19.4999C9.00965 19.9037 9.55954 20.3343 10.1168 20.66C10.6739 20.9855 11.3096 21.25 12 21.25C12.6904 21.25 13.3261 20.9855 13.8832 20.66C14.4405 20.3343 14.9903 19.9037 15.5026 19.4999C15.7662 19.2921 16.0434 19.0786 16.3292 18.8586C17.5898 17.888 19.0171 16.789 20.1833 15.4758C21.6395 13.8361 22.75 11.8027 22.75 9.13713C22.75 6.42506 21.2153 4.07296 18.9992 3.05999C16.901 2.1009 14.3121 2.39027 12 4.45885Z"
-                            fill=""
-                          />
-                        </svg>
+                        <ChevronRight className="h-5 w-5 text-foreground" />
                       </button>
+                    </>
+                  )}
+
+                  {currentImages.length > 1 && (
+                    <div className="absolute inset-x-0 bottom-3 z-10 flex items-center justify-center gap-1.5 sm:hidden">
+                      {currentImages.map((_, index) => (
+                        <button
+                          key={index}
+                          onClick={() => setSelectedImage(index)}
+                          className={cn(
+                            "h-2 rounded-full transition-all",
+                            selectedImage === index ? "w-6 bg-primary" : "w-2 bg-black/20"
+                          )}
+                          aria-label={`Ir a imagen ${index + 1}`}
+                        />
+                      ))}
                     </div>
-                  </form>
+                  )}
                 </div>
               </div>
-            </div>
-          </section>
 
-          <section className="overflow-hidden bg-gray-2 py-20">
-            <div className="max-w-[1170px] w-full mx-auto px-4 sm:px-8 xl:px-0">
-              {/* <!--== tab header start ==--> */}
-              <div className="flex flex-nowrap overflow-x-auto items-center bg-white rounded-[10px] shadow-1 gap-5 xl:gap-12.5 py-4.5 px-4 sm:px-6 mb-8 scrollbar-hide">
-                {tabs.map((item, key) => (
+              <div className="hidden items-center justify-center gap-2 border-t border-border/50 bg-white/50 p-3 sm:flex lg:hidden">
+                {currentImages.map((image, index) => (
                   <button
-                    key={key}
-                    onClick={() => setActiveTab(item.id)}
-                    className={`font-medium lg:text-lg ease-out duration-200 hover:text-blue relative before:h-0.5 before:bg-blue before:absolute before:left-0 before:bottom-0 before:ease-out before:duration-200 hover:before:w-full whitespace-nowrap ${activeTab === item.id
-                      ? "text-blue before:w-full"
-                      : "text-dark before:w-0"
-                      }`}
+                    key={`${image}-${index}`}
+                    onClick={() => setSelectedImage(index)}
+                    className={cn(
+                      "relative h-14 w-14 overflow-hidden rounded-lg border-2 bg-white transition-all duration-200",
+                      selectedImage === index
+                        ? "border-primary ring-2 ring-primary/20"
+                        : "border-border hover:border-primary/50"
+                    )}
                   >
-                    {item.title}
+                    <CloudinaryImage
+                      src={image}
+                      alt={`${productDetails?.title || "Producto"} - imagen ${index + 1}`}
+                      width={80}
+                      height={80}
+                      className="h-full w-full object-contain p-1"
+                    />
                   </button>
                 ))}
               </div>
-              {/* <!--== tab header end ==--> */}
-
-              {/* <!--== tab content start ==--> */}
-              {/* <!-- tab content one start --> */}
-              <div>
-                <div
-                  className={`flex-col sm:flex-row gap-7.5 xl:gap-12.5 mt-12.5 ${activeTab === "tabOne" ? "flex" : "hidden"
-                    }`}
-                >
-                  <div className="max-w-[670px] w-full">
-                    <h2 className="font-medium text-2xl text-dark mb-7">
-                      Especificaciones:
-                    </h2>
-
-                    {productDetails?.description ? (
-                      <div className="whitespace-pre-line">
-                        {productDetails.description}
-                      </div>
-                    ) : (
-                      <p className="text-gray-5 italic">
-                        No hay descripción disponible para este producto.
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="max-w-[447px] w-full">
-                    <h2 className="font-medium text-2xl text-dark mb-7">
-                      Cuidado y Mantenimiento:
-                    </h2>
-
-                    <div className="space-y-4">
-                      <div>
-                        <h3 className="font-medium text-dark mb-2">Marca:</h3>
-                        <p className="text-gray-6">{productDetails?.brand || 'No especificada'}</p>
-                      </div>
-                      <div>
-                        <h3 className="font-medium text-dark mb-2">Categoría:</h3>
-                        <p className="text-gray-6">{productDetails?.category || 'No especificada'}</p>
-                      </div>
-                      <div>
-                        <h3 className="font-medium text-dark mb-2">SKU:</h3>
-                        <p className="text-gray-6">{productDetails?.sku || 'No especificado'}</p>
-                      </div>
-                      {productDetails?.fulfillmentType && (
-                        <div>
-                          <h3 className="font-medium text-dark mb-2">Tipo de entrega:</h3>
-                          <p className="text-gray-6">
-                            {productDetails.fulfillmentType === 'PHYSICAL' && 'Producto físico'}
-                            {productDetails.fulfillmentType === 'DIGITAL_ON_DEMAND' && 'Digital bajo demanda'}
-                            {productDetails.fulfillmentType === 'DIGITAL_INSTANT' && 'Digital instantáneo'}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              {/* <!-- tab content one end --> */}
-
-              {/* <!-- tab content two start --> */}
-              <div>
-                <div
-                  className={`rounded-xl bg-white shadow-1 p-4 sm:p-6 mt-10 ${activeTab === "tabTwo" ? "block" : "hidden"
-                    }`}
-                >
-                  {/* Información del producto desde el backend */}
-                  <div className="rounded-md even:bg-gray-1 flex py-4 px-4 sm:px-5">
-                    <div className="max-w-[450px] min-w-[140px] w-full">
-                      <p className="text-sm sm:text-base text-dark">Marca</p>
-                    </div>
-                    <div className="w-full">
-                      <p className="text-sm sm:text-base text-dark">
-                        {productDetails?.brand || 'No especificada'}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="rounded-md even:bg-gray-1 flex py-4 px-4 sm:px-5">
-                    <div className="max-w-[450px] min-w-[140px] w-full">
-                      <p className="text-sm sm:text-base text-dark">Categoría</p>
-                    </div>
-                    <div className="w-full">
-                      <p className="text-sm sm:text-base text-dark">
-                        {productDetails?.category || 'No especificada'}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="rounded-md even:bg-gray-1 flex py-4 px-4 sm:px-5">
-                    <div className="max-w-[450px] min-w-[140px] w-full">
-                      <p className="text-sm sm:text-base text-dark">SKU</p>
-                    </div>
-                    <div className="w-full">
-                      <p className="text-sm sm:text-base text-dark">
-                        {productDetails?.sku || 'No especificado'}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="rounded-md even:bg-gray-1 flex py-4 px-4 sm:px-5">
-                    <div className="max-w-[450px] min-w-[140px] w-full">
-                      <p className="text-sm sm:text-base text-dark">Stock Total</p>
-                    </div>
-                    <div className="w-full">
-                      <p className="text-sm sm:text-base text-dark">
-                        {productDetails?.fulfillmentType === 'DIGITAL_ON_DEMAND'
-                          ? "Ilimitado (Digital)"
-                          : `${productDetails?.stockTotal || 0} unidades`
-                        }
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="rounded-md even:bg-gray-1 flex py-4 px-4 sm:px-5">
-                    <div className="max-w-[450px] min-w-[140px] w-full">
-                      <p className="text-sm sm:text-base text-dark">Tipo de Entrega</p>
-                    </div>
-                    <div className="w-full">
-                      <p className="text-sm sm:text-base text-dark">
-                        {productDetails?.fulfillmentType === 'PHYSICAL' && 'Producto físico'}
-                        {productDetails?.fulfillmentType === 'DIGITAL_ON_DEMAND' && 'Digital bajo demanda'}
-                        {productDetails?.fulfillmentType === 'DIGITAL_INSTANT' && 'Digital instantáneo'}
-                        {!productDetails?.fulfillmentType && 'No especificado'}
-                      </p>
-                    </div>
-                  </div>
-
-                  {productDetails?.hasVariants && (
-                    <div className="rounded-md even:bg-gray-1 flex py-4 px-4 sm:px-5">
-                      <div className="max-w-[450px] min-w-[140px] w-full">
-                        <p className="text-sm sm:text-base text-dark">Variantes Disponibles</p>
-                      </div>
-                      <div className="w-full">
-                        <p className="text-sm sm:text-base text-dark">
-                          {productDetails.variants.length} variantes
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {productDetails?.priceRange && (
-                    <div className="rounded-md even:bg-gray-1 flex py-4 px-4 sm:px-5">
-                      <div className="max-w-[450px] min-w-[140px] w-full">
-                        <p className="text-sm sm:text-base text-dark">Rango de Precios</p>
-                      </div>
-                      <div className="w-full">
-                        <p className="text-sm sm:text-base text-dark">
-                          ${productDetails.priceRange.minDiscounted.toFixed(2)} - ${productDetails.priceRange.maxDiscounted.toFixed(2)}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-              {/* <!-- tab content two end --> */}
-              {/* tab content three - Reviews */}
-              <div className={activeTab === "tabThree" ? "block" : "hidden"}>
-                <div className="max-w-[900px] mx-auto">
-                  <ReviewsList
-                    reviews={reviews}
-                    averageRating={productDetails?.averageRating ?? null}
-                    totalReviews={productDetails?.totalReviews ?? 0}
-                    currentUserId={currentUserId}
-                    onEditReview={handleEditReview}
-                    onDeleteReview={handleDeleteReview}
-                  />
-                  {/* Review Form - solo para usuarios autenticados */}
-                  {currentUserId && (
-                    <ReviewForm
-                      productId={product?.id}
-                      existingReview={isEditingReview ? myReview : null}
-                      onSubmit={handleSubmitReview}
-                      onCancel={() => setIsEditingReview(false)}
-                    />
-                  )}
-                  {/* Mensaje para usuarios no autenticados */}
-                  {!currentUserId && (
-                    <div className="text-center py-8 text-dark-4">
-                      <p>Debes iniciar sesión para escribir una review</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-              {/* tab content three end */}
             </div>
-          </section>
 
-          <RecentlyViewdItems />
+            <div className="flex flex-col p-4 sm:p-6 lg:p-8">
+              {productTags.length > 0 && (
+                <div className="mb-2 flex flex-wrap gap-1.5 sm:mb-3 sm:gap-2">
+                  {productTags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary sm:px-3 sm:py-1 sm:text-xs"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
 
-          <Newsletter />
-        </>
-      )}
+              <h1 className="text-lg font-bold leading-tight tracking-tight text-foreground sm:text-2xl lg:text-3xl">
+                {productDetails?.title}
+              </h1>
+
+              {productDetails?.isPresale && (
+                <div className="mt-4 rounded-xl border border-yellow-light-1 bg-yellow-light-4 p-4 text-sm text-yellow-dark-2">
+                  <span className="block font-semibold uppercase tracking-wide">Reserva disponible</span>
+                  <span className="mt-1 block">
+                    Lanzamiento:{" "}
+                    {productDetails.releaseDate
+                      ? new Date(productDetails.releaseDate).toLocaleDateString("es-AR", {
+                          day: "numeric",
+                          month: "long",
+                          year: "numeric",
+                        })
+                      : "Fecha a confirmar"}
+                  </span>
+                </div>
+              )}
+
+              <div className="mt-2 flex flex-wrap items-center gap-3 sm:mt-3 sm:gap-4">
+                <div className="flex items-center gap-1">
+                  <div className="flex">
+                    {Array.from({ length: 5 }).map((_, index) => {
+                      const filled = rating >= index + 1;
+                      const partial = !filled && rating > index && rating < index + 1;
+
+                      return (
+                        <Star
+                          key={index}
+                          className={cn(
+                            "h-3.5 w-3.5 sm:h-4 sm:w-4",
+                            filled || partial
+                              ? "fill-yellow text-yellow"
+                              : "fill-neutral-200 text-neutral-200"
+                          )}
+                          style={partial ? { fillOpacity: rating - index } : undefined}
+                        />
+                      );
+                    })}
+                  </div>
+                  <span className="text-xs text-muted-foreground sm:text-sm">({reviewCount})</span>
+                </div>
+
+                <div
+                  className={cn(
+                    "flex items-center gap-1.5",
+                    productDetails?.isPresale ? "text-yellow-dark-2" : isInStock ? "text-green" : "text-red"
+                  )}
+                >
+                  <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  <span className="text-xs font-medium sm:text-sm">
+                    {productDetails?.isPresale
+                      ? "Preventa"
+                      : isInStock
+                        ? "Disponible"
+                        : "Sin stock"}
+                  </span>
+                </div>
+              </div>
+
+              <div className="mt-4 rounded-lg bg-muted/50 p-3 sm:mt-6 sm:rounded-xl sm:p-4">
+                <div className="flex flex-wrap items-baseline gap-2 sm:gap-3">
+                  <span className="text-2xl font-bold text-foreground sm:text-3xl">{formatCurrency(currentPrice)}</span>
+                  {hasDiscount && (
+                    <span className="text-sm text-muted-foreground line-through sm:text-lg">
+                      {formatCurrency(originalPrice)}
+                    </span>
+                  )}
+                </div>
+
+                {currentPriceWithTransfer && (
+                  <div className="mt-1.5 flex flex-wrap items-center gap-2 sm:mt-2">
+                    <span className="text-xl font-bold text-green sm:text-2xl">
+                      {formatCurrency(currentPriceWithTransfer)}
+                    </span>
+                    <span className="rounded-full bg-green-light-6 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-green-dark sm:px-2.5 sm:py-1 sm:text-xs">
+                      Transferencia
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-4 grid grid-cols-3 gap-2 sm:mt-6 sm:gap-3">
+                <div className="flex flex-col items-center gap-1 rounded-lg border border-border bg-background p-2 text-center sm:gap-1.5 sm:p-3">
+                  <Truck className="h-4 w-4 text-primary sm:h-5 sm:w-5" />
+                  <span className="text-[9px] leading-tight text-muted-foreground sm:text-xs">Envio gratis</span>
+                </div>
+                <div className="flex flex-col items-center gap-1 rounded-lg border border-border bg-background p-2 text-center sm:gap-1.5 sm:p-3">
+                  <ShieldCheck className="h-4 w-4 text-primary sm:h-5 sm:w-5" />
+                  <span className="text-[9px] leading-tight text-muted-foreground sm:text-xs">Garantia</span>
+                </div>
+                <div className="flex flex-col items-center gap-1 rounded-lg border border-border bg-background p-2 text-center sm:gap-1.5 sm:p-3">
+                  <RotateCcw className="h-4 w-4 text-primary sm:h-5 sm:w-5" />
+                  <span className="text-[9px] leading-tight text-muted-foreground sm:text-xs">Devoluciones</span>
+                </div>
+              </div>
+
+              <div className="my-4 h-px bg-border sm:my-6" />
+
+              {productDetails?.hasVariants && Object.keys(productDetails.options).length > 0 && (
+                <div className="mb-6 space-y-5">
+                  {Object.entries(productDetails.options).map(([optionName, values]) => (
+                    <div key={optionName} className="mb-4 sm:mb-6">
+                      <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:mb-2 sm:text-xs">
+                        {optionName}
+                      </label>
+                      <div className="flex flex-wrap gap-2">
+                        {values.map((value) => {
+                          const isSelected = selectedAttrs[optionName] === value;
+
+                          return (
+                            <button
+                              key={value}
+                              type="button"
+                              onClick={() => handleAttrChange(optionName, value)}
+                              className={cn(
+                                "rounded-lg border px-3 py-2 text-xs font-medium transition-colors sm:px-4 sm:py-2.5 sm:text-sm",
+                                isSelected
+                                  ? "border-primary bg-primary text-primary-foreground"
+                                  : "border-border bg-background hover:border-primary/40 hover:bg-muted"
+                              )}
+                            >
+                              {formatDisplayValue(value)}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {!hasFormatOption && selectedVariant && Object.keys(selectedVariant.attrs).length > 0 && (
+                <div className="mb-4 sm:mb-6">
+                  <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:mb-2 sm:text-xs">
+                    Formato
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    <button className="rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground sm:px-4 sm:py-2.5 sm:text-sm">
+                      {Object.values(selectedVariant.attrs).map((value) => formatDisplayValue(value)).join(" / ")}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div className="mt-auto space-y-3 sm:space-y-0">
+                <div className="flex items-center justify-between gap-2 sm:justify-start sm:gap-3">
+                  <div className="flex items-center rounded-lg border border-border">
+                    <button
+                      onClick={() => setQuantity((current) => Math.max(1, current - 1))}
+                      className="flex h-10 w-10 items-center justify-center text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:bg-muted sm:h-12 sm:w-12"
+                      aria-label="Restar cantidad"
+                    >
+                      <Minus className="h-4 w-4" />
+                    </button>
+                    <span className="w-10 text-center text-sm font-medium sm:w-12">{quantity}</span>
+                    <button
+                      onClick={() => {
+                        const isDigital = productDetails?.fulfillmentType === "DIGITAL_ON_DEMAND";
+                        const max = isDigital ? 9999 : selectedVariant?.stock ?? productDetails?.stockTotal ?? 9999;
+                        setQuantity((current) => Math.min(current + 1, max));
+                      }}
+                      className="flex h-10 w-10 items-center justify-center text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:bg-muted sm:h-12 sm:w-12"
+                      aria-label="Sumar cantidad"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  <Button
+                    size="lg"
+                    className="hidden flex-1 rounded-lg text-base sm:flex"
+                    disabled={!isInStock || quantity === 0}
+                    onClick={handleAddToCart}
+                  >
+                    {productDetails?.isPresale
+                      ? "Reservar ahora"
+                      : isInStock
+                        ? "Agregar al carrito"
+                        : "Sin stock"}
+                  </Button>
+
+                  <div className="flex gap-2 sm:order-last">
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      className={cn("h-10 w-10 rounded-lg sm:h-12 sm:w-12", isInWishlist && "border-red-light-4 bg-red-light-6")}
+                      onClick={handleToggleWishlist}
+                    >
+                      <Heart
+                        className={cn(
+                          "h-4 w-4 transition-colors sm:h-5 sm:w-5",
+                          isInWishlist ? "fill-red text-red" : "text-muted-foreground"
+                        )}
+                      />
+                    </Button>
+
+                    <Button size="icon" variant="outline" className="h-10 w-10 rounded-lg sm:h-12 sm:w-12" onClick={handleShare}>
+                      <Share2 className="h-4 w-4 text-muted-foreground sm:h-5 sm:w-5" />
+                    </Button>
+                  </div>
+                </div>
+
+                <Button
+                  size="lg"
+                  className="w-full rounded-lg text-sm sm:hidden"
+                  disabled={!isInStock || quantity === 0}
+                  onClick={handleAddToCart}
+                >
+                  {productDetails?.isPresale
+                    ? "Reservar ahora"
+                    : isInStock
+                      ? "Agregar al carrito"
+                      : "Sin stock"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {productDetails?.description && (
+          <div className="mt-4 rounded-xl border border-border bg-card p-4 shadow-sm sm:mt-8 sm:rounded-2xl sm:p-6 lg:p-8">
+            <h2 className="text-base font-semibold text-foreground sm:text-lg">Descripcion</h2>
+            <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-muted-foreground sm:mt-3 sm:text-base">
+              {productDetails.description}
+            </p>
+          </div>
+        )}
+
+        <section className="mt-8 rounded-2xl border border-border bg-card p-6 shadow-sm lg:p-8">
+          <div className="flex flex-nowrap gap-3 overflow-x-auto pb-2">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={cn(
+                  "rounded-full px-4 py-2 text-sm font-medium transition-colors whitespace-nowrap",
+                  activeTab === tab.id
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {tab.title}
+              </button>
+            ))}
+          </div>
+
+          {activeTab === "description" && (
+            <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
+              <div>
+                {productDetails?.description ? (
+                  <div className="whitespace-pre-line leading-relaxed text-muted-foreground">
+                    {productDetails.description}
+                  </div>
+                ) : (
+                  <p className="italic text-muted-foreground">No hay descripcion disponible para este producto.</p>
+                )}
+
+                {productDetails?.productType === "DLC" && productDetails.parentGameId && productDetails.parentGameName && (
+                  <div className="mt-6 rounded-xl border border-blue-light-4 bg-blue-light-5 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-blue">Juego base requerido</p>
+                    <p className="mt-2 text-sm text-dark">
+                      Este DLC corresponde a{" "}
+                      <Link
+                        href={generateProductUrl(productDetails.parentGameId, productDetails.parentGameName)}
+                        className="font-semibold text-blue hover:underline"
+                      >
+                        {productDetails.parentGameName}
+                      </Link>
+                      .
+                    </p>
+                  </div>
+                )}
+
+                {productDetails?.productType === "GAME" && productDetails.dlcs.length > 0 && (
+                  <div className="mt-6 rounded-xl border border-border bg-background p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">DLCs disponibles</p>
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                      {productDetails.dlcs.map((dlc) => (
+                        <Link
+                          key={dlc.id}
+                          href={generateProductUrl(dlc.id, dlc.title)}
+                          className="flex items-center gap-3 rounded-xl border border-border p-3 transition-colors hover:border-primary/40 hover:bg-muted/40"
+                        >
+                          <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-gray-1">
+                            <CloudinaryImage
+                              src={dlc.image || "/placeholder.png"}
+                              alt={dlc.title}
+                              width={64}
+                              height={64}
+                              className="h-full w-full object-contain p-1"
+                            />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="line-clamp-2 text-sm font-medium text-foreground">{dlc.title}</p>
+                            <p className="mt-1 text-sm font-semibold text-primary">
+                              {formatCurrency(dlc.discountedPrice ?? dlc.price)}
+                            </p>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-4 rounded-xl border border-border bg-muted/30 p-5">
+                <div>
+                  <h3 className="font-medium text-foreground">Tipo</h3>
+                  <p className="text-sm text-muted-foreground">{getProductTypeLabel(productDetails?.productType) || "No especificado"}</p>
+                </div>
+                <div>
+                  <h3 className="font-medium text-foreground">Marca</h3>
+                  <p className="text-sm text-muted-foreground">{productDetails?.brand || "No especificada"}</p>
+                </div>
+                <div>
+                  <h3 className="font-medium text-foreground">Categoria</h3>
+                  <p className="text-sm text-muted-foreground">{productDetails?.category || "No especificada"}</p>
+                </div>
+                <div>
+                  <h3 className="font-medium text-foreground">SKU</h3>
+                  <p className="text-sm text-muted-foreground">{selectedVariant?.sku || productDetails?.sku || "No especificado"}</p>
+                </div>
+                <div>
+                  <h3 className="font-medium text-foreground">Entrega</h3>
+                  <p className="text-sm text-muted-foreground">{getFulfillmentLabel(productDetails?.fulfillmentType)}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === "specifications" && (
+            <div className="mt-6 rounded-xl border border-border">
+              {productDetails?.specifications && Object.keys(productDetails.specifications).length > 0 ? (
+                Object.entries(productDetails.specifications).map(([key, value]) => (
+                  <div
+                    key={key}
+                    className="grid gap-2 border-b border-border px-4 py-4 last:border-b-0 md:grid-cols-2"
+                  >
+                    <p className="text-sm font-medium text-muted-foreground">{key}</p>
+                    <p className="text-sm font-semibold text-foreground">{value}</p>
+                  </div>
+                ))
+              ) : (
+                <div className="px-4 py-10 text-center italic text-muted-foreground">
+                  No hay especificaciones tecnicas detalladas.
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === "additional" && (
+            <div className="mt-6 rounded-xl border border-border">
+              {[
+                ["Tipo", getProductTypeLabel(productDetails?.productType) || "No especificado"],
+                ["Marca", productDetails?.brand || "No especificada"],
+                ["Categoria", productDetails?.category || "No especificada"],
+                ["SKU", selectedVariant?.sku || productDetails?.sku || "No especificado"],
+                [
+                  "Stock total",
+                  productDetails?.fulfillmentType === "DIGITAL_ON_DEMAND"
+                    ? "Ilimitado (Digital)"
+                    : `${productDetails?.stockTotal || 0} unidades`,
+                ],
+                ["Tipo de entrega", getFulfillmentLabel(productDetails?.fulfillmentType)],
+                ...(productDetails?.productType === "DLC" && productDetails.parentGameName
+                  ? [["Juego base", productDetails.parentGameName]]
+                  : []),
+                ...(productDetails?.productType === "GAME" && productDetails.dlcs.length > 0
+                  ? [["DLCs", `${productDetails.dlcs.length} disponibles`]]
+                  : []),
+                ...(productDetails?.hasVariants ? [["Variantes disponibles", `${productDetails.variants.length} variantes`]] : []),
+                ...(productDetails?.priceRange
+                  ? [[
+                      "Rango de precios",
+                      `${formatCurrency(productDetails.priceRange.minDiscounted)} - ${formatCurrency(productDetails.priceRange.maxDiscounted)}`,
+                    ]]
+                  : []),
+              ].map(([label, value]) => (
+                <div
+                  key={label}
+                  className="grid gap-2 border-b border-border px-4 py-4 last:border-b-0 md:grid-cols-2"
+                >
+                  <p className="text-sm font-medium text-muted-foreground">{label}</p>
+                  <p className="text-sm text-foreground">{value}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {activeTab === "reviews" && (
+            <div className="mt-6">
+              <ReviewsList
+                reviews={reviews}
+                averageRating={productDetails?.averageRating ?? null}
+                totalReviews={productDetails?.totalReviews ?? 0}
+                currentUserId={currentUserId}
+                onEditReview={handleEditReview}
+                onDeleteReview={handleDeleteReview}
+              />
+
+              {currentUserId ? (
+                <ReviewForm
+                  productId={product?.id as number}
+                  existingReview={isEditingReview ? myReview : null}
+                  onSubmit={handleSubmitReview}
+                  onCancel={() => setIsEditingReview(false)}
+                />
+              ) : (
+                <div className="py-8 text-center text-muted-foreground">
+                  Debes iniciar sesion para escribir una review.
+                </div>
+              )}
+            </div>
+          )}
+        </section>
+      </div>
+
+      <RecentlyViewdItems />
+      <Newsletter />
     </>
   );
 };

@@ -172,26 +172,46 @@ const Checkout = () => {
               )}
 
               {(() => {
-                // isReady depende de si requiere shipping o no
-                // billingProfile es obligatorio SOLO para usuarios autenticados
+                if (loading || loadingOrder) {
+                  return (
+                    <div className="w-full h-12 bg-gray-200 animate-pulse rounded-md mt-7.5" />
+                  );
+                }
+
+                const missingBilling = isAuthenticated && !billingProfileSelected;
+                const missingShipping = order?.requiresShipping && !shippingSelected;
+                const missingPayment = !paymentMethodSelected;
+
                 const isReady = Boolean(
                   orderNumber &&
-                  (isAuthenticated ? billingProfileSelected : true) &&
-                  (order?.requiresShipping ? shippingSelected : true) &&
-                  paymentMethodSelected
+                  !missingBilling &&
+                  !missingShipping &&
+                  !missingPayment
                 );
+
                 return (
-                  <button
-                    type="button"
-                    onClick={onSubmit}
-                    disabled={saving || loadingOrder}
-                    className={`w-full flex justify-center font-medium py-3 px-6 rounded-md mt-7.5 ${!isReady || saving || loadingOrder
-                      ? "text-gray-600 bg-gray-400 cursor-not-allowed border-2 border-gray-300"
-                      : "text-white bg-blue hover:bg-blue-dark"
-                      }`}
-                  >
-                    {saving ? "Procesando..." : "Confirmar y pagar"}
-                  </button>
+                  <div className="mt-7.5">
+                    <button
+                      type="button"
+                      onClick={onSubmit}
+                      disabled={saving || !isReady}
+                      className={`w-full flex justify-center font-medium py-3 px-6 rounded-md ${!isReady || saving
+                        ? "text-gray-600 bg-gray-200 cursor-not-allowed border border-gray-300"
+                        : "text-white bg-blue hover:bg-blue-dark shadow-lg shadow-blue/20"
+                        }`}
+                    >
+                      {saving ? "Procesando..." : "Confirmar y pagar"}
+                    </button>
+                    {!isReady && !saving && (
+                      <p className="text-[13px] text-red-500 mt-3 flex items-center gap-1.5 justify-center">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
+                        {missingBilling ? "Falta seleccionar un perfil de facturación" :
+                          missingShipping ? "Falta seleccionar una dirección de envío" :
+                            missingPayment ? "Seleccioná un método de pago" :
+                              !orderNumber ? "Error: No hay número de orden" : "Completá los datos arriba"}
+                      </p>
+                    )}
+                  </div>
                 );
               })()}
 

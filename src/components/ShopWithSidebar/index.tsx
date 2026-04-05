@@ -7,6 +7,7 @@ import BrandDropdown from "./BrandDropdown";
 import SizeDropdown from "./SizeDropdown";
 import ColorsDropdwon from "./ColorsDropdwon";
 import PriceDropdown from "./PriceDropdown";
+import ConsoleDropdown from "./ConsoleDropdown";
 import SingleGridItem from "../Shop/SingleGridItem";
 import SingleListItem from "../Shop/SingleListItem";
 import { useUrlState } from "@/hooks/useUrlState";
@@ -69,6 +70,8 @@ const ShopWithSidebar: React.FC = () => {
   const urlSort = useMemo(() => (typeof params.sort === "string" ? params.sort : "0"), [params.sort]);
   const urlQ = useMemo(() => (typeof params.q === "string" ? params.q : undefined), [params.q]);
   const urlBrandIds = useMemo(() => parseCsvNums(params.brandIds), [params.brandIds]);
+  const urlConsoleId = useMemo(() => parseNum(params.consoleId), [params.consoleId]);
+  const urlProductType = useMemo(() => (typeof params.productType === "string" ? params.productType : undefined), [params.productType]);
 
 
   /******************
@@ -99,10 +102,13 @@ const ShopWithSidebar: React.FC = () => {
   const [maxPrice, setMaxPrice] = useState<number | undefined>(urlMaxPrice);
   const [inStockOnly, setInStockOnly] = useState<boolean | undefined>(urlInStock);
   const [brandIds, setBrandIds] = useState<number[] | undefined>(urlBrandIds);
+  const [consoleId, setConsoleId] = useState<number | undefined>(urlConsoleId);
+  const [productType, setProductType] = useState<string | undefined>(urlProductType);
 
   // Facetas (categorías)
   const [categoryFacets, setCategoryFacets] = useState<CategoryFacet[]>([]);
   const [brandFacets, setBrandFacets] = useState<CategoryFacet[]>([]);
+  const [consoleFacets, setConsoleFacets] = useState<CategoryFacet[]>([]);
   const [priceRange, setPriceRange] = useState<PriceRange | null>(null);
   const [facetsLoading, setFacetsLoading] = useState(false);
   const [facetsError, setFacetsError] = useState<string | null>(null);
@@ -121,11 +127,13 @@ const ShopWithSidebar: React.FC = () => {
         inStockOnly,
         q: urlQ,
         brandIds: brandIds?.join(","),
+        consoleId,
+        productType,
       },
       { replace: true }
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, selectedOption, categoryId, minPrice, maxPrice, inStockOnly, urlQ, brandIds]);
+  }, [page, selectedOption, categoryId, minPrice, maxPrice, inStockOnly, urlQ, brandIds, consoleId, productType]);
 
   /******************
    * Sort param para el backend
@@ -156,7 +164,9 @@ const ShopWithSidebar: React.FC = () => {
           maxPrice,
           inStockOnly,
           q: urlQ,
-          brandIds, // ⬅️ nuevo
+          brandIds,
+          consoleId, // ⬅️ nuevo
+          productType, // ⬅️ nuevo
         });
         const payload = res as PaginatedResponse<Product>;
         if (!cancelled) {
@@ -172,7 +182,7 @@ const ShopWithSidebar: React.FC = () => {
       }
     })();
     return () => { cancelled = true; };
-  }, [page, pageSize, sortParam, categoryId, minPrice, maxPrice, inStockOnly, urlQ, brandIds]);
+  }, [page, pageSize, sortParam, categoryId, minPrice, maxPrice, inStockOnly, urlQ, brandIds, consoleId, productType]);
 
 
   /******************
@@ -194,6 +204,7 @@ const ShopWithSidebar: React.FC = () => {
         if (!cancelled) {
           setCategoryFacets(facets.categoryFacets ?? []);
           setBrandFacets(facets.brandFacets ?? []);
+          setConsoleFacets(facets.consoleFacets ?? []);
           if (facets.priceRange?.minPrice != null && facets.priceRange?.maxPrice != null) {
             setPriceRange({
               minPrice: Number(facets.priceRange.minPrice),
@@ -338,6 +349,8 @@ const ShopWithSidebar: React.FC = () => {
                           setMaxPrice(undefined);
                           setInStockOnly(undefined);
                           setBrandIds(undefined);
+                          setConsoleId(undefined);
+                          setProductType(undefined);
                           setPage(1);
                         }}
                       >
@@ -351,6 +364,13 @@ const ShopWithSidebar: React.FC = () => {
                     categories={categoryFacets}
                     selectedId={categoryId}
                     onChange={(id) => { setCategoryId(id); setPage(1); }}
+                  />
+
+                  {/* console box */}
+                  <ConsoleDropdown
+                    consoles={consoleFacets}
+                    selectedId={consoleId}
+                    onChange={(id) => { setConsoleId(id); setPage(1); }}
                   />
                   {facetsLoading && <p className="px-5 text-sm text-gray-500">Cargando categorías…</p>}
                   {facetsError && !facetsLoading && <p className="px-5 text-sm text-red-500">{facetsError}</p>}

@@ -10,8 +10,34 @@ type Props = {
 };
 
 const Breadcrumb: React.FC<Props> = ({ title, pages = [] }) => {
+  const siteUrl = process.env.NEXTAUTH_URL || "https://hornerotech.com.ar";
+
+  // Prepare JSON-LD for breadcrumbs
+  const breadcrumbList = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": siteUrl
+      },
+      ...pages.map((page, index) => ({
+        "@type": "ListItem",
+        "position": index + 2,
+        "name": typeof page === "string" ? page : (typeof page.label === "string" ? page.label : title),
+        "item": typeof page === "string" ? null : `${siteUrl}${page.href}`
+      })).filter(item => item.item !== null)
+    ]
+  };
+
   return (
     <div className="overflow-hidden shadow-breadcrumb pt-[100px] lg:pt-[155px] xl:pt-[165px]">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbList) }}
+      />
       <div className="border-t border-gray-3">
         <div className="max-w-[1170px] w-full mx-auto px-4 sm:px-8 xl:px-0 py-5 xl:py-10">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -63,3 +89,4 @@ const Breadcrumb: React.FC<Props> = ({ title, pages = [] }) => {
 };
 
 export default Breadcrumb;
+

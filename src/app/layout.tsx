@@ -7,6 +7,13 @@ import { AuthProvider } from "@/app/context/AuthContext";
 import MetaPixel from "@/components/MetaPixel";
 import { ReduxProvider } from "@/redux/provider";
 
+import { Inter } from "next/font/google";
+
+const inter = Inter({ 
+  subsets: ["latin"],
+  variable: "--font-inter"
+});
+
 export default function RootLayout({
   children,
 }: {
@@ -15,7 +22,7 @@ export default function RootLayout({
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
 
   return (
-    <html lang="es">
+    <html lang="es" className={inter.variable}>
       <head>
         <title>HorneroTech | Tienda de tecnología de confianza</title>
         <meta name="description" content="Tu tienda de tecnología de confianza" />
