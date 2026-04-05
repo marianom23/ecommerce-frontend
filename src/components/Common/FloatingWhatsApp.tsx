@@ -25,7 +25,7 @@ const FloatingWhatsApp = () => {
             </svg>
 
             {/* Tooltip con fondo oscuro sólido y sombra para visibilidad */}
-            <span className="absolute right-full mr-4 top-1/2 -translate-y-1/2 bg-neutral-900/90 backdrop-blur-sm text-white text-sm font-medium px-4 py-2 rounded-xl whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none shadow-2xl border border-white/10">
+            <span className="absolute right-full top-1/2 mr-4 -translate-y-1/2 rounded-xl bg-dark px-4 py-2 text-sm font-medium text-white whitespace-nowrap opacity-0 shadow-2xl transition-all duration-300 pointer-events-none border border-dark/20 group-hover:opacity-100">
                 ¿Necesitás ayuda? Chateá con nosotros
             </span>
         </a>
