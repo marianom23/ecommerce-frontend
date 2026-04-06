@@ -123,6 +123,15 @@ const SingleListItem = ({ item }: { item: Product }) => {
           </div>
         )}
 
+        {/* Badge preventa */}
+        {item.isPresale && (
+          <div className="absolute left-0 bottom-3 z-20">
+            <span className="rounded-r-full bg-[#7c3aed] px-3 py-1 text-xs font-bold text-white shadow-sm tracking-wide uppercase">
+              Preventa
+            </span>
+          </div>
+        )}
+
         {/* Tags oscuros apilados (Digital, DLC, Consola) */}
         <div className="absolute right-3 top-3 z-20 flex flex-col items-end gap-2">
           {(item.fulfillmentType === 'DIGITAL_ON_DEMAND' || item.fulfillmentType === 'DIGITAL_INSTANT') && (

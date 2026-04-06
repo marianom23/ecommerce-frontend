@@ -122,6 +122,15 @@ const SingleGridItem = ({ item, variant = "default" }: { item: Product; variant?
           </div>
         )}
 
+        {/* Badge preventa */}
+        {item.isPresale && (
+          <div className="absolute left-0 bottom-3 z-10 pointer-events-none">
+            <span className="rounded-r-full bg-[#7c3aed] px-3 py-1 text-xs font-bold text-white shadow-1 tracking-wide uppercase">
+              Preventa
+            </span>
+          </div>
+        )}
+
         {/* Tags: Digital, DLC, Consola */}
         <div className="absolute right-3 top-3 z-10 flex flex-col gap-1.5 pointer-events-none">
           {(item.fulfillmentType === 'DIGITAL_ON_DEMAND' || item.fulfillmentType === 'DIGITAL_INSTANT') && (
