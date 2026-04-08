@@ -35,10 +35,11 @@ const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onOpenChange }) =
                         <SheetTitle className="text-left">
                             <Link href="/" onClick={() => onOpenChange(false)}>
                                 <Image
-                                    src="/images/logo/logo.svg"
+                                    src="/images/logo/logo2.png"
                                     alt="Logo"
-                                    width={140}
-                                    height={30}
+                                    width={130}
+                                    height={32}
+                                    className="h-auto w-auto max-h-[32px]"
                                 />
                             </Link>
                         </SheetTitle>

@@ -2,6 +2,8 @@
  * Generates a URL-friendly slug from a product title
  */
 export function generateSlug(title: string): string {
+  if (!title || typeof title !== 'string') return 'producto';
+  
   return title
     .toLowerCase()
     .replace(/[^a-z0-9\s-]/g, '') // Remove special characters except spaces and hyphens

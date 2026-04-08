@@ -33,7 +33,7 @@ const Breadcrumb: React.FC<Props> = ({ title, pages = [] }) => {
   };
 
   return (
-    <div className="overflow-hidden shadow-breadcrumb pt-[100px] lg:pt-[155px] xl:pt-[165px]">
+    <div className="overflow-hidden shadow-breadcrumb pt-[80px] lg:pt-[120px] xl:pt-[130px]">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbList) }}
