@@ -114,6 +114,31 @@ const ShopWithSidebar: React.FC = () => {
   const [facetsError, setFacetsError] = useState<string | null>(null);
 
   /******************
+   * Sync local states when URL changes (listening to navigation)
+   ******************/
+  useEffect(() => {
+    setCategoryId(urlCategoryId);
+    setConsoleId(urlConsoleId);
+    setBrandIds(urlBrandIds);
+    setMinPrice(urlMinPrice);
+    setMaxPrice(urlMaxPrice);
+    setInStockOnly(urlInStock);
+    setSelectedOption(urlSort);
+    setProductType(urlProductType);
+    setPage(Number(params.page ?? 1));
+  }, [
+    urlCategoryId,
+    urlConsoleId,
+    urlBrandIds,
+    urlMinPrice,
+    urlMaxPrice,
+    urlInStock,
+    urlSort,
+    urlProductType,
+    params.page
+  ]);
+
+  /******************
    * Sync URL cuando cambian filtros/página
    ******************/
   useEffect(() => {

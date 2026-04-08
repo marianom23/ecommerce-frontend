@@ -73,9 +73,9 @@ const Home = () => {
   }, [digitalProducts]);
 
   return (
-    <main>
+    <div>
       {/* Gallery Section - Now acts as the Main Hero/Banner */}
-      <section className="bg-white text-black pb-0 pt-32 sm:pt-40 lg:pt-48">
+      <section className="bg-white text-black pb-0 pt-6 md:pt-10">
         <div className="mx-auto max-w-7xl px-4 md:px-6">
           <div className="mb-0 text-center max-w-5xl mx-auto">
             <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold mb-6 md:mb-8 text-balance leading-tight tracking-tight">
@@ -117,7 +117,7 @@ const Home = () => {
       <CounDown banners={banners} />
       <Testimonials />
       <Newsletter />
-    </main>
+    </div>
   );
 };
 
