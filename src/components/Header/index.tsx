@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { logoutClient } from "@/lib/logoutClient";
 import CustomSelect, { type SelectOption } from "./CustomSelect";
-import { Search, ChevronDown } from "lucide-react";
+import { Search, ChevronDown, User } from "lucide-react";
 import { productService } from "@/services/productService";
 import { menuData } from "./menuData";
 import Dropdown from "./Dropdown";
@@ -130,11 +130,8 @@ const Header = () => {
               {/* Right Icons */}
               <div className="flex items-center gap-4">
                 <Link href={isAuthenticated ? "/mi-cuenta" : "/signin"} aria-label="Mi Cuenta">
-                  <div className="flex flex-col items-center">
-                    <span className="block text-[10px] text-dark-4 uppercase leading-none">Mi Cuenta</span>
-                    <span className="font-medium text-xs text-dark truncate max-w-[80px]">
-                      {isAuthenticated ? (user?.firstName ?? user?.name ?? "Usuario") : "Ingresar"}
-                    </span>
+                  <div className="flex items-center justify-center p-1 active:scale-90 transition-transform">
+                    <User className="w-6.5 h-6.5 text-blue stroke-[1.8]" />
                   </div>
                 </Link>
 

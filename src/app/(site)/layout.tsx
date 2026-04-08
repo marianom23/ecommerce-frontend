@@ -48,7 +48,9 @@ export default function SiteLayout({
           <ModalProvider>
             <PreviewSliderProvider>
               <Header />
-              {children}
+              <main className="pt-[110px] lg:pt-[140px]">
+                {children}
+              </main>
               <QuickViewModal />
               <CartSidebarModal />
               <PreviewSliderModal />

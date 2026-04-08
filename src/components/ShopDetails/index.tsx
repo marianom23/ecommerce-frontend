@@ -490,7 +490,7 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
         />
       </div>
 
-      <div className="mx-auto max-w-7xl px-3 pb-4 pt-6 sm:px-6 sm:py-6 lg:px-8">
+      <div className="mx-auto max-w-7xl px-3 pb-4 pt-3 sm:px-6 sm:py-6 lg:px-8">
         <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm sm:rounded-2xl">
           <div className="grid lg:grid-cols-2">
             <div className="relative bg-gray-1 lg:p-8">
