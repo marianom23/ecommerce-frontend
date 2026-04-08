@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { productService, DigitalProduct } from "@/services/productService";
 
 import dynamic from 'next/dynamic'
-import { useRouter } from "next/navigation";
+
 
 import { getCldImageUrl } from 'next-cloudinary';
 
@@ -22,15 +22,10 @@ import { Banner } from "@/types/banner";
 const CircularGallery = dynamic(() => import('@/components/CircularGallery'), { ssr: false })
 
 const Home = () => {
-  const router = useRouter();
+
   const [banners, setBanners] = useState<Banner[]>([]);
   const [digitalProducts, setDigitalProducts] = useState<DigitalProduct[]>([]);
 
-  const handleGalleryClick = React.useCallback((item: any) => {
-    if (item.slug) {
-      router.push(`/detalle-producto/${item.slug}`);
-    }
-  }, [router]);
 
   useEffect(() => {
     const fetchBanners = async () => {
@@ -98,7 +93,6 @@ const Home = () => {
               font="bold 32px system-ui"
               scrollSpeed={1}
               scrollEase={0.05}
-              onClick={handleGalleryClick}
             />
           </div>
         )}
