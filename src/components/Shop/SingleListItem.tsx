@@ -16,7 +16,7 @@ import { updateproductDetails } from "@/redux/features/product-details";
 import { generateProductUrl } from "@/utils/slug";
 import { useAuth } from "@/hooks/useAuth";
 import * as pixel from "@/utils/pixel";
-import { Heart, Eye, Star } from "lucide-react";
+import { Heart, Eye, Star, ShoppingCart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
@@ -151,8 +151,8 @@ const SingleListItem = ({ item }: { item: Product }) => {
           )}
         </div>
 
-        {/* Botones de accion (aparecen en hover en la imagen) */}
-        <div className="absolute bottom-0 left-0 right-0 z-20 flex w-full translate-y-full items-center justify-center gap-3 bg-gradient-to-t from-black/20 to-transparent p-5 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+        {/* Botones de accion — Siempre visibles en mobile, hover en desktop */}
+        <div className="absolute bottom-4 left-0 right-0 z-20 flex items-center justify-center gap-3 px-5 transition-all duration-300 sm:translate-y-full sm:opacity-0 sm:group-hover:translate-y-0 sm:group-hover:opacity-100">
           <Button
             size="icon"
             variant="secondary"
@@ -162,15 +162,29 @@ const SingleListItem = ({ item }: { item: Product }) => {
               handleQuickViewUpdate();
               openModal();
             }}
-            className="h-11 w-11 shrink-0 rounded-full bg-white shadow-md hover:bg-neutral-50"
+            className="hidden sm:flex h-11 w-11 shrink-0 rounded-full bg-white shadow-md hover:bg-neutral-50"
           >
             <Eye className="h-5 w-5 text-gray-800" />
           </Button>
+
+          <Button
+            size="icon"
+            variant="secondary"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleAddToCart();
+            }}
+            className="h-11 w-11 shrink-0 rounded-full bg-dark text-white shadow-md hover:bg-dark-2"
+          >
+            <ShoppingCart className="h-5 w-5" />
+          </Button>
+
           <Button
             size="icon"
             variant="secondary"
             className={cn(
-              "h-11 w-11 shrink-0 rounded-full bg-white shadow-md hover:bg-neutral-50",
+              "hidden sm:flex h-11 w-11 shrink-0 rounded-full bg-white shadow-md hover:bg-neutral-50",
               isInWishlist && "bg-red-50"
             )}
             onClick={(e) => {

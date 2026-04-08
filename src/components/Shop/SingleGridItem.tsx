@@ -146,8 +146,8 @@ const SingleGridItem = ({ item, variant = "default" }: { item: Product; variant?
 
         </div>
 
-        {/* Botones — aparecen al hacer hover, suben desde abajo */}
-        <div className="absolute bottom-0 left-0 right-0 z-20 flex translate-y-full items-center justify-center gap-2.5 bg-gradient-to-t from-black/20 to-transparent px-4 pb-5 pt-8 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+        {/* Botones de accion — Siempre visibles en mobile, hover en desktop */}
+        <div className="absolute bottom-4 left-0 right-0 z-20 flex items-center justify-center gap-3 px-5 transition-all duration-300 sm:translate-y-full sm:opacity-0 sm:group-hover:translate-y-0 sm:group-hover:opacity-100">
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -155,20 +155,19 @@ const SingleGridItem = ({ item, variant = "default" }: { item: Product; variant?
               openModal();
             }}
             aria-label="Vista rápida"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white shadow-1 transition-colors duration-200 hover:text-blue"
+            className="hidden sm:flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white shadow-1 transition-colors duration-200 hover:text-blue"
           >
             <Eye className="h-4 w-4" />
           </button>
-
           <button
             onClick={(e) => {
               e.stopPropagation();
               handleAddToCart();
             }}
             aria-label="Agregar al carrito"
-            className="flex h-10 w-10 sm:w-auto sm:px-6 shrink-0 items-center justify-center gap-2 rounded-full bg-dark text-white shadow-1 transition-colors duration-200 hover:bg-dark-2 text-sm font-medium"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-dark text-white shadow-1 transition-colors duration-200 hover:bg-dark-2 sm:h-11 sm:w-auto sm:px-6 sm:gap-2 sm:text-sm sm:font-medium"
           >
-            <ShoppingCart className="h-4 w-4 shrink-0" />
+            <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
             <span className="hidden sm:inline">Agregar</span>
           </button>
 
@@ -179,7 +178,7 @@ const SingleGridItem = ({ item, variant = "default" }: { item: Product; variant?
             }}
             aria-label="Wishlist"
             className={cn(
-              "flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white shadow-1 transition-colors duration-200",
+              "hidden sm:flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white shadow-1 transition-colors duration-200",
               isInWishlist ? "text-red" : "hover:text-blue"
             )}
           >

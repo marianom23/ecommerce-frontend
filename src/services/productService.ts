@@ -5,7 +5,7 @@ import {
   type ProductFacetsResponse,
 } from "@/types/facets";
 // export type Product = { id: number; title: string; reviews: number; price: number; discountedPrice: number; imgs?: { thumbnails: string[]; previews: string[] } };
-export type ListParams = { page?: number; limit?: number; sort?: string; q?: string; categoryId?: number; consoleId?: number; productType?: string; excludeDLC?: boolean; minPrice?: number, maxPrice?: number, sinceDays?: number, brandIds?: number[], inStockOnly?: boolean; };
+export type ListParams = { page?: number; limit?: number; sort?: string; q?: string; categoryId?: number; consoleId?: number; productType?: string; excludeDLC?: boolean; minPrice?: number, maxPrice?: number, sinceDays?: number, brandIds?: number[], inStockOnly?: boolean; isPresale?: boolean; };
 export type CreateProductDto = { name: string; description?: string; price: number; sku?: string; brandId?: number; categoryId?: number; consoleId?: number; productType?: string; };
 export type UpdateProductDto = Partial<CreateProductDto>;
 
@@ -31,6 +31,9 @@ export const productService = {
   },
   getDigitalProducts() {
     return api.get<DigitalProduct[]>(`${basePublic}/digital`);
+  },
+  getFeaturedProducts() {
+    return api.get<Product[]>(`${basePublic}/featured`);
   },
   create(body: CreateProductDto) {
     return api.post<Product>(baseAdmin, body);

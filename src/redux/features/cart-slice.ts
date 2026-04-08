@@ -188,7 +188,7 @@ const slice = createSlice({
     // MUTACIONES GUEST
     builder
       .addCase(addCartItemGuest.pending, pending)
-      .addCase(addCartItemGuest.fulfilled, (s, a) => { fulfilled(s, a); toast.success("Producto agregado 🛒"); })
+      .addCase(addCartItemGuest.fulfilled, fulfilled)
       .addCase(addCartItemGuest.rejected, rejectedWithStockError)
 
       .addCase(updateCartItemQuantityGuest.pending, pending)
@@ -214,7 +214,7 @@ const slice = createSlice({
     // MUTACIONES LOGGED
     builder
       .addCase(addCartItemLogged.pending, pending)
-      .addCase(addCartItemLogged.fulfilled, (s, a) => { fulfilled(s, a); toast.success("Producto agregado 🛒"); })
+      .addCase(addCartItemLogged.fulfilled, fulfilled)
       .addCase(addCartItemLogged.rejected, rejectedWithStockError)
 
       .addCase(updateCartItemQuantityLogged.pending, pending)

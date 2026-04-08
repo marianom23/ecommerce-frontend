@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { logoutClient } from "@/lib/logoutClient";
 import CustomSelect, { type SelectOption } from "./CustomSelect";
+import { Search, ChevronDown } from "lucide-react";
 import { productService } from "@/services/productService";
 import { menuData } from "./menuData";
 import Dropdown from "./Dropdown";
@@ -30,6 +31,7 @@ const Header = () => {
   const [navigationOpen, setNavigationOpen] = useState(false);
   const [stickyMenu, setStickyMenu] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isSearchCatOpen, setIsSearchCatOpen] = useState(false);
 
   const { openCartModal } = useCartModalContext();
   const totalPrice = useSelector(selectTotalPrice);
@@ -117,36 +119,23 @@ const Header = () => {
               {/* Centered Logo */}
               <Link className="flex-shrink-0 absolute left-1/2 -translate-x-1/2" href="/">
                 <Image
-                  src="/images/logo/celular.svg"
+                  src="/images/logo/logo2.png"
                   alt="Logo"
-                  width={88}
-                  height={36}
+                  width={110}
+                  height={28}
+                  className="h-auto w-auto max-h-[28px]"
                 />
               </Link>
 
               {/* Right Icons */}
               <div className="flex items-center gap-4">
                 <Link href={isAuthenticated ? "/mi-cuenta" : "/signin"} aria-label="Mi Cuenta">
-                  <svg
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      clipRule="evenodd"
-                      d="M12 1.25C9.37 1.25 7.25 3.37 7.25 6C7.25 8.62 9.37 10.75 12 10.75C14.62 10.75 16.75 8.62 16.75 6C16.75 3.37 14.62 1.25 12 1.25Z"
-                      fill="#3C50E0"
-                    />
-                    <path
-                      fillRule="evenodd"
-                      clipRule="evenodd"
-                      d="M12 12.25C9.68 12.25 7.55 12.78 5.98 13.66C4.42 14.54 3.25 15.87 3.25 17.5V17.6C3.25 18.76 3.25 20.22 4.53 21.26C5.15 21.77 6.04 22.14 7.23 22.38C8.42 22.62 9.97 22.75 12 22.75C14.03 22.75 15.58 22.62 16.77 22.38C17.96 22.14 18.84 21.77 19.47 21.26C20.75 20.22 20.75 18.76 20.75 17.6V17.5C20.75 15.87 19.58 14.54 18.02 13.66C16.44 12.78 14.31 12.25 12 12.25Z"
-                      fill="#3C50E0"
-                    />
-                  </svg>
+                  <div className="flex flex-col items-center">
+                    <span className="block text-[10px] text-dark-4 uppercase leading-none">Mi Cuenta</span>
+                    <span className="font-medium text-xs text-dark truncate max-w-[80px]">
+                      {isAuthenticated ? (user?.firstName ?? user?.name ?? "Usuario") : "Ingresar"}
+                    </span>
+                  </div>
                 </Link>
 
                 <button onClick={handleOpenCartModal} className="relative" aria-label="Carrito">
@@ -200,52 +189,59 @@ const Header = () => {
                   router.push(`/productos?${params.toString()}`);
                 }}
               >
-                <div className="flex items-center">
-                  <div>
-                    <CustomSelect
-                      options={catOptions}
-                      value={selectedCategory}
-                      onChange={(v) => setSelectedCategory(String(v))}
-                      aria-label="Seleccionar categoría"
-                    />
-                  </div>
-
-                  <div className="relative flex-1">
-                    {/* divider */}
-                    <span className="absolute left-0 top-1/2 -translate-y-1/2 inline-block w-px h-5.5 bg-gray-4"></span>
-
-                    <input
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      value={searchQuery}
-                      type="search"
-                      name="search"
-                      id="search-mobile"
-                      placeholder={catsLoading ? "Cargando categorías…" : "Buscar productos…"}
-                      autoComplete="off"
-                      className="custom-search w-full rounded-r-[5px] bg-gray-1 !border-l-0 border border-gray-3 py-2.5 pl-4 pr-10 outline-none ease-in duration-200"
-                      aria-label="Buscar productos"
-                    />
-
+                <div className="flex items-center w-full h-10 rounded-full border border-gray-3 bg-white shadow-sm px-3 gap-1 text-sm text-dark relative">
+                  {/* Dropdown de categorías móvile */}
+                  <div className="relative flex items-center shrink-0">
                     <button
-                      type="submit"
-                      aria-label="Buscar"
-                      className="flex items-center justify-center absolute right-3 top-1/2 -translate-y-1/2 ease-in duration-200 hover:text-blue"
+                      type="button"
+                      onClick={() => setIsSearchCatOpen(!isSearchCatOpen)}
+                      className="flex items-center gap-1 font-medium whitespace-nowrap pr-2 hover:text-blue transition-colors"
                     >
-                      <svg
-                        className="fill-current"
-                        width="18"
-                        height="18"
-                        viewBox="0 0 18 18"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          d="M17.2687 15.6656L12.6281 11.8969C14.5406 9.28123 14.3437 5.5406 11.9531 3.1781C10.6875 1.91248 8.99995 1.20935 7.19995 1.20935C5.39995 1.20935 3.71245 1.91248 2.44683 3.1781C-0.168799 5.79373 -0.168799 10.0687 2.44683 12.6844C3.71245 13.95 5.39995 14.6531 7.19995 14.6531C8.91558 14.6531 10.5187 14.0062 11.7843 12.8531L16.4812 16.65C16.5937 16.7344 16.7343 16.7906 16.875 16.7906C17.0718 16.7906 17.2406 16.7062 17.3531 16.5656C17.5781 16.2844 17.55 15.8906 17.2687 15.6656ZM7.19995 13.3875C5.73745 13.3875 4.38745 12.825 3.34683 11.7844C1.20933 9.64685 1.20933 6.18748 3.34683 4.0781C4.38745 3.03748 5.73745 2.47498 7.19995 2.47498C8.66245 2.47498 10.0125 3.03748 11.0531 4.0781C13.1906 6.2156 13.1906 9.67498 11.0531 11.7844C10.0406 12.825 8.66245 13.3875 7.19995 13.3875Z"
-                          fill=""
-                        />
-                      </svg>
+                      <span className="max-w-[70px] truncate">
+                        {catOptions.find(c => c.value === selectedCategory)?.label || "Categorías"}
+                      </span>
+                      <ChevronDown
+                        className={`w-3.5 h-3.5 text-gray-500 transition-transform duration-200 ${isSearchCatOpen ? "rotate-180" : ""}`}
+                      />
                     </button>
+
+                    {isSearchCatOpen && (
+                      <ul className="absolute top-full left-0 mt-2 w-48 bg-white border border-gray-3 rounded-lg shadow-md py-1 z-9999 text-sm overflow-y-auto max-h-60">
+                        {catOptions.map((cat) => (
+                          <li key={cat.value}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedCategory(String(cat.value));
+                                setIsSearchCatOpen(false);
+                              }}
+                              className="w-full text-left px-3 py-1.5 hover:bg-gray-1 transition-colors text-dark"
+                            >
+                              {cat.label}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
+
+                  <div className="w-px h-4 bg-gray-3 shrink-0" />
+
+                  <input
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    value={searchQuery}
+                    type="search"
+                    placeholder="Buscar productos..."
+                    className="flex-1 bg-transparent outline-none placeholder:text-gray-400 text-dark min-w-0 px-2"
+                  />
+
+                  <button
+                    type="submit"
+                    aria-label="Buscar"
+                    className="shrink-0 text-gray-400 hover:text-blue transition-colors"
+                  >
+                    <Search className="w-4 h-4" />
+                  </button>
                 </div>
               </form>
             </div>
@@ -253,21 +249,22 @@ const Header = () => {
 
           {/* DESKTOP LAYOUT (hidden lg:flex) */}
           <div
-            className={`hidden lg:flex flex-row items-center justify-between gap-5 xl:justify-between ease-out duration-200 ${stickyMenu ? "py-4" : "py-6"}`}
+            className={`hidden lg:flex flex-row items-center justify-between gap-5 xl:justify-between ease-out duration-200 ${stickyMenu ? "py-3" : "py-4"}`}
           >
             {/* left */}
-            <div className="flex flex-1 flex-row items-center gap-5 lg:gap-10 min-w-0">
-              <Link className="flex-shrink-0 -mt-1" href="/">
+            <div className="flex flex-1 flex-row items-center gap-5 lg:gap-6 min-w-0 text-dark">
+              <Link className="flex-shrink-0" href="/">
                 <Image
-                  src="/images/logo/logo.svg"
+                  src="/images/logo/logo2.png"
                   alt="Logo"
-                  width={170}
-                  height={36}
+                  width={160}
+                  height={35}
+                  className="h-auto w-auto max-h-[35px]"
                 />
               </Link>
 
               {/* buscador desktop */}
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-0 flex justify-start">
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
@@ -276,54 +273,62 @@ const Header = () => {
                     if (selectedCategory !== "0") params.set("categoryId", selectedCategory);
                     router.push(`/productos?${params.toString()}`);
                   }}
+                  className="w-full max-w-2xl"
                 >
-                  <div className="flex items-center">
-                    <div>
-                      <CustomSelect
-                        options={catOptions}
-                        value={selectedCategory}
-                        onChange={(v) => setSelectedCategory(String(v))}
-                        aria-label="Seleccionar categoría"
-                      />
-                    </div>
-
-                    <div className="relative flex-1 min-w-0">
-                      {/* divider */}
-                      <span className="absolute left-0 top-1/2 -translate-y-1/2 inline-block w-px h-5.5 bg-gray-4"></span>
-
-                      <input
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        value={searchQuery}
-                        type="search"
-                        name="search"
-                        id="search"
-                        placeholder={catsLoading ? "Cargando categorías…" : "Buscar productos…"}
-                        autoComplete="off"
-                        className="custom-search w-full rounded-r-[5px] bg-gray-1 !border-l-0 border border-gray-3 py-2.5 pl-4 pr-10 outline-none ease-in duration-200"
-                        aria-label="Buscar productos"
-                      />
-
+                  <div className="flex items-center w-full h-9 rounded-full border border-gray-3 bg-white shadow-sm px-3 gap-1 text-sm text-dark relative">
+                    {/* Dropdown de categorías */}
+                    <div className="relative flex items-center shrink-0">
                       <button
-                        id="search-btn"
-                        type="submit"
-                        aria-label="Buscar"
-                        className="flex items-center justify-center absolute right-3 top-1/2 -translate-y-1/2 ease-in duration-200 hover:text-blue"
+                        type="button"
+                        onClick={() => setIsSearchCatOpen(!isSearchCatOpen)}
+                        className="flex items-center gap-1 font-medium whitespace-nowrap pr-2 hover:text-blue transition-colors"
                       >
-                        <svg
-                          className="fill-current"
-                          width="18"
-                          height="18"
-                          viewBox="0 0 18 18"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            d="M17.2687 15.6656L12.6281 11.8969C14.5406 9.28123 14.3437 5.5406 11.9531 3.1781C10.6875 1.91248 8.99995 1.20935 7.19995 1.20935C5.39995 1.20935 3.71245 1.91248 2.44683 3.1781C-0.168799 5.79373 -0.168799 10.0687 2.44683 12.6844C3.71245 13.95 5.39995 14.6531 7.19995 14.6531C8.91558 14.6531 10.5187 14.0062 11.7843 12.8531L16.4812 16.65C16.5937 16.7344 16.7343 16.7906 16.875 16.7906C17.0718 16.7906 17.2406 16.7062 17.3531 16.5656C17.5781 16.2844 17.55 15.8906 17.2687 15.6656ZM7.19995 13.3875C5.73745 13.3875 4.38745 12.825 3.34683 11.7844C1.20933 9.64685 1.20933 6.18748 3.34683 4.0781C4.38745 3.03748 5.73745 2.47498 7.19995 2.47498C8.66245 2.47498 10.0125 3.03748 11.0531 4.0781C13.1906 6.2156 13.1906 9.67498 11.0531 11.7844C10.0406 12.825 8.66245 13.3875 7.19995 13.3875Z"
-                            fill=""
-                          />
-                        </svg>
+                        {catOptions.find(c => c.value === selectedCategory)?.label || "Categorías"}
+                        <ChevronDown
+                          className={`w-3.5 h-3.5 text-gray-500 transition-transform duration-200 ${isSearchCatOpen ? "rotate-180" : ""}`}
+                        />
                       </button>
+
+                      {isSearchCatOpen && (
+                        <ul className="absolute top-full left-0 mt-2 w-48 bg-white border border-gray-3 rounded-lg shadow-md py-1 z-50 text-sm overflow-y-auto max-h-60">
+                          {catOptions.map((cat) => (
+                            <li key={cat.value}>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedCategory(String(cat.value));
+                                  setIsSearchCatOpen(false);
+                                }}
+                                className="w-full text-left px-3 py-1.5 hover:bg-gray-1 transition-colors text-dark"
+                              >
+                                {cat.label}
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                     </div>
+
+                    {/* Divisor */}
+                    <div className="w-px h-4 bg-gray-3 shrink-0" />
+
+                    {/* Input */}
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder={catsLoading ? "Cargando..." : "Buscar productos..."}
+                      className="flex-1 bg-transparent outline-none placeholder:text-gray-400 text-dark min-w-0 px-2"
+                    />
+
+                    {/* Ícono de búsqueda */}
+                    <button
+                      type="submit"
+                      aria-label="Buscar"
+                      className="shrink-0 text-gray-400 hover:text-blue transition-colors"
+                    >
+                      <Search className="w-4 h-4" />
+                    </button>
                   </div>
                 </form>
               </div>
@@ -342,25 +347,13 @@ const Header = () => {
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
-                    fillRule="evenodd"
-                    clipRule="evenodd"
-                    d="M4.7177 3.09215C5.94388 1.80121 7.9721 2.04307 8.98569 3.47665L10.2467 5.26014C11.0574 6.4068 10.9889 8.00097 10.0214 9.01965L9.7765 9.27743C9.77582 9.27921 9.7751 9.28115 9.77436 9.28323C9.76142 9.31959 9.7287 9.43538 9.7609 9.65513C9.82765 10.1107 10.1793 11.0364 11.607 12.5394C13.0391 14.0472 13.9078 14.4025 14.3103 14.4679C14.484 14.4961 14.5748 14.4716 14.6038 14.4614L15.0124 14.0312C15.8862 13.1113 17.2485 12.9301 18.347 13.5623L20.2575 14.662C21.8904 15.6019 22.2705 17.9011 20.9655 19.275L19.545 20.7705C19.1016 21.2373 18.497 21.6358 17.75 21.7095C15.9261 21.8895 11.701 21.655 7.27161 16.9917C3.13844 12.6403 2.35326 8.85538 2.25401 7.00615L2.92011 6.9704L2.25401 7.00615C2.20497 6.09248 2.61224 5.30879 3.1481 4.74464L4.7177 3.09215ZM7.7609 4.34262C7.24855 3.61797 6.32812 3.57473 5.80528 4.12518L4.23568 5.77767C3.90429 6.12656 3.73042 6.52646 3.75185 6.92576C3.83289 8.43558 4.48307 11.8779 8.35919 15.9587C12.4234 20.2375 16.1676 20.3584 17.6026 20.2167C17.8864 20.1887 18.1783 20.0313 18.4574 19.7375L19.8779 18.2419C20.4907 17.5968 20.3301 16.4345 19.5092 15.962L17.5987 14.8624C17.086 14.5673 16.4854 14.6584 16.1 15.0642L15.6445 15.5437L15.1174 15.043C15.6445 15.5438 15.6438 15.5445 15.6432 15.5452L15.6417 15.5467L15.6388 15.5498L15.6324 15.5562L15.6181 15.5704C15.6078 15.5803 15.5959 15.5913 15.5825 15.6031C15.5556 15.6266 15.5223 15.6535 15.4824 15.6819C15.4022 15.7387 15.2955 15.8012 15.1606 15.8544C14.8846 15.9633 14.5201 16.0216 14.0699 15.9485C13.1923 15.806 12.0422 15.1757 10.5194 13.5724C8.99202 11.9644 8.40746 10.7647 8.27675 9.87259C8.21022 9.41852 8.26346 9.05492 8.36116 8.78035C8.40921 8.64533 8.46594 8.53766 8.51826 8.4559C8.54435 8.41514 8.56922 8.381 8.5912 8.35322C8.60219 8.33933 8.61246 8.32703 8.62182 8.31627L8.63514 8.30129L8.64125 8.29465L8.64415 8.29154L8.64556 8.29004C8.64625 8.28931 8.64694 8.28859 9.17861 8.79357L8.64695 8.28858L8.93376 7.98662C9.3793 7.51755 9.44403 6.72317 9.02189 6.1261L7.7609 4.34262Z"
-                    fill="#3C50E0"
-                  />
-                  <path
-                    d="M13.2595 1.88008C13.3257 1.47119 13.7122 1.19381 14.1211 1.26001C14.1464 1.26485 14.2279 1.28007 14.2705 1.28958C14.3559 1.30858 14.4749 1.33784 14.6233 1.38106C14.9201 1.46751 15.3347 1.60991 15.8323 1.83805C16.8286 2.2948 18.1544 3.09381 19.5302 4.46961C20.906 5.84541 21.705 7.17122 22.1617 8.1675C22.3899 8.66511 22.5323 9.07972 22.6187 9.3765C22.6619 9.5249 22.6912 9.64393 22.7102 9.72926C22.7197 9.77193 22.7267 9.80619 22.7315 9.8315L22.7373 9.86269C22.8034 10.2716 22.5286 10.6741 22.1197 10.7403C21.712 10.8063 21.3279 10.5303 21.2601 10.1233C21.258 10.1124 21.2522 10.083 21.2461 10.0553C21.2337 9.99994 21.2124 9.91212 21.1786 9.79597C21.1109 9.56363 20.9934 9.2183 20.7982 8.79262C20.4084 7.94232 19.7074 6.76813 18.4695 5.53027C17.2317 4.2924 16.0575 3.59141 15.2072 3.20158C14.7815 3.00642 14.4362 2.88889 14.2038 2.82122C14.0877 2.78739 13.9417 2.75387 13.8863 2.74154C13.4793 2.67372 13.1935 2.2878 13.2595 1.88008Z"
-                    fill="#3C50E0"
-                  />
-                  <path
-                    fillRule="evenodd"
-                    clipRule="evenodd"
-                    d="M13.4861 5.32955C13.5999 4.93128 14.015 4.70066 14.4133 4.81445L14.2072 5.53559C14.4133 4.81445 14.4136 4.81455 14.414 4.81465L14.4147 4.81486L14.4162 4.81531L14.4196 4.81628L14.4273 4.81859L14.4471 4.82476C14.4622 4.82958 14.481 4.83586 14.5035 4.84383C14.5484 4.85976 14.6077 4.88243 14.6805 4.91363C14.8262 4.97607 15.0253 5.07249 15.2698 5.2172C15.7593 5.50688 16.4275 5.98806 17.2124 6.77303C17.9974 7.558 18.4786 8.22619 18.7683 8.71565C18.913 8.96016 19.0094 9.15923 19.0718 9.30491C19.103 9.37772 19.1257 9.43708 19.1416 9.48199C19.1496 9.50444 19.1559 9.52327 19.1607 9.53835L19.1669 9.55814L19.1692 9.56589L19.1702 9.56922L19.1706 9.57075L19.1708 9.57148C19.1709 9.57184 19.171 9.57219 18.4499 9.77823L19.171 9.57219C19.2848 9.97047 19.0542 10.3856 18.6559 10.4994C18.261 10.6122 17.8496 10.3864 17.7317 9.99438L17.728 9.9836C17.7227 9.96858 17.7116 9.93899 17.6931 9.89579C17.6561 9.80946 17.589 9.66823 17.4774 9.47963C17.2544 9.10289 16.8517 8.53364 16.1518 7.83369C15.4518 7.13374 14.8826 6.73103 14.5058 6.50806C14.3172 6.39645 14.176 6.32935 14.0897 6.29235C14.0465 6.27383 14.0169 6.2628 14.0019 6.25747L13.9911 6.25377C13.599 6.13589 13.3733 5.72445 13.4861 5.32955Z"
-                    fill="#3C50E0"
+                    d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"
+                    fill="#25D366"
                   />
                 </svg>
                 <div>
                   <span className="block text-2xs text-dark-4 uppercase">
-                    SOPORTE 24/7
+                    ESCRIBINOS
                   </span>
                   <p className="font-medium text-custom-sm text-dark">
                     (+54) 261 4689151
@@ -381,27 +374,6 @@ const Header = () => {
                         aria-label="Ir a Mi Cuenta"
                         className="flex items-center gap-2.5 cursor-pointer"
                       >
-                        {/* icono usuario */}
-                        <svg
-                          width="24"
-                          height="24"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            clipRule="evenodd"
-                            d="M12 1.25C9.37 1.25 7.25 3.37 7.25 6C7.25 8.62 9.37 10.75 12 10.75C14.62 10.75 16.75 8.62 16.75 6C16.75 3.37 14.62 1.25 12 1.25Z"
-                            fill="#3C50E0"
-                          />
-                          <path
-                            fillRule="evenodd"
-                            clipRule="evenodd"
-                            d="M12 12.25C9.68 12.25 7.55 12.78 5.98 13.66C4.42 14.54 3.25 15.87 3.25 17.5V17.6C3.25 18.76 3.25 20.22 4.53 21.26C5.15 21.77 6.04 22.14 7.23 22.38C8.42 22.62 9.97 22.75 12 22.75C14.03 22.75 15.58 22.62 16.77 22.38C17.96 22.14 18.84 21.77 19.47 21.26C20.75 20.22 20.75 18.76 20.75 17.6V17.5C20.75 15.87 19.58 14.54 18.02 13.66C16.44 12.78 14.31 12.25 12 12.25Z"
-                            fill="#3C50E0"
-                          />
-                        </svg>
                         <div>
                           <span className="block text-2xs text-dark-4 uppercase">Mi Cuenta</span>
                           <p className="font-medium text-custom-sm text-dark">
@@ -412,27 +384,6 @@ const Header = () => {
                     </div>
                   ) : (
                     <Link href="/signin" className="flex items-center gap-2.5">
-                      {/* icono usuario */}
-                      <svg
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          clipRule="evenodd"
-                          d="M12 1.25C9.37 1.25 7.25 3.37 7.25 6C7.25 8.62 9.37 10.75 12 10.75C14.62 10.75 16.75 8.62 16.75 6C16.75 3.37 14.62 1.25 12 1.25Z"
-                          fill="#3C50E0"
-                        />
-                        <path
-                          fillRule="evenodd"
-                          clipRule="evenodd"
-                          d="M12 12.25C9.68 12.25 7.55 12.78 5.98 13.66C4.42 14.54 3.25 15.87 3.25 17.5V17.6C3.25 18.76 3.25 20.22 4.53 21.26C5.15 21.77 6.04 22.14 7.23 22.38C8.42 22.62 9.97 22.75 12 22.75C14.03 22.75 15.58 22.62 16.77 22.38C17.96 22.14 18.84 21.77 19.47 21.26C20.75 20.22 20.75 18.76 20.75 17.6V17.5C20.75 15.87 19.58 14.54 18.02 13.66C16.44 12.78 14.31 12.25 12 12.25Z"
-                          fill="#3C50E0"
-                        />
-                      </svg>
                       <div>
                         <span className="block text-2xs text-dark-4 uppercase">
                           Mi Cuenta

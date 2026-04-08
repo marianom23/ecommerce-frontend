@@ -490,19 +490,7 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
         />
       </div>
 
-      <div className="mx-auto max-w-7xl px-3 pb-4 pt-36 sm:px-6 sm:py-6 lg:px-8">
-        <nav className="mb-4 hidden flex-wrap items-center gap-2 text-sm text-muted-foreground sm:flex">
-          <Link href="/" className="transition-colors hover:text-foreground">
-            Inicio
-          </Link>
-          <ChevronRight className="h-4 w-4" />
-          <Link href="/productos" className="transition-colors hover:text-foreground">
-            Productos
-          </Link>
-          <ChevronRight className="h-4 w-4" />
-          <span className="max-w-[220px] truncate">{breadcrumbCategory}</span>
-        </nav>
-
+      <div className="mx-auto max-w-7xl px-3 pb-4 pt-6 sm:px-6 sm:py-6 lg:px-8">
         <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm sm:rounded-2xl">
           <div className="grid lg:grid-cols-2">
             <div className="relative bg-gray-1 lg:p-8">
@@ -912,7 +900,7 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
                       {productDetails.dlcs.map((dlc) => (
                         <Link
                           key={dlc.id}
-                          href={generateProductUrl(dlc.id, dlc.title)}
+                          href={generateProductUrl(dlc.id, dlc.title || "producto")}
                           className="flex items-center gap-3 rounded-xl border border-border p-3 transition-colors hover:border-primary/40 hover:bg-muted/40"
                         >
                           <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-gray-1">

@@ -303,7 +303,7 @@ class App {
         this.scrollSpeed = scrollSpeed;
         this.onClick = onClick;
         this.items = items; // Save items to access data later
-        this.scroll = { ease: scrollEase, current: 0, target: 0, last: 0 };
+        this.scroll = { ease: scrollEase, current: 1000, target: 1000, last: 1000 };
         this.onCheckDebounce = debounce(this.onCheck, 200);
         this.createRenderer();
         this.createCamera();
@@ -447,6 +447,11 @@ class App {
         }
     }
     update() {
+        // Auto-scroll logic: increment target when not interacting
+        if (!this.isDown) {
+            this.scroll.target += 0.05; // Velocidad reducida para un giro más elegante
+        }
+
         this.scroll.current = lerp(this.scroll.current, this.scroll.target, this.scroll.ease);
         const direction = this.scroll.current > this.scroll.last ? 'right' : 'left';
         if (this.medias) {
@@ -458,13 +463,14 @@ class App {
     }
     addEventListeners() {
         this.boundOnResize = this.onResize.bind(this);
-        this.boundOnWheel = this.onWheel.bind(this);
+        // Desactivamos el wheel para que el scroll de la página no afecte la velocidad horizontal
+        // this.boundOnWheel = this.onWheel.bind(this); 
         this.boundOnTouchDown = this.onTouchDown.bind(this);
         this.boundOnTouchMove = this.onTouchMove.bind(this);
         this.boundOnTouchUp = this.onTouchUp.bind(this);
         window.addEventListener('resize', this.boundOnResize);
-        window.addEventListener('mousewheel', this.boundOnWheel);
-        window.addEventListener('wheel', this.boundOnWheel);
+        // window.addEventListener('mousewheel', this.boundOnWheel);
+        // window.addEventListener('wheel', this.boundOnWheel);
         window.addEventListener('mousedown', this.boundOnTouchDown);
         window.addEventListener('mousemove', this.boundOnTouchMove);
         window.addEventListener('mouseup', this.boundOnTouchUp);
