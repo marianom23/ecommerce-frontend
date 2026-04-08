@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { logoutClient } from "@/lib/logoutClient";
@@ -32,6 +32,14 @@ const Header = () => {
   const [stickyMenu, setStickyMenu] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isSearchCatOpen, setIsSearchCatOpen] = useState(false);
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const q = searchParams.get("q") || "";
+    const cat = searchParams.get("categoryId") || "0";
+    setSearchQuery(q);
+    setSelectedCategory(cat);
+  }, [searchParams]);
 
   const { openCartModal } = useCartModalContext();
   const totalPrice = useSelector(selectTotalPrice);
