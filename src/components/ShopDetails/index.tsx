@@ -178,7 +178,7 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
           content_ids: [details.id],
           content_type: details.productType?.toLowerCase() || "product",
           value: details.discountedPrice || details.price || details.priceRange.minDiscounted,
-          currency: "USD",
+          currency: "ARS",
         });
       } catch (err) {
         console.error("Error fetching product details:", err);
@@ -383,6 +383,7 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
         productId: productDetails.id,
         variantId: productDetails.hasVariants && selectedVariantId ? selectedVariantId : undefined,
         quantity,
+        price: currentPrice,
       });
     } catch (cartError) {
       console.error("Error adding to cart:", cartError);
@@ -411,7 +412,7 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
           content_ids: [productDetails.id],
           content_type: "product",
           value: productDetails.discountedPrice || productDetails.price || productDetails.priceRange.minDiscounted,
-          currency: "USD",
+          currency: "ARS",
         });
       }
     }

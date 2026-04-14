@@ -189,7 +189,7 @@ const QuickViewModal = () => {
             fetchedDetails.discountedPrice ||
             fetchedDetails.price ||
             fetchedDetails.priceRange.minDiscounted,
-          currency: "USD",
+          currency: "ARS",
         });
       } catch (error) {
         console.error(error);
@@ -334,6 +334,7 @@ const QuickViewModal = () => {
         productId,
         variantId: details?.hasVariants ? (selectedVariantId ?? undefined) : undefined,
         quantity,
+        price: currentPrice,
       });
       closeModal();
     } catch (error) {
@@ -363,7 +364,7 @@ const QuickViewModal = () => {
           content_ids: [product.id],
           content_type: details?.productType?.toLowerCase() || "product",
           value: currentPrice,
-          currency: "USD",
+          currency: "ARS",
         });
       }
     }

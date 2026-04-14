@@ -41,7 +41,12 @@ const SingleGridItem = ({ item, variant = "default" }: { item: Product; variant?
       toast("Debes elegir una variante del producto", { icon: "👈" });
       return;
     }
-    await addItem({ productId: item.id, variantId: item.defaultVariantId, quantity: 1 });
+    await addItem({
+      productId: item.id,
+      variantId: item.defaultVariantId,
+      quantity: 1,
+      price: item.discountedPrice || item.price
+    });
   };
 
   const handleItemToWishList = async () => {
@@ -60,7 +65,7 @@ const SingleGridItem = ({ item, variant = "default" }: { item: Product; variant?
           content_ids: [item.id],
           content_type: "product",
           value: item.discountedPrice || item.price,
-          currency: "USD",
+          currency: "ARS",
         });
       }
     }
