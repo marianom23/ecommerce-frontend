@@ -41,7 +41,7 @@ const Checkout = () => {
         content_ids: cart.items.map((item: any) => item.productId || item.id), // Ensure we get the ID
         content_type: "product",
         value: cart.total,
-        currency: "USD", // Adjust if needed, maybe cart.currency
+        currency: "ARS", // Adjust if needed, maybe cart.currency
         num_items: cart.items.reduce((acc: number, item: any) => acc + item.quantity, 0),
       });
       setHasTrackedInitiateCheckout(true);

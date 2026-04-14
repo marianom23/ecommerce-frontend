@@ -23,7 +23,7 @@ export const fetchCartLogged = createAsyncThunk<Cart>("cart/fetchLogged", async 
 
 /* ========== MUTACIONES GUEST ========== */
 export const addCartItemGuest = createAsyncThunk<Cart,
-  { productId?: number; variantId?: number; quantity: number },
+  { productId?: number; variantId?: number; quantity: number; price?: number },
   { rejectValue: string }>(
     "cart/addItemGuest",
     async (body, { rejectWithValue }) => {
@@ -35,7 +35,7 @@ export const addCartItemGuest = createAsyncThunk<Cart,
         pixel.event("AddToCart", {
           content_type: "product",
           content_ids: [body.productId],
-          value: undefined, // Opcional: podrías pasar el precio si lo tuvieras aquí
+          value: body.price ? body.price * body.quantity : undefined,
           currency: "ARS"
         }, { eventID: eventId });
 
@@ -82,7 +82,7 @@ export const clearCartGuest = createAsyncThunk<Cart>(
 
 /* ========== MUTACIONES LOGGED ========== */
 export const addCartItemLogged = createAsyncThunk<Cart,
-  { productId?: number; variantId?: number; quantity: number },
+  { productId?: number; variantId?: number; quantity: number; price?: number },
   { rejectValue: string }>(
     "cart/addItemLogged",
     async (body, { rejectWithValue }) => {
@@ -94,7 +94,7 @@ export const addCartItemLogged = createAsyncThunk<Cart,
         pixel.event("AddToCart", {
           content_type: "product",
           content_ids: [body.productId],
-          value: undefined,
+          value: body.price ? body.price * body.quantity : undefined,
           currency: "ARS"
         }, { eventID: eventId });
 

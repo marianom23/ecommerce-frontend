@@ -47,6 +47,7 @@ const SingleListItem = ({ item }: { item: Product }) => {
       productId: item.id,
       variantId: item.defaultVariantId,
       quantity: 1,
+      price: item.discountedPrice || item.price,
     });
   };
 
@@ -67,7 +68,7 @@ const SingleListItem = ({ item }: { item: Product }) => {
           content_ids: [item.id],
           content_type: "product",
           value: item.discountedPrice || item.price,
-          currency: "USD",
+          currency: "ARS",
         });
       }
     }
