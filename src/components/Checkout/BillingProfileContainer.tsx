@@ -51,7 +51,7 @@ const BillingProfileContainer: React.FC<{
     setErr(null);
     setSaving(true);
     try {
-      await orderService.patchBillingProfile(order.orderNumber, profile as any);
+      await orderService.patchBillingProfile(order.orderNumber, { billingProfileId: profile.id });
       if (!silent) {
         toast.success("Perfil de facturación aplicado ✓");
       }
