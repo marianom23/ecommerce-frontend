@@ -36,22 +36,7 @@ export type UpdateShippingAddressRequest = {
 };
 
 export type UpdateBillingProfileRequest = {
-  billingProfileId?: number;
-  fullName?: string;
-  email?: string;
-  phone?: string;
-  documentType?: string;
-  documentNumber?: string;
-  taxCondition?: string;
-  businessName?: string;
-  street?: string;
-  streetNumber?: string;
-  city?: string;
-  state?: string;
-  postalCode?: string;
-  country?: string;
-  apartmentNumber?: string;
-  floor?: string;
+  billingProfileId: number;
 };
 
 export type UpdatePaymentMethodRequest = {
