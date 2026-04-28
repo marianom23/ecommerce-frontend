@@ -840,14 +840,6 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
           </div>
         </div>
 
-        {productDetails?.description && (
-          <div className="mt-4 rounded-xl border border-border bg-card p-4 shadow-sm sm:mt-8 sm:rounded-2xl sm:p-6 lg:p-8">
-            <h2 className="text-base font-semibold text-foreground sm:text-lg">Descripcion</h2>
-            <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-muted-foreground sm:mt-3 sm:text-base">
-              {productDetails.description}
-            </p>
-          </div>
-        )}
 
         <section className="mt-8 rounded-2xl border border-border bg-card p-6 shadow-sm lg:p-8">
           <div className="flex flex-nowrap gap-3 overflow-x-auto pb-2">
