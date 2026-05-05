@@ -5,6 +5,7 @@ import type { Product } from "@/types/product";
 import type { PaginatedResponse } from "@/lib/api";
 import SingleGridItem from "@/components/Shop/SingleGridItem";
 import { productService } from "@/services/productService";
+import { SectionCardsSkeleton } from "@/components/Common/Skeletons";
 
 const NewArrival = () => {
   const [items, setItems] = useState<Product[]>([]);
@@ -68,11 +69,7 @@ const NewArrival = () => {
 
         {/* Grid */}
         {loading && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-7.5 gap-y-9">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="animate-pulse h-[330px] rounded-lg bg-white shadow-1" />
-            ))}
-          </div>
+          <SectionCardsSkeleton count={8} />
         )}
 
         {error && !loading && (

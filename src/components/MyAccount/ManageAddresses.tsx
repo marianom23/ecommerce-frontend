@@ -8,6 +8,16 @@ import BillingProfileForm from "../Checkout/BillingProfileForm";
 
 import toast from "react-hot-toast";
 import Modal from "../Common/Modal";
+import { OrderListSkeleton } from "@/components/Common/Skeletons";
+
+const getBillingProfileSummary = (profile: BillingProfileResponse) => {
+    const taxLabel = profile.taxCondition === "CONSUMIDOR_FINAL" ? "Predeterminado" : profile.taxCondition;
+    const documentLabel = profile.documentNumber
+        ? `${profile.documentType || "Doc."} ${profile.documentNumber}`
+        : "Documento no informado";
+
+    return `${documentLabel} • ${taxLabel}`;
+};
 
 export default function ManageAddresses() {
     // Estado para direcciones de envío
@@ -118,7 +128,7 @@ export default function ManageAddresses() {
                 </div>
 
                 {loadingShipping ? (
-                    <p className="p-4 sm:p-7.5 text-dark-5">Cargando direcciones de envío...</p>
+                    <OrderListSkeleton rows={2} />
                 ) : shippingMode === "form" ? (
                     <div className="p-4 sm:p-7.5">
                         <ShippingForm
@@ -234,7 +244,7 @@ export default function ManageAddresses() {
                 </div>
 
                 {loadingProfiles ? (
-                    <p className="p-4 sm:p-7.5 text-dark-5">Cargando perfiles de facturación...</p>
+                    <OrderListSkeleton rows={2} />
                 ) : profileMode === "form" ? (
                     <div className="p-4 sm:p-7.5">
                         <BillingProfileForm
@@ -278,7 +288,7 @@ export default function ManageAddresses() {
                                             <div className="flex-1">
                                                 <div className="flex justify-between items-start">
                                                     <div className="font-medium text-dark">
-                                                        {profile.documentType} {profile.documentNumber} • {profile.taxCondition === "CONSUMIDOR_FINAL" ? "Predeterminado" : profile.taxCondition}
+                                                        {getBillingProfileSummary(profile)}
                                                     </div>
                                                     <div className="flex items-center gap-3">
                                                         <button
@@ -327,7 +337,7 @@ export default function ManageAddresses() {
                                                         <div><span className="font-medium">Nombre:</span> {profile.fullName}</div>
                                                         {profile.businessName && <div><span className="font-medium">Razón Social:</span> {profile.businessName}</div>}
                                                         <div><span className="font-medium">Condición:</span> {profile.taxCondition}</div>
-                                                        <div><span className="font-medium">Doc:</span> {profile.documentType} {profile.documentNumber}</div>
+                                                        {profile.documentNumber && <div><span className="font-medium">Doc:</span> {profile.documentType || "Doc."} {profile.documentNumber}</div>}
                                                         {profile.emailForInvoices && <div className="sm:col-span-2"><span className="font-medium">Email Facturas:</span> {profile.emailForInvoices}</div>}
                                                         {profile.phone && <div><span className="font-medium">Teléfono:</span> {profile.phone}</div>}
                                                         {profile.city && (

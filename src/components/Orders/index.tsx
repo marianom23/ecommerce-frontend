@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import SingleOrder from "./SingleOrder";
 import { orderService } from "@/services/orderService";
 import type { OrderSummary, PageResponse } from "@/services/orderService";
+import { OrderListSkeleton } from "@/components/Common/Skeletons";
 
 const Orders = () => {
   const [pageData, setPageData] = useState<PageResponse<OrderSummary> | null>(null);
@@ -25,7 +26,7 @@ const Orders = () => {
   }, [page]);
 
   if (loading) {
-    return <p className="py-9.5 px-4 sm:px-7.5 xl:px-10">Cargando pedidos…</p>;
+    return <OrderListSkeleton rows={4} />;
   }
 
   if (err) {

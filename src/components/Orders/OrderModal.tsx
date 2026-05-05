@@ -3,6 +3,7 @@ import React from "react";
 import OrderDetails from "./OrderDetails";
 import EditOrder from "./EditOrder";
 import type { OrderResponse } from "@/services/orderService";
+import { OrderListSkeleton } from "@/components/Common/Skeletons";
 
 type Props = {
   showDetails: boolean;
@@ -29,7 +30,7 @@ const OrderModal = ({ showDetails, showEdit, toggleModal, order, orderId, loadin
 
         {showDetails && (
           loading ? (
-            <div className="p-8">Cargando detalle de orden #{String(orderId).slice(-8)}…</div>
+            <OrderListSkeleton rows={2} />
           ) : order ? (
             <OrderDetails orderItem={order} />
           ) : (

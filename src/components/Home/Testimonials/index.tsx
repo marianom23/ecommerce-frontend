@@ -5,6 +5,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { reviewService } from "@/services/reviewService";
 import { ReviewResponse } from "@/types/review";
 import SingleItem from "./SingleItem";
+import { SectionCardsSkeleton } from "@/components/Common/Skeletons";
 
 // Import Swiper styles
 import "swiper/css/navigation";
@@ -40,7 +41,15 @@ const Testimonials = () => {
     sliderRef.current.swiper.slideNext();
   }, []);
 
-  if (loading) return null; // o un skeleton
+  if (loading) {
+    return (
+      <section className="overflow-hidden pb-16.5">
+        <div className="max-w-[1170px] w-full mx-auto px-4 sm:px-8 xl:px-0">
+          <SectionCardsSkeleton count={3} className="grid-cols-1 md:grid-cols-3" />
+        </div>
+      </section>
+    );
+  }
   if (reviews.length === 0) return null;
 
   return (

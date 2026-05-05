@@ -111,7 +111,8 @@ class Media {
         bend,
         textColor,
         borderRadius = 0,
-        font
+        font,
+        onLoad
     }) {
         this.extra = 0;
         this.geometry = geometry;
@@ -128,6 +129,7 @@ class Media {
         this.textColor = textColor;
         this.borderRadius = borderRadius;
         this.font = font;
+        this.onLoad = onLoad;
         this.createShader();
         this.createMesh();
         this.createTitle();
@@ -205,7 +207,9 @@ class Media {
         img.onload = () => {
             texture.image = img;
             this.program.uniforms.uImageSizes.value = [img.naturalWidth, img.naturalHeight];
+            this.onLoad?.();
         };
+        img.onerror = () => this.onLoad?.();
     }
     createMesh() {
         this.plane = new Mesh(this.gl, {
@@ -295,13 +299,17 @@ class App {
             font = 'bold 30px Figtree',
             scrollSpeed = 2,
             scrollEase = 0.05,
-            onClick = null
+            onClick = null,
+            onReady = null
         } = {}
     ) {
         document.documentElement.classList.remove('no-js');
         this.container = container;
         this.scrollSpeed = scrollSpeed;
         this.onClick = onClick;
+        this.onReady = onReady;
+        this.loadedMediaCount = 0;
+        this.ready = false;
         this.items = items; // Save items to access data later
         this.scroll = { ease: scrollEase, current: 1000, target: 1000, last: 1000 };
         this.onCheckDebounce = debounce(this.onCheck, 200);
@@ -372,9 +380,17 @@ class App {
                 bend,
                 textColor,
                 borderRadius,
-                font
+                font,
+                onLoad: () => this.handleMediaLoad()
             });
         });
+    }
+    handleMediaLoad() {
+        this.loadedMediaCount += 1;
+        if (!this.ready && this.loadedMediaCount >= this.mediasImages.length) {
+            this.ready = true;
+            window.requestAnimationFrame(() => this.onReady?.());
+        }
     }
     onTouchDown(e) {
         // Ensure user is actually touching the canvas
@@ -503,7 +519,8 @@ export default function CircularGallery({
     font = 'bold 30px Figtree',
     scrollSpeed = 2,
     scrollEase = 0.05,
-    onClick = null
+    onClick = null,
+    onReady = null
 }) {
     const containerRef = useRef(null);
     useEffect(() => {
@@ -515,11 +532,12 @@ export default function CircularGallery({
             font,
             scrollSpeed,
             scrollEase,
-            onClick
+            onClick,
+            onReady
         });
         return () => {
             app.destroy();
         };
-    }, [items, bend, textColor, borderRadius, font, scrollSpeed, scrollEase, onClick]);
+    }, [items, bend, textColor, borderRadius, font, scrollSpeed, scrollEase, onClick, onReady]);
     return <div className="circular-gallery" ref={containerRef} />;
 }

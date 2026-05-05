@@ -42,9 +42,10 @@ const GuestShippingForm: React.FC<Props> = ({ order, onSelected }) => {
         handleSubmit,
         watch,
         reset,
-        formState: { errors, isDirty }
+        formState: { errors, isDirty, isValid }
     } = useForm<GuestShippingSchema>({
         resolver: zodResolver(guestShippingSchema),
+        mode: "onChange",
         defaultValues: {
             recipientName: "",
             phone: "",
@@ -59,30 +60,35 @@ const GuestShippingForm: React.FC<Props> = ({ order, onSelected }) => {
         }
     });
 
-    // Reset isSaved only when form becomes dirty again
-    useEffect(() => {
-        if (isSaved && isDirty) {
-            setIsSaved(false);
-        }
-    }, [isDirty, isSaved]);
+    // Auto-save logic
+    const formValues = watch();
 
-    const onSubmit = async (data: GuestShippingSchema) => {
-        if (!order) {
-            toast.error("No hay orden activa");
+    useEffect(() => {
+        // If invalid, clear parent selection
+        if (!isValid) {
+            onSelected?.(null);
+            setIsSaved(false);
             return;
         }
+
+        // If valid, auto-submit after a delay
+        const timeoutId = setTimeout(() => {
+            handleSubmit(onSubmit)();
+        }, 1000);
+
+        return () => clearTimeout(timeoutId);
+    }, [formValues, isDirty, isValid, handleSubmit]);
+
+    const onSubmit = async (data: GuestShippingSchema) => {
+        if (!order) return;
 
         setErr(null);
         setSaving(true);
 
         try {
-            // PATCH /api/orders/{orderNumber}/shipping-address con dirección completa
-            if (!order?.orderNumber) {
-                toast.error("No hay información de la orden");
-                return;
-            }
+            if (!order?.orderNumber) return;
+            
             await orderService.patchShippingAddress(order.orderNumber, {
-                // NO enviamos shippingAddressId para guests
                 recipientName: data.recipientName,
                 phone: data.phone,
                 street: data.street,
@@ -95,16 +101,11 @@ const GuestShippingForm: React.FC<Props> = ({ order, onSelected }) => {
                 country: data.country,
             } as any);
 
-            toast.success("Dirección de envío guardada ✓");
-            reset(data); // Mark as pristine/saved
             setIsSaved(true);
             onSelected?.(data);
+            reset(data); // Mark as pristine
         } catch (e: any) {
-            setErr(
-                e?.response?.data?.message ||
-                e?.message ||
-                "No se pudo guardar la dirección."
-            );
+            setErr(e?.response?.data?.message || e?.message || "Error al guardar");
         } finally {
             setSaving(false);
         }
@@ -125,13 +126,13 @@ const GuestShippingForm: React.FC<Props> = ({ order, onSelected }) => {
 
                 <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
                     <div>
-                        <label htmlFor="recipientName" className="block text-sm text-dark mb-1">
+                        <label htmlFor="recipientName" className="block text-sm text-dark mb-2 font-semibold">
                             Nombre del destinatario *
                         </label>
                         <input
                             type="text"
                             id="recipientName"
-                            className={`w-full border rounded px-3 py-2 text-sm focus:border-blue outline-none bg-white ${errors.recipientName ? "border-red-500" : "border-gray-4"}`}
+                            className={`w-full border rounded-lg px-3.5 py-3 text-sm focus:ring-4 focus:ring-blue/15 focus:border-blue outline-none transition-all bg-white shadow-sm placeholder:text-gray-400 text-dark ${errors.recipientName ? "border-red-500" : "border-gray-3"}`}
                             {...register("recipientName")}
                             placeholder="Ej: Juan Pérez"
                         />
@@ -139,13 +140,13 @@ const GuestShippingForm: React.FC<Props> = ({ order, onSelected }) => {
                     </div>
 
                     <div>
-                        <label htmlFor="phone" className="block text-sm text-dark mb-1">
+                        <label htmlFor="phone" className="block text-sm text-dark mb-2 font-semibold">
                             Teléfono *
                         </label>
                         <input
                             type="tel"
                             id="phone"
-                            className={`w-full border rounded px-3 py-2 text-sm focus:border-blue outline-none bg-white ${errors.phone ? "border-red-500" : "border-gray-4"}`}
+                            className={`w-full border rounded-lg px-3.5 py-3 text-sm focus:ring-4 focus:ring-blue/15 focus:border-blue outline-none transition-all bg-white shadow-sm placeholder:text-gray-400 text-dark ${errors.phone ? "border-red-500" : "border-gray-3"}`}
                             {...register("phone")}
                             placeholder="Ej: 11 1234-5678"
                         />
@@ -154,26 +155,26 @@ const GuestShippingForm: React.FC<Props> = ({ order, onSelected }) => {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label htmlFor="street" className="block text-sm text-dark mb-1">
+                            <label htmlFor="street" className="block text-sm text-dark mb-2 font-semibold">
                                 Calle *
                             </label>
                             <input
                                 type="text"
                                 id="street"
-                                className={`w-full border rounded px-3 py-2 text-sm focus:border-blue outline-none bg-white ${errors.street ? "border-red-500" : "border-gray-4"}`}
+                                className={`w-full border rounded-lg px-3.5 py-3 text-sm focus:ring-4 focus:ring-blue/15 focus:border-blue outline-none transition-all bg-white shadow-sm placeholder:text-gray-400 text-dark ${errors.street ? "border-red-500" : "border-gray-3"}`}
                                 {...register("street")}
                             />
                             {errors.street && <span className="text-red-500 text-xs">{errors.street.message}</span>}
                         </div>
 
                         <div>
-                            <label htmlFor="streetNumber" className="block text-sm text-dark mb-1">
+                            <label htmlFor="streetNumber" className="block text-sm text-dark mb-2 font-semibold">
                                 Número *
                             </label>
                             <input
                                 type="text"
                                 id="streetNumber"
-                                className={`w-full border rounded px-3 py-2 text-sm focus:border-blue outline-none bg-white ${errors.streetNumber ? "border-red-500" : "border-gray-4"}`}
+                                className={`w-full border rounded-lg px-3.5 py-3 text-sm focus:ring-4 focus:ring-blue/15 focus:border-blue outline-none transition-all bg-white shadow-sm placeholder:text-gray-400 text-dark ${errors.streetNumber ? "border-red-500" : "border-gray-3"}`}
                                 {...register("streetNumber")}
                             />
                             {errors.streetNumber && <span className="text-red-500 text-xs">{errors.streetNumber.message}</span>}
@@ -182,38 +183,38 @@ const GuestShippingForm: React.FC<Props> = ({ order, onSelected }) => {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label htmlFor="floor" className="block text-sm text-dark mb-1">
+                            <label htmlFor="floor" className="block text-sm text-dark mb-2 font-semibold">
                                 Piso (opcional)
                             </label>
                             <input
                                 type="text"
                                 id="floor"
-                                className="w-full border border-gray-4 rounded px-3 py-2 text-sm focus:border-blue outline-none bg-white"
+                                className="w-full border border-gray-3 rounded-lg px-3.5 py-3 text-sm focus:ring-4 focus:ring-blue/15 focus:border-blue outline-none transition-all bg-white shadow-sm placeholder:text-gray-400 text-dark"
                                 {...register("floor")}
                             />
                         </div>
 
                         <div>
-                            <label htmlFor="apartmentNumber" className="block text-sm text-dark mb-1">
+                            <label htmlFor="apartmentNumber" className="block text-sm text-dark mb-2 font-semibold">
                                 Depto (opcional)
                             </label>
                             <input
                                 type="text"
                                 id="apartmentNumber"
-                                className="w-full border border-gray-4 rounded px-3 py-2 text-sm focus:border-blue outline-none bg-white"
+                                className="w-full border border-gray-3 rounded-lg px-3.5 py-3 text-sm focus:ring-4 focus:ring-blue/15 focus:border-blue outline-none transition-all bg-white shadow-sm placeholder:text-gray-400 text-dark"
                                 {...register("apartmentNumber")}
                             />
                         </div>
                     </div>
 
                     <div>
-                        <label htmlFor="city" className="block text-sm text-dark mb-1">
+                        <label htmlFor="city" className="block text-sm text-dark mb-2 font-semibold">
                             Ciudad *
                         </label>
                         <input
                             type="text"
                             id="city"
-                            className={`w-full border rounded px-3 py-2 text-sm focus:border-blue outline-none bg-white ${errors.city ? "border-red-500" : "border-gray-4"}`}
+                            className={`w-full border rounded-lg px-3.5 py-3 text-sm focus:ring-4 focus:ring-blue/15 focus:border-blue outline-none transition-all bg-white shadow-sm placeholder:text-gray-400 text-dark ${errors.city ? "border-red-500" : "border-gray-3"}`}
                             {...register("city")}
                         />
                         {errors.city && <span className="text-red-500 text-xs">{errors.city.message}</span>}
@@ -221,26 +222,26 @@ const GuestShippingForm: React.FC<Props> = ({ order, onSelected }) => {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label htmlFor="state" className="block text-sm text-dark mb-1">
+                            <label htmlFor="state" className="block text-sm text-dark mb-2 font-semibold">
                                 Provincia *
                             </label>
                             <input
                                 type="text"
                                 id="state"
-                                className={`w-full border rounded px-3 py-2 text-sm focus:border-blue outline-none bg-white ${errors.state ? "border-red-500" : "border-gray-4"}`}
+                                className={`w-full border rounded-lg px-3.5 py-3 text-sm focus:ring-4 focus:ring-blue/15 focus:border-blue outline-none transition-all bg-white shadow-sm placeholder:text-gray-400 text-dark ${errors.state ? "border-red-500" : "border-gray-3"}`}
                                 {...register("state")}
                             />
                             {errors.state && <span className="text-red-500 text-xs">{errors.state.message}</span>}
                         </div>
 
                         <div>
-                            <label htmlFor="postalCode" className="block text-sm text-dark mb-1">
+                            <label htmlFor="postalCode" className="block text-sm text-dark mb-2 font-semibold">
                                 Código postal *
                             </label>
                             <input
                                 type="text"
                                 id="postalCode"
-                                className={`w-full border rounded px-3 py-2 text-sm focus:border-blue outline-none bg-white ${errors.postalCode ? "border-red-500" : "border-gray-4"}`}
+                                className={`w-full border rounded-lg px-3.5 py-3 text-sm focus:ring-4 focus:ring-blue/15 focus:border-blue outline-none transition-all bg-white shadow-sm placeholder:text-gray-400 text-dark ${errors.postalCode ? "border-red-500" : "border-gray-3"}`}
                                 {...register("postalCode")}
                             />
                             {errors.postalCode && <span className="text-red-500 text-xs">{errors.postalCode.message}</span>}
@@ -248,39 +249,18 @@ const GuestShippingForm: React.FC<Props> = ({ order, onSelected }) => {
                     </div>
 
                     <div>
-                        <label htmlFor="country" className="block text-sm text-dark mb-1">
+                        <label htmlFor="country" className="block text-sm text-dark mb-2 font-semibold">
                             País *
                         </label>
                         <input
                             type="text"
                             id="country"
-                            className="w-full border border-gray-4 rounded px-3 py-2 text-sm focus:border-blue outline-none bg-gray-2"
+                            className="w-full border border-gray-3 rounded-lg px-3.5 py-3 text-sm outline-none bg-gray-2 text-dark-5 cursor-not-allowed shadow-sm"
                             value="Argentina"
                             disabled
                         />
                     </div>
 
-                    {isSaved ? (
-                        <button
-                            type="button"
-                            disabled
-                            className="w-full bg-green text-white py-3 px-6 rounded-lg font-medium flex items-center justify-center gap-2 mt-4 cursor-default"
-                        >
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" fill="white" fillOpacity="0.2" />
-                                <path d="M16 11L11 16L8 13" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                            Guardado
-                        </button>
-                    ) : (
-                        <button
-                            type="submit"
-                            disabled={saving}
-                            className="w-full bg-blue text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-dark transition-colors disabled:opacity-60 mt-4"
-                        >
-                            {saving ? "Guardando..." : "Guardar dirección"}
-                        </button>
-                    )}
                 </form>
             </div>
         </div>

@@ -11,6 +11,7 @@ import "swiper/css";
 import { productService } from "@/services/productService";
 import type { CategoryFacet } from "@/types/facets";
 import SingleItem from "./SingleItem";
+import { CategoryCarouselSkeleton } from "@/components/Common/Skeletons";
 
 type UICategory = {
   id: number;
@@ -122,12 +123,16 @@ const Categories = () => {
               </h2>
             </div>
 
-            <div className="flex items-center gap-3">
-              <button onClick={handlePrev} className="swiper-button-prev" aria-label="Anterior">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <button
+                onClick={handlePrev}
+                className="flex h-8 w-8 items-center justify-center rounded-md border border-gray-3 bg-white text-dark transition-colors hover:text-blue sm:h-10 sm:w-10"
+                aria-label="Anterior"
+              >
                 <svg
                   className="fill-current"
-                  width="24"
-                  height="24"
+                  width="20"
+                  height="20"
                   viewBox="0 0 24 24"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
@@ -141,11 +146,15 @@ const Categories = () => {
                 </svg>
               </button>
 
-              <button onClick={handleNext} className="swiper-button-next" aria-label="Siguiente">
+              <button
+                onClick={handleNext}
+                className="flex h-8 w-8 items-center justify-center rounded-md border border-gray-3 bg-white text-dark transition-colors hover:text-blue sm:h-10 sm:w-10"
+                aria-label="Siguiente"
+              >
                 <svg
                   className="fill-current"
-                  width="24"
-                  height="24"
+                  width="20"
+                  height="20"
                   viewBox="0 0 24 24"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
@@ -163,11 +172,7 @@ const Categories = () => {
 
           {/* Contenido */}
           {loading && (
-            <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-6">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="h-40 rounded-full bg-white shadow-1 animate-pulse" />
-              ))}
-            </div>
+            <CategoryCarouselSkeleton count={6} />
           )}
 
           {error && !loading && (

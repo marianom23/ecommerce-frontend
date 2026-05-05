@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { AddressResponse } from "@/services/addressService";
+import { InlineFieldSkeleton } from "@/components/Common/Skeletons";
 
 const ShippingList: React.FC<{
   title: string;
@@ -32,7 +33,12 @@ const ShippingList: React.FC<{
       </div>
 
       <div className="p-4 sm:p-8.5">
-        {loading && <p className="text-sm text-dark-5">Cargando...</p>}
+        {loading && (
+          <div className="space-y-3">
+            <InlineFieldSkeleton className="h-14 w-full" />
+            <InlineFieldSkeleton className="h-14 w-full" />
+          </div>
+        )}
 
         {!loading && !addresses.length && (
           <p className="text-sm text-dark-5">No tenés direcciones de envío guardadas.</p>
@@ -54,7 +60,7 @@ const ShippingList: React.FC<{
                     name="shipping-addr"
                     checked={selectedId === a.id}
                     onChange={() => onSelect(a)}
-                    className="peer appearance-none w-5 h-5 border-2 border-gray-400 rounded-full checked:border-blue checked:border-4 transition-all"
+                    className="peer appearance-none w-5 h-5 border-2 border-gray-300 rounded-full checked:border-blue checked:border-4 transition-all"
                   />
                 </div>
                 <div className="text-sm w-full">

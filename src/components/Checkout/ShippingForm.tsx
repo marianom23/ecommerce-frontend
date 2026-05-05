@@ -73,65 +73,65 @@ const ShippingForm: React.FC<{
       <form onSubmit={handleSubmit(onSubmit)}>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
           <div>
-            <label className="block text-sm text-dark mb-1">Calle</label>
+            <label className="block text-sm text-dark mb-2 font-semibold">Calle</label>
             <input
-              className={`w-full border rounded px-3 py-2 text-sm focus:border-blue outline-none ${errors.street ? "border-red-500" : "border-gray-4"}`}
+              className={`w-full border rounded px-3 py-2 text-sm focus:border-blue outline-none ${errors.street ? "border-red-500" : "border-gray-3"}`}
               {...register("street")}
               placeholder="Ej: Av. Corrientes"
             />
             {errors.street && <span className="text-red-500 text-xs">{errors.street.message}</span>}
           </div>
           <div>
-            <label className="block text-sm text-dark mb-1">Altura</label>
+            <label className="block text-sm text-dark mb-2 font-semibold">Altura</label>
             <input
-              className={`w-full border rounded px-3 py-2 text-sm focus:border-blue outline-none ${errors.streetNumber ? "border-red-500" : "border-gray-4"}`}
+              className={`w-full border rounded px-3 py-2 text-sm focus:border-blue outline-none ${errors.streetNumber ? "border-red-500" : "border-gray-3"}`}
               {...register("streetNumber")}
               placeholder="1234"
             />
             {errors.streetNumber && <span className="text-red-500 text-xs">{errors.streetNumber.message}</span>}
           </div>
           <div>
-            <label className="block text-sm text-dark mb-1">Piso (opcional)</label>
+            <label className="block text-sm text-dark mb-2 font-semibold">Piso (opcional)</label>
             <input
-              className="w-full border border-gray-4 rounded px-3 py-2 text-sm focus:border-blue outline-none"
+              className="w-full border border-gray-3 rounded px-3 py-2 text-sm focus:border-blue outline-none"
               {...register("floor")}
             />
           </div>
           <div>
-            <label className="block text-sm text-dark mb-1">Depto (opcional)</label>
+            <label className="block text-sm text-dark mb-2 font-semibold">Depto (opcional)</label>
             <input
-              className="w-full border border-gray-4 rounded px-3 py-2 text-sm focus:border-blue outline-none"
+              className="w-full border border-gray-3 rounded px-3 py-2 text-sm focus:border-blue outline-none"
               {...register("apartmentNumber")}
             />
           </div>
           <div>
-            <label className="block text-sm text-dark mb-1">Ciudad / Localidad</label>
+            <label className="block text-sm text-dark mb-2 font-semibold">Ciudad / Localidad</label>
             <input
-              className={`w-full border rounded px-3 py-2 text-sm focus:border-blue outline-none ${errors.city ? "border-red-500" : "border-gray-4"}`}
+              className={`w-full border rounded px-3 py-2 text-sm focus:border-blue outline-none ${errors.city ? "border-red-500" : "border-gray-3"}`}
               {...register("city")}
             />
             {errors.city && <span className="text-red-500 text-xs">{errors.city.message}</span>}
           </div>
           <div>
-            <label className="block text-sm text-dark mb-1">Provincia / Estado</label>
+            <label className="block text-sm text-dark mb-2 font-semibold">Provincia / Estado</label>
             <input
-              className={`w-full border rounded px-3 py-2 text-sm focus:border-blue outline-none ${errors.state ? "border-red-500" : "border-gray-4"}`}
+              className={`w-full border rounded px-3 py-2 text-sm focus:border-blue outline-none ${errors.state ? "border-red-500" : "border-gray-3"}`}
               {...register("state")}
             />
             {errors.state && <span className="text-red-500 text-xs">{errors.state.message}</span>}
           </div>
           <div>
-            <label className="block text-sm text-dark mb-1">Código Postal</label>
+            <label className="block text-sm text-dark mb-2 font-semibold">Código Postal</label>
             <input
-              className={`w-full border rounded px-3 py-2 text-sm focus:border-blue outline-none ${errors.postalCode ? "border-red-500" : "border-gray-4"}`}
+              className={`w-full border rounded px-3 py-2 text-sm focus:border-blue outline-none ${errors.postalCode ? "border-red-500" : "border-gray-3"}`}
               {...register("postalCode")}
             />
             {errors.postalCode && <span className="text-red-500 text-xs">{errors.postalCode.message}</span>}
           </div>
           <div>
-            <label className="block text-sm text-dark mb-1">País</label>
+            <label className="block text-sm text-dark mb-2 font-semibold">País</label>
             <input
-              className="w-full border border-gray-4 rounded px-3 py-2 text-sm focus:border-blue outline-none bg-gray-2"
+              className="w-full border border-gray-3 rounded-lg px-3.5 py-3 text-sm outline-none bg-gray-2 text-dark-5 cursor-not-allowed shadow-sm"
               value="Argentina"
               disabled
             />

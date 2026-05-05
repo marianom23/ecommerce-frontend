@@ -11,8 +11,8 @@ import toast from "react-hot-toast";
 
 const billingSchema = z.object({
   fullName: z.string().min(3, "Mínimo 3 caracteres"),
-  documentType: z.string().min(1, "El tipo de documento es obligatorio"),
-  documentNumber: z.string().min(7, "Mínimo 7 caracteres"),
+  documentType: z.string().optional(),
+  documentNumber: z.string().optional().refine((value) => !value || value.length >= 7, "Mínimo 7 caracteres"),
   taxCondition: z.string().min(1, "La condición impositiva es obligatoria"),
   email: z.string().email("Email inválido").min(1, "El email es obligatorio"),
   phone: z.string().optional(),
@@ -98,29 +98,30 @@ export default function BillingProfileForm({ order, shippingAddress, onSelected,
   const formValues = watch();
 
   useEffect(() => {
-    if (!isDirty) return;
-
-    if (!isFormValid || onSaved) {
-        if (!isFormValid) setSyncStatus("incomplete");
+    // If invalid, clear parent selection immediately
+    if (!isFormValid) {
+        onSelected?.(null);
+        setSyncStatus("incomplete");
         return;
     }
 
+    // If valid, auto-save to order
+    setSyncStatus("idle");
     const timeoutId = setTimeout(() => {
-      handleSubmit(onSubmit)();
+        handleSubmit(onSubmit)();
     }, 1200);
-
     return () => clearTimeout(timeoutId);
-  }, [formValues, isDirty, isFormValid, handleSubmit, onSaved]);
+  }, [formValues, isDirty, isFormValid, handleSubmit, onSelected]);
 
   const onSubmit = async (data: BillingSchema) => {
     setSyncStatus("saving");
     try {
       if (order?.orderNumber) {
-          console.log("🚀 Enviando patchBillingProfile:", data);
+          console.log("Enviando patchBillingProfile:", data);
           await orderService.patchBillingProfile(order.orderNumber, {
             fullName: data.fullName,
-            documentType: data.documentType,
-            documentNumber: data.documentNumber,
+            documentType: data.documentNumber ? data.documentType : undefined,
+            documentNumber: data.documentNumber || undefined,
             taxCondition: data.taxCondition,
             email: data.email,
             phone: data.phone || undefined,
@@ -139,8 +140,8 @@ export default function BillingProfileForm({ order, shippingAddress, onSelected,
       if (isAuthenticated || initialData) {
           const profileData = {
               fullName: data.fullName,
-              documentType: data.documentType as any,
-              documentNumber: data.documentNumber,
+              documentType: data.documentNumber ? data.documentType as any : undefined,
+              documentNumber: data.documentNumber || undefined,
               taxCondition: data.taxCondition as any,
               emailForInvoices: data.email,
               phone: data.phone,
@@ -167,7 +168,7 @@ export default function BillingProfileForm({ order, shippingAddress, onSelected,
       onSelected?.(data);
       if (onSaved && savedProfile) onSaved(savedProfile);
     } catch (e: any) {
-      console.error("❌ Error en onSubmit:", e);
+      console.error("Error en onSubmit:", e);
       setSyncStatus("error");
     }
   };
@@ -194,37 +195,15 @@ export default function BillingProfileForm({ order, shippingAddress, onSelected,
                Volver
             </button>
           )}
-          <div className="text-[12px] font-medium h-6 flex items-center">
-            {syncStatus === "saving" && (
-              <span className="flex items-center gap-1.5 text-blue animate-pulse">
-                <div className="h-1.5 w-1.5 rounded-full bg-blue" />
-                Guardando...
-              </span>
-            )}
-            {syncStatus === "saved" && (
-              <span className="text-green flex items-center gap-1">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-                Guardado
-              </span>
-            )}
-            {syncStatus === "incomplete" && (
-              <span className="text-orange-500 flex items-center gap-1 italic">
-                 Faltan datos...
-              </span>
-            )}
-            {syncStatus === "error" && <span className="text-red-500">Error al guardar</span>}
-          </div>
         </div>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)}>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-5 mb-4">
-          <div className="sm:col-span-2">
-            <label className="block text-sm text-dark mb-1 font-medium">Nombre Completo / Razón Social *</label>
+          <div>
+            <label className="block text-sm text-dark mb-2 font-semibold">Nombre Completo / Razón Social *</label>
             <input
-              className={`w-full border rounded px-3 py-2.5 text-sm focus:border-blue outline-none transition-all ${errors.fullName ? "border-red-500 bg-red-50" : "border-gray-4"}`}
+              className={`w-full border rounded-lg px-3.5 py-3 text-sm focus:ring-4 focus:ring-blue/15 focus:border-blue outline-none transition-all bg-white shadow-sm placeholder:text-gray-400 text-dark ${errors.fullName ? "border-red-500 bg-red-50" : "border-gray-3"}`}
               {...register("fullName")}
               placeholder="Ej: Juan Pérez"
             />
@@ -232,9 +211,41 @@ export default function BillingProfileForm({ order, shippingAddress, onSelected,
           </div>
 
           <div>
-            <label className="block text-sm text-dark mb-1 font-medium">Tipo Doc. *</label>
+            <label className="block text-sm text-dark mb-2 font-semibold">Email *</label>
+            <input
+              type="email"
+              className={`w-full border rounded-lg px-3.5 py-3 text-sm focus:ring-4 focus:ring-blue/15 focus:border-blue outline-none transition-all bg-white shadow-sm placeholder:text-gray-400 text-dark ${errors.email ? "border-red-500 bg-red-50" : "border-gray-3"}`}
+              {...register("email")}
+            />
+            {errors.email && <p className="text-[11px] text-red-500 mt-1">{errors.email.message}</p>}
+          </div>
+
+          <div>
+            <label className="block text-sm text-dark mb-2 font-semibold">Condición Impositiva *</label>
             <select
-              className="w-full border border-gray-4 rounded px-3 py-2.5 text-sm focus:border-blue outline-none bg-white"
+              className="w-full border border-gray-3 rounded-lg px-3.5 py-3 text-sm focus:ring-4 focus:ring-blue/15 focus:border-blue outline-none transition-all bg-white shadow-sm text-dark bg-white"
+              {...register("taxCondition")}
+            >
+              <option value="CONSUMIDOR_FINAL">Consumidor Final</option>
+              <option value="MONOTRIBUTO">Monotributo</option>
+              <option value="RESPONSABLE_INSCRIPTO">Responsable Inscripto</option>
+              <option value="EXENTO">Exento</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm text-dark mb-2 font-semibold">Teléfono (opcional)</label>
+            <input
+              type="tel"
+              className="w-full border border-gray-3 rounded-lg px-3.5 py-3 text-sm focus:ring-4 focus:ring-blue/15 focus:border-blue outline-none transition-all bg-white shadow-sm text-dark"
+              {...register("phone")}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm text-dark mb-2 font-semibold">Tipo Doc. (opcional)</label>
+            <select
+              className="w-full border border-gray-3 rounded-lg px-3.5 py-3 text-sm focus:ring-4 focus:ring-blue/15 focus:border-blue outline-none transition-all bg-white shadow-sm text-dark bg-white"
               {...register("documentType")}
             >
               <option value="DNI">DNI</option>
@@ -245,45 +256,14 @@ export default function BillingProfileForm({ order, shippingAddress, onSelected,
           </div>
 
           <div>
-            <label className="block text-sm text-dark mb-1 font-medium">Número Doc. *</label>
+            <label className="block text-sm text-dark mb-2 font-semibold">Número Doc. (opcional)</label>
             <input
-              className={`w-full border rounded px-3 py-2.5 text-sm focus:border-blue outline-none transition-all ${errors.documentNumber ? "border-red-500 bg-red-50" : "border-gray-4"}`}
+              className={`w-full border rounded-lg px-3.5 py-3 text-sm focus:ring-4 focus:ring-blue/15 focus:border-blue outline-none transition-all bg-white shadow-sm placeholder:text-gray-400 text-dark ${errors.documentNumber ? "border-red-500 bg-red-50" : "border-gray-3"}`}
               {...register("documentNumber")}
             />
             {errors.documentNumber && <p className="text-[11px] text-red-500 mt-1">{errors.documentNumber.message}</p>}
           </div>
 
-          <div>
-            <label className="block text-sm text-dark mb-1 font-medium">Email *</label>
-            <input
-              type="email"
-              className={`w-full border rounded px-3 py-2.5 text-sm focus:border-blue outline-none transition-all ${errors.email ? "border-red-500 bg-red-50" : "border-gray-4"}`}
-              {...register("email")}
-            />
-            {errors.email && <p className="text-[11px] text-red-500 mt-1">{errors.email.message}</p>}
-          </div>
-
-          <div>
-            <label className="block text-sm text-dark mb-1 font-medium">Condición Impositiva *</label>
-            <select
-              className="w-full border border-gray-4 rounded px-3 py-2.5 text-sm focus:border-blue outline-none bg-white"
-              {...register("taxCondition")}
-            >
-              <option value="CONSUMIDOR_FINAL">Consumidor Final</option>
-              <option value="MONOTRIBUTO">Monotributo</option>
-              <option value="RESPONSABLE_INSCRIPTO">Responsable Inscripto</option>
-              <option value="EXENTO">Exento</option>
-            </select>
-          </div>
-
-          <div className="sm:col-span-2">
-            <label className="block text-sm text-dark mb-1 font-medium">Teléfono (opcional)</label>
-            <input
-              type="tel"
-              className="w-full border border-gray-4 rounded px-3 py-2.5 text-sm focus:border-blue outline-none"
-              {...register("phone")}
-            />
-          </div>
 
           {!showAddress && (
             <div className="sm:col-span-2 flex flex-wrap gap-4 mt-2">
@@ -308,57 +288,45 @@ export default function BillingProfileForm({ order, shippingAddress, onSelected,
               </div>
 
               <div>
-                <label className="block text-sm text-dark mb-1 font-medium">Calle</label>
-                <input className="w-full border border-gray-4 rounded px-3 py-2.5 text-sm focus:border-blue outline-none" {...register("street")} />
+                <label className="block text-sm text-dark mb-2 font-semibold">Calle</label>
+                <input className="w-full border border-gray-3 rounded-lg px-3.5 py-3 text-sm focus:ring-4 focus:ring-blue/15 focus:border-blue outline-none transition-all bg-white shadow-sm text-dark" {...register("street")} />
               </div>
 
               <div>
-                <label className="block text-sm text-dark mb-1 font-medium">Altura</label>
-                <input className="w-full border border-gray-4 rounded px-3 py-2.5 text-sm focus:border-blue outline-none" {...register("streetNumber")} />
+                <label className="block text-sm text-dark mb-2 font-semibold">Altura</label>
+                <input className="w-full border border-gray-3 rounded-lg px-3.5 py-3 text-sm focus:ring-4 focus:ring-blue/15 focus:border-blue outline-none transition-all bg-white shadow-sm text-dark" {...register("streetNumber")} />
               </div>
 
               <div>
-                <label className="block text-sm text-dark mb-1 font-medium">Piso</label>
-                <input className="w-full border border-gray-4 rounded px-3 py-2.5 text-sm focus:border-blue outline-none" {...register("floor")} />
+                <label className="block text-sm text-dark mb-2 font-semibold">Piso</label>
+                <input className="w-full border border-gray-3 rounded-lg px-3.5 py-3 text-sm focus:ring-4 focus:ring-blue/15 focus:border-blue outline-none transition-all bg-white shadow-sm text-dark" {...register("floor")} />
               </div>
 
               <div>
-                <label className="block text-sm text-dark mb-1 font-medium">Depto</label>
-                <input className="w-full border border-gray-4 rounded px-3 py-2.5 text-sm focus:border-blue outline-none" {...register("apartmentNumber")} />
+                <label className="block text-sm text-dark mb-2 font-semibold">Depto</label>
+                <input className="w-full border border-gray-3 rounded-lg px-3.5 py-3 text-sm focus:ring-4 focus:ring-blue/15 focus:border-blue outline-none transition-all bg-white shadow-sm text-dark" {...register("apartmentNumber")} />
               </div>
 
               <div>
-                <label className="block text-sm text-dark mb-1 font-medium">Ciudad</label>
-                <input className="w-full border border-gray-4 rounded px-3 py-2.5 text-sm focus:border-blue outline-none" {...register("city")} />
+                <label className="block text-sm text-dark mb-2 font-semibold">Ciudad</label>
+                <input className="w-full border border-gray-3 rounded-lg px-3.5 py-3 text-sm focus:ring-4 focus:ring-blue/15 focus:border-blue outline-none transition-all bg-white shadow-sm text-dark" {...register("city")} />
               </div>
 
               <div>
-                <label className="block text-sm text-dark mb-1 font-medium">Provincia</label>
-                <input className="w-full border border-gray-4 rounded px-3 py-2.5 text-sm focus:border-blue outline-none" {...register("state")} />
+                <label className="block text-sm text-dark mb-2 font-semibold">Provincia</label>
+                <input className="w-full border border-gray-3 rounded-lg px-3.5 py-3 text-sm focus:ring-4 focus:ring-blue/15 focus:border-blue outline-none transition-all bg-white shadow-sm text-dark" {...register("state")} />
               </div>
 
               <div>
-                <label className="block text-sm text-dark mb-1 font-medium">Código Postal</label>
-                <input className="w-full border border-gray-4 rounded px-3 py-2.5 text-sm focus:border-blue outline-none" {...register("postalCode")} />
+                <label className="block text-sm text-dark mb-2 font-semibold">Código Postal</label>
+                <input className="w-full border border-gray-3 rounded-lg px-3.5 py-3 text-sm focus:ring-4 focus:ring-blue/15 focus:border-blue outline-none transition-all bg-white shadow-sm text-dark" {...register("postalCode")} />
               </div>
             </>
           )}
         </div>
 
-        {onSaved && (
-          <div className="mt-8 flex justify-end">
-            <button
-              type="submit"
-              disabled={syncStatus === "saving"}
-              className={`w-full sm:w-auto px-10 py-3.5 rounded-lg font-bold text-white transition-all shadow-md ${
-                syncStatus === "saving" ? "bg-blue/70 cursor-not-allowed" : "bg-blue hover:bg-blue-dark active:scale-95"
-              }`}
-            >
-              {syncStatus === "saving" ? "Guardando..." : "Guardar Perfil"}
-            </button>
-          </div>
-        )}
       </form>
     </div>
   );
 }
+

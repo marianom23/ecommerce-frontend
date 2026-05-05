@@ -6,6 +6,7 @@ import type { Product } from "@/types/product";
 import type { PaginatedResponse } from "@/lib/api";
 import SingleGridItem from "@/components/Shop/SingleGridItem";
 import { productService } from "@/services/productService";
+import { SectionCardsSkeleton } from "@/components/Common/Skeletons";
 
 const BestSeller = () => {
   const [items, setItems] = useState<Product[]>([]);
@@ -38,7 +39,7 @@ const BestSeller = () => {
   }, []);
 
   return (
-    <section id="destacados" className="overflow-hidden">
+    <section className="overflow-hidden">
       <div className="max-w-[1170px] w-full mx-auto px-4 sm:px-8 xl:px-0">
         {/* Título */}
         <div className="mb-10 flex items-center justify-between">
@@ -53,11 +54,7 @@ const BestSeller = () => {
 
         {/* Grid */}
         {loading && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-7.5">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="h-[403px] rounded-lg bg-white shadow-1 animate-pulse" />
-            ))}
-          </div>
+          <SectionCardsSkeleton count={8} cover />
         )}
 
         {error && !loading && (

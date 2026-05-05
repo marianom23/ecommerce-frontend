@@ -67,17 +67,16 @@ const CartSidebarModal = () => {
 
   useEffect(() => {
     if (isCartModalOpen) {
+      setIsAnimating(false);
       setShouldRender(true);
       document.body.style.overflow = "hidden";
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => setIsAnimating(true));
-      });
-      return;
+      const timer = window.setTimeout(() => setIsAnimating(true), 20);
+      return () => window.clearTimeout(timer);
     }
 
     setIsAnimating(false);
     document.body.style.overflow = "";
-    const timer = window.setTimeout(() => setShouldRender(false), 300);
+    const timer = window.setTimeout(() => setShouldRender(false), 500);
     return () => window.clearTimeout(timer);
   }, [isCartModalOpen]);
 
@@ -141,7 +140,7 @@ const CartSidebarModal = () => {
     <>
       <div
         className={cn(
-          "fixed inset-0 z-[99998] bg-black/50 backdrop-blur-sm transition-opacity duration-300",
+          "fixed inset-0 z-[99998] bg-black/50 backdrop-blur-sm transition-opacity duration-500 ease-out",
           isAnimating ? "opacity-100" : "opacity-0"
         )}
         onClick={closeCartModal}
@@ -149,7 +148,7 @@ const CartSidebarModal = () => {
 
       <aside
         className={cn(
-          "fixed inset-y-0 right-0 z-[99999] flex w-full max-w-full flex-col rounded-l-2xl bg-white shadow-2xl transition-transform duration-300 ease-out sm:max-w-[448px]",
+          "fixed inset-y-0 right-0 z-[99999] flex w-full max-w-full transform-gpu flex-col rounded-l-2xl bg-white shadow-2xl transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform sm:max-w-[448px]",
           isAnimating ? "translate-x-0" : "translate-x-full"
         )}
         aria-label="Carrito"

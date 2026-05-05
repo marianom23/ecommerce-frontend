@@ -23,11 +23,11 @@ const ShippingMethod = () => {
                 className="sr-only"
                 onChange={() => setShippingMethod("free")}
               />
-              {/* selectShipping === 'free' ? 'border-4 border-blue' : 'border border-gray-4' */}
+              {/* selectShipping === 'free' ? 'border-4 border-blue' : 'border border-gray-3' */}
               <div
                 className={`flex h-4 w-4 items-center justify-center rounded-full ${shippingMethod === "free"
                     ? "border-4 border-blue"
-                    : "border border-gray-4"
+                    : "border border-gray-3"
                   }`}
               ></div>
             </div>

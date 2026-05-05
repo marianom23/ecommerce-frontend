@@ -11,6 +11,7 @@ import { bankAccountService, type BankAccount } from "@/services/bankAccountServ
 import { paymentService } from "@/services/paymentService";
 import Modal from "@/components/Common/Modal";
 import toast from "react-hot-toast";
+import { CheckoutPanelSkeleton } from "@/components/Common/Skeletons";
 
 type Mode = "success" | "failure" | "pending";
 
@@ -207,7 +208,7 @@ export default function CheckoutResult({ mode }: Props) {
                 </div>
               )}
 
-              {loading && <p className="mb-6 text-blue">Verificando orden en el servidor...</p>}
+              {loading && <div className="mx-auto mb-8 max-w-lg"><CheckoutPanelSkeleton rows={4} /></div>}
               {!loading && err && <p className="text-red-600 mb-6">{err}</p>}
 
               {!loading && order && (

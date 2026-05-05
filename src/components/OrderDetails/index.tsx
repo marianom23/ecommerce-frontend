@@ -13,6 +13,7 @@ import { paymentService } from "@/services/paymentService";
 import Modal from "@/components/Common/Modal";
 import toast from "react-hot-toast";
 import { statusToBadge, fmtDate, fmtMoney } from "@/utils/orders";
+import { OrderListSkeleton } from "@/components/Common/Skeletons";
 
 type Props = { orderNumber: string };
 
@@ -89,7 +90,7 @@ export default function OrderDetails({ orderNumber }: Props) {
     }
   };
 
-  if (loading) return <div className="p-6">Cargando orden...</div>;
+  if (loading) return <OrderListSkeleton rows={3} />;
   if (errorMsg) return <div className="p-6 text-red-500">{errorMsg}</div>;
   if (!order) return <div className="p-6 text-red-500">Orden no encontrada</div>;
 

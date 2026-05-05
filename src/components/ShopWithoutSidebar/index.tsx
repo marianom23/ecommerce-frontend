@@ -9,6 +9,7 @@ import CustomSelect from "../ShopWithSidebar/CustomSelect";
 import { productService } from "@/services/productService";
 import { type Product } from "@/types/product";
 import type { PaginatedResponse } from "@/lib/api";
+import { InlineFieldSkeleton, ProductGridSkeleton, ProductListSkeleton } from "@/components/Common/Skeletons";
 
 const ShopWithoutSidebar = () => {
   const [productStyle, setProductStyle] = useState<"grid" | "list">("grid");
@@ -113,7 +114,7 @@ const ShopWithoutSidebar = () => {
 
                     <p className="text-sm">
                       {loading
-                        ? "Loading…"
+                        ? <InlineFieldSkeleton className="inline-block h-4 w-24 align-middle" />
                         : error
                         ? "Error loading products"
                         : (
@@ -176,7 +177,7 @@ const ShopWithoutSidebar = () => {
                 }`}
               >
                 {loading && (
-                  <div className="col-span-full text-center py-10">Loading…</div>
+                  productStyle === "grid" ? <ProductGridSkeleton count={8} /> : <ProductListSkeleton count={4} />
                 )}
                 {error && !loading && (
                   <div className="col-span-full text-center text-red-600 py-10">

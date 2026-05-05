@@ -2,17 +2,19 @@
 import { api } from "@/lib/api";
 
 /** ===== Bases ===== */
-const basePublic = "/products"; // pasa por app/api/p/[...path]/route.ts (público)
+const basePublic = "/products"; // pasa por app/api/p/[...path]/route.ts (publico)
 const baseAdmin = "/products"; // pasa por app/api/b/[...path]/route.ts (con Bearer)
 
-/** ===== Tipos mínimos del endpoint /products/:id/details ===== */
-type ImageSet = { urls: string[] };
+/** ===== Tipos minimos del endpoint /products/:id/details ===== */
+type ImageSet = { urls: string[]; thumbnails?: string[]; previews?: string[] };
 
-type APIRelatedDlc = {
+type APIRelatedProduct = {
   id: number;
   title: string;
+  consoleName?: string | null;
   price?: number | null;
   discountedPrice?: number | null;
+  imageUrl?: string | null;
   imgs?: Partial<ImageSet>;
 };
 
@@ -44,9 +46,9 @@ type APIProductBase = {
   presale?: boolean;
   releaseDate?: string | null;
   productType?: ProductType;
-  dlcs?: APIRelatedDlc[];
-  parentGameId?: number | null;
-  parentGameName?: string | null;
+  fulfillmentType?: "PHYSICAL" | "DIGITAL_ON_DEMAND" | "DIGITAL_INSTANT";
+  parentProducts?: APIRelatedProduct[];
+  childProducts?: APIRelatedProduct[];
 };
 
 type APIProductWithVariants = APIProductBase & {
@@ -68,16 +70,24 @@ type APIProductSimple = APIProductBase & {
 
 export type ProductDetailsRaw = APIProductWithVariants | APIProductSimple;
 
-/** ===== Tipo normalizado para la UI ===== */
 export type NormalizedVariant = {
   id: number;
   sku: string;
   attrs: Record<string, string>;
   price: number;
   discountedPrice: number;
-  priceWithTransfer?: number; // Nuevo campo
+  priceWithTransfer?: number;
   stock: number;
   images: string[];
+};
+
+export type RelatedProduct = {
+  id: number;
+  title: string;
+  consoleName?: string;
+  price?: number;
+  discountedPrice?: number;
+  image?: string;
 };
 
 export type NormalizedProduct = {
@@ -98,40 +108,68 @@ export type NormalizedProduct = {
   priceRange: { min: number; max: number; minDiscounted: number; maxDiscounted: number };
   stockTotal: number;
   inStock: boolean;
-  fulfillmentType: 'PHYSICAL' | 'DIGITAL_ON_DEMAND' | 'DIGITAL_INSTANT';
+  fulfillmentType: "PHYSICAL" | "DIGITAL_ON_DEMAND" | "DIGITAL_INSTANT";
   priceWithTransfer?: number;
   specifications?: Record<string, string>;
   isPresale?: boolean;
   releaseDate?: string | null;
   productType?: ProductType;
-  dlcs: {
-    id: number;
-    title: string;
-    price?: number;
-    discountedPrice?: number;
-    image?: string;
-  }[];
-  parentGameId?: number | null;
-  parentGameName?: string | null;
+  parentProducts: RelatedProduct[];
+  childProducts: RelatedProduct[];
 };
 
-/** ===== Fetchers ===== */
 function getRawFrom(base: string, id: number) {
   return api.get<ProductDetailsRaw>(`${base}/${id}/details`);
 }
 
-/** ===== Normalizador ===== */
 function normalize(p: ProductDetailsRaw): NormalizedProduct {
   const money = (n: number | null | undefined) =>
     typeof n === "number" && !Number.isNaN(n) ? n : 0;
-  const normalizeDlcs = (dlcs?: APIRelatedDlc[]) =>
-    (dlcs ?? []).map((dlc) => ({
-      id: dlc.id,
-      title: dlc.title,
-      price: typeof dlc.price === "number" ? dlc.price : undefined,
-      discountedPrice: typeof dlc.discountedPrice === "number" ? dlc.discountedPrice : undefined,
-      image: dlc.imgs?.urls?.[0],
+
+  const parseSpecifications = (json?: string) => {
+    if (!json) return {};
+    try {
+      return JSON.parse(json);
+    } catch {
+      return {};
+    }
+  };
+
+  const firstImage = (imgs?: Partial<ImageSet>, fallback?: string | null) =>
+    imgs?.urls?.[0] ?? imgs?.previews?.[0] ?? imgs?.thumbnails?.[0] ?? fallback ?? undefined;
+
+  const normalizeRelatedProducts = (products?: APIRelatedProduct[]) =>
+    (products ?? []).map((product) => ({
+      id: product.id,
+      title: product.title,
+      consoleName: product.consoleName ?? undefined,
+      price: typeof product.price === "number" ? product.price : undefined,
+      discountedPrice: typeof product.discountedPrice === "number" ? product.discountedPrice : undefined,
+      image: firstImage(product.imgs, product.imageUrl),
     }));
+
+  const base = p;
+  const baseImages = base.imgs?.urls ?? base.imgs?.previews ?? [];
+  const fulfillmentType = base.fulfillmentType || "PHYSICAL";
+  const common = {
+    id: base.id,
+    title: base.title,
+    description: base.description,
+    brand: base.brand,
+    category: base.category,
+    sku: base.sku,
+    images: baseImages,
+    averageRating: base.averageRating ?? 0,
+    totalReviews: base.totalReviews ?? 0,
+    fulfillmentType,
+    priceWithTransfer: base.priceWithTransfer,
+    specifications: parseSpecifications(base.specificationsJson),
+    isPresale: base.presale,
+    releaseDate: base.releaseDate,
+    productType: base.productType,
+    parentProducts: normalizeRelatedProducts(base.parentProducts),
+    childProducts: normalizeRelatedProducts(base.childProducts),
+  };
 
   if (p.hasVariants) {
     const pv = p as APIProductWithVariants;
@@ -139,15 +177,14 @@ function normalize(p: ProductDetailsRaw): NormalizedProduct {
     const variants: NormalizedVariant[] = (pv.variants ?? []).map((v) => {
       const price = money(v.price);
       const discounted = money(v.discountedPrice ?? v.price);
-      const images =
-        (v.imgs?.urls?.length ? v.imgs.urls : pv.imgs?.urls) ?? [];
+      const images = (v.imgs?.urls?.length ? v.imgs.urls : v.imgs?.previews?.length ? v.imgs.previews : baseImages) ?? [];
       return {
         id: v.id,
         sku: v.sku,
         attrs: v.attributes ?? {},
         price,
         discountedPrice: discounted,
-        priceWithTransfer: v.priceWithTransfer ?? undefined, // Mapear nuevo campo
+        priceWithTransfer: v.priceWithTransfer ?? undefined,
         stock: v.stock ?? 0,
         images,
       };
@@ -156,7 +193,6 @@ function normalize(p: ProductDetailsRaw): NormalizedProduct {
     const prices = variants.map((v) => v.price);
     const discounts = variants.map((v) => v.discountedPrice);
     const stocks = variants.map((v) => v.stock);
-
     const min = prices.length ? Math.min(...prices) : 0;
     const max = prices.length ? Math.max(...prices) : 0;
     const minDisc = discounts.length ? Math.min(...discounts) : min;
@@ -164,75 +200,39 @@ function normalize(p: ProductDetailsRaw): NormalizedProduct {
     const stockTotal = stocks.reduce((a, b) => a + (b || 0), 0);
 
     return {
-      id: pv.id,
-      title: pv.title,
-      description: pv.description,
-      brand: pv.brand,
-      category: pv.category,
-      sku: pv.sku,
-      images: pv.imgs?.urls ?? [],
-      averageRating: pv.averageRating ?? 0,
-      totalReviews: pv.totalReviews ?? 0,
+      ...common,
       hasVariants: true,
       options: pv.variantOptions ?? {},
       variants,
       priceRange: { min, max, minDiscounted: minDisc, maxDiscounted: maxDisc },
       stockTotal,
-      inStock: (pv as any).fulfillmentType === 'DIGITAL_ON_DEMAND' ? true : stockTotal > 0,
-      fulfillmentType: (pv as any).fulfillmentType || 'PHYSICAL',
-      priceWithTransfer: pv.priceWithTransfer,
-      specifications: pv.specificationsJson ? JSON.parse(pv.specificationsJson) : {},
-      isPresale: pv.presale,
-      releaseDate: pv.releaseDate,
-      productType: pv.productType,
-      dlcs: normalizeDlcs(pv.dlcs),
-      parentGameId: pv.parentGameId ?? null,
-      parentGameName: pv.parentGameName ?? null,
-    };
-  } else {
-    const ps = p as APIProductSimple;
-
-    const price = money(ps.price);
-    const discounted = money(ps.discountedPrice ?? price);
-    const stock = ps.stock ?? 0;
-
-    return {
-      id: ps.id,
-      title: ps.title,
-      description: ps.description,
-      brand: ps.brand,
-      category: ps.category,
-      sku: ps.sku,
-      images: ps.imgs?.urls ?? [],
-      averageRating: ps.averageRating ?? 0,
-      totalReviews: ps.totalReviews ?? 0,
-      hasVariants: false,
-      options: {},
-      variants: [],
-      price,
-      discountedPrice: discounted,
-      priceRange: {
-        min: price,
-        max: price,
-        minDiscounted: discounted,
-        maxDiscounted: discounted,
-      },
-      stockTotal: stock,
-      inStock: (ps as any).fulfillmentType === 'DIGITAL_ON_DEMAND' ? true : stock > 0,
-      fulfillmentType: (ps as any).fulfillmentType || 'PHYSICAL',
-      priceWithTransfer: ps.priceWithTransfer,
-      specifications: ps.specificationsJson ? JSON.parse(ps.specificationsJson) : {},
-      isPresale: ps.presale,
-      releaseDate: ps.releaseDate,
-      productType: ps.productType,
-      dlcs: normalizeDlcs(ps.dlcs),
-      parentGameId: ps.parentGameId ?? null,
-      parentGameName: ps.parentGameName ?? null,
+      inStock: fulfillmentType === "DIGITAL_ON_DEMAND" ? true : stockTotal > 0,
     };
   }
+
+  const ps = p as APIProductSimple;
+  const price = money(ps.price);
+  const discounted = money(ps.discountedPrice ?? price);
+  const stock = ps.stock ?? 0;
+
+  return {
+    ...common,
+    hasVariants: false,
+    options: {},
+    variants: [],
+    price,
+    discountedPrice: discounted,
+    priceRange: {
+      min: price,
+      max: price,
+      minDiscounted: discounted,
+      maxDiscounted: discounted,
+    },
+    stockTotal: stock,
+    inStock: fulfillmentType === "DIGITAL_ON_DEMAND" ? true : stock > 0,
+  };
 }
 
-/** ===== Servicios ===== */
 export const productDetailsPublicService = {
   getRaw(id: number) {
     return getRawFrom(basePublic, id);
@@ -253,5 +253,4 @@ export const productDetailsAdminService = {
   },
 };
 
-/** Alias para compatibilidad: mantiene el comportamiento previo (admin) */
 export const productDetailsService = productDetailsAdminService;

@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import { AddressResponse } from "@/services/addressService";
+import { InlineFieldSkeleton } from "@/components/Common/Skeletons";
 
 const BillingList: React.FC<{
   title: string;
@@ -35,7 +36,12 @@ const BillingList: React.FC<{
 
 
 
-      {loading && <p className="text-sm text-dark-5">Cargando...</p>}
+      {loading && (
+        <div className="space-y-3">
+          <InlineFieldSkeleton className="h-12 w-full" />
+          <InlineFieldSkeleton className="h-12 w-full" />
+        </div>
+      )}
 
       {!loading && !addresses.length && (
         <p className="text-sm text-dark-5">No tenés direcciones de facturación guardadas.</p>

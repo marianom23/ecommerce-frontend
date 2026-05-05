@@ -3,6 +3,7 @@
 
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { useAuth } from "@/hooks/useAuth";
+import { useCartModalContext } from "@/app/context/CartSidebarModalContext";
 import {
   // lecturas
   fetchCartGuest,
@@ -31,9 +32,12 @@ import {
   selectTotalPrice,
 } from "@/redux/features/cart-slice";
 
+const CART_AUTO_OPENED_KEY = "hornero-cart-auto-opened";
+
 export function useCart() {
   const dispatch = useAppDispatch();
   const { isAuthenticated } = useAuth();
+  const { openCartModal } = useCartModalContext();
 
   const cart = useAppSelector(selectCart);
   const items = useAppSelector(selectCartItems);
@@ -54,8 +58,21 @@ export function useCart() {
     refreshLogged: () => dispatch(fetchCartLogged()),
 
     // mutaciones
-    addItem: (p: { productId?: number; variantId?: number; quantity: number; price?: number }) =>
-      isLogged ? dispatch(addCartItemLogged(p)) : dispatch(addCartItemGuest(p)),
+    addItem: async (p: { productId?: number; variantId?: number; quantity: number; price?: number }) => {
+      const action = await (isLogged ? dispatch(addCartItemLogged(p)) : dispatch(addCartItemGuest(p)));
+      const addedToCart = addCartItemLogged.fulfilled.match(action) || addCartItemGuest.fulfilled.match(action);
+
+      if (addedToCart) {
+        window.dispatchEvent(new Event("cart:attention"));
+
+        if (sessionStorage.getItem(CART_AUTO_OPENED_KEY) !== "true") {
+          sessionStorage.setItem(CART_AUTO_OPENED_KEY, "true");
+          openCartModal();
+        }
+      }
+
+      return action;
+    },
 
     updateQuantity: (itemId: number, quantity: number) =>
       isLogged

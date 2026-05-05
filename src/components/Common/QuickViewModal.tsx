@@ -18,6 +18,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import CloudinaryImage from "@/components/Common/CloudinaryImage";
+import { ProductGridSkeleton } from "@/components/Common/Skeletons";
 import { useModalContext } from "@/app/context/QuickViewModalContext";
 import { usePreviewSlider } from "@/app/context/PreviewSliderContext";
 import { AppDispatch, useAppSelector } from "@/redux/store";
@@ -419,7 +420,7 @@ const QuickViewModal = () => {
               <div className="relative overflow-hidden rounded-xl bg-white shadow-sm">
                 <div className="aspect-[3/4]">
                   {loading ? (
-                    <div className="flex h-full items-center justify-center text-sm text-dark-4">Cargando...</div>
+                    <div className="p-4"><ProductGridSkeleton count={1} /></div>
                   ) : err ? (
                     <div className="flex h-full items-center justify-center px-6 text-center text-sm text-red">{err}</div>
                   ) : (

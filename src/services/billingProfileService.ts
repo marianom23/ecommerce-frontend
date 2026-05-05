@@ -12,8 +12,8 @@ export type TaxCondition =
   | "EXENTO";
 
 export type BillingProfileRequest = {
-  documentType: DocumentType;
-  documentNumber: string;
+  documentType?: DocumentType | null;
+  documentNumber?: string | null;
   fullName?: string;
   taxCondition: TaxCondition;
   businessName?: string | null;
@@ -35,8 +35,8 @@ export type BillingProfileRequest = {
 export type BillingProfileResponse = {
   id: number;
 
-  documentType: DocumentType;
-  documentNumber: string;
+  documentType?: DocumentType | null;
+  documentNumber?: string | null;
   fullName?: string;
   taxCondition: TaxCondition;
   businessName?: string | null;

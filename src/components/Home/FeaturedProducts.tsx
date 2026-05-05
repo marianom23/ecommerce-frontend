@@ -5,6 +5,7 @@ import type { Product } from "@/types/product";
 import SingleGridItem from "@/components/Shop/SingleGridItem";
 import { productService } from "@/services/productService";
 import { Star } from "lucide-react";
+import { SectionCardsSkeleton } from "@/components/Common/Skeletons";
 
 const FeaturedProducts = () => {
   const [items, setItems] = useState<Product[]>([]);
@@ -60,11 +61,7 @@ const FeaturedProducts = () => {
         </div>
 
         {loading && (
-          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-x-7.5 gap-y-9">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="animate-pulse h-[330px] rounded-lg bg-white shadow-1" />
-            ))}
-          </div>
+          <SectionCardsSkeleton count={4} />
         )}
 
         {error && !loading && (

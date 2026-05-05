@@ -10,6 +10,7 @@ import Orders from "../Orders";
 import ManageAddresses from "./ManageAddresses";
 import AccountDetails from "./AccountDetails";
 import Modal from "@/components/Common/Modal";
+import { AccountPanelSkeleton } from "@/components/Common/Skeletons";
 
 type MyAccountProps = {
   current:
@@ -68,6 +69,12 @@ export default function MyAccount({ current }: MyAccountProps) {
 
       <section className="overflow-hidden py-20 bg-gray-2">
         <div className="max-w-[1170px] w-full mx-auto px-4 sm:px-8 xl:px-0">
+          {loading ? (
+            <div className="flex flex-col gap-7.5">
+              <AccountPanelSkeleton />
+              <AccountPanelSkeleton />
+            </div>
+          ) : (
           <div className="flex flex-col gap-7.5">
             {/* <!--== user dashboard menu start ==--> */}
             <div className="w-full bg-white rounded-xl shadow-1 p-4">
@@ -166,6 +173,7 @@ export default function MyAccount({ current }: MyAccountProps) {
             {/* <!-- details tab content end -->
             <!--== user dashboard content end ==--> */}
           </div>
+          )}
         </div>
       </section>
 

@@ -74,6 +74,26 @@
 }
 
 @layer utilities {
+  @keyframes cart-pop {
+    0% {
+      transform: translateY(0) scale(1);
+    }
+    35% {
+      transform: translateY(-5px) scale(1.08);
+    }
+    65% {
+      transform: translateY(1px) scale(0.99);
+    }
+    100% {
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  .animate-cart-pop {
+    animation: cart-pop 520ms cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: transform;
+  }
+
   /* Chrome, Safari and Opera */
   .no-scrollbar::-webkit-scrollbar {
     display: none;

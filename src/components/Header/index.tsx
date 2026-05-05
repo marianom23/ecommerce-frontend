@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { logoutClient } from "@/lib/logoutClient";
 import CustomSelect, { type SelectOption } from "./CustomSelect";
-import { Search, ChevronDown, User } from "lucide-react";
+import { Search, ChevronDown, Instagram } from "lucide-react";
 import { productService } from "@/services/productService";
 import { menuData } from "./menuData";
 import Dropdown from "./Dropdown";
@@ -27,11 +27,12 @@ const Header = () => {
   const [catOptions, setCatOptions] = useState<SelectOption[]>([
     { label: "Categorías", value: "0" },
   ]);
-  const [catsLoading, setCatsLoading] = useState(false);
   const [navigationOpen, setNavigationOpen] = useState(false);
   const [stickyMenu, setStickyMenu] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [isSearchCatOpen, setIsSearchCatOpen] = useState(false);
+  const [cartAttention, setCartAttention] = useState(false);
   const searchParams = useSearchParams();
 
   useEffect(() => {
@@ -46,6 +47,17 @@ const Header = () => {
   const totalItems = useSelector(selectItemsCount);
 
   const handleOpenCartModal = () => openCartModal();
+
+  useEffect(() => {
+    const handleCartAttention = () => {
+      setCartAttention(false);
+      window.requestAnimationFrame(() => setCartAttention(true));
+      window.setTimeout(() => setCartAttention(false), 560);
+    };
+
+    window.addEventListener("cart:attention", handleCartAttention);
+    return () => window.removeEventListener("cart:attention", handleCartAttention);
+  }, []);
 
   const computedMenu = useMemo(() => {
     return menuData;
@@ -66,7 +78,6 @@ const Header = () => {
     (async () => {
       try {
         setBrandsLoading(true);
-        setCatsLoading(true);
         const facets = await productService.getFacets({}); // sin filtros → todas
         const mapped: SelectOption[] = [
           { label: "Categorías", value: "0" },
@@ -84,7 +95,6 @@ const Header = () => {
         if (!cancelled) setCatOptions([{ label: "Categorías", value: "0" }]);
         if (!cancelled) setBrandFacets([]);
       } finally {
-        if (!cancelled) setCatsLoading(false);
         if (!cancelled) setBrandsLoading(false);
       }
     })();
@@ -94,18 +104,18 @@ const Header = () => {
   return (
     <>
       <header
-        className={`fixed left-0 top-0 w-full z-9999 bg-white transition-all ease-in-out duration-300 border-b border-gray-3 ${stickyMenu && "shadow"}`}
+        className={`fixed left-0 top-0 w-full z-9999 bg-white transition-all ease-in-out duration-300 border-b border-gray-3 ${stickyMenu && "lg:shadow"}`}
       >
         <div className="max-w-[1170px] mx-auto px-4 sm:px-7.5 xl:px-0">
           {/* MOBILE LAYOUT (lg:hidden) */}
-          <div className={`lg:hidden ${stickyMenu ? "py-2" : "py-3"}`}>
+          <div className="py-3 lg:hidden">
             {/* Row 1: Menu, Logo, Icons */}
-            <div className="flex items-center justify-between mb-3">
+            <div className="grid h-11 grid-cols-[88px_1fr_88px] items-center gap-1">
               {/* Left side - Hamburger Menu Button */}
               <button
                 onClick={() => setMobileMenuOpen(true)}
                 aria-label="Abrir menú"
-                className="flex items-center justify-center"
+                className="flex h-10 w-10 items-center justify-center active:scale-95 transition-transform"
               >
                 <svg
                   width="24"
@@ -125,25 +135,30 @@ const Header = () => {
               </button>
 
               {/* Centered Logo */}
-              <Link className="flex-shrink-0 absolute left-1/2 -translate-x-1/2" href="/">
+              <Link className="flex min-w-0 items-center justify-center" href="/" aria-label="HorneroTech">
                 <Image
                   src="/images/logo/logo2.png"
                   alt="Logo"
-                  width={110}
-                  height={28}
-                  className="h-auto w-auto max-h-[28px]"
+                  width={150}
+                  height={36}
+                  priority
+                  className="h-auto w-[138px] max-w-full"
                 />
               </Link>
 
               {/* Right Icons */}
-              <div className="flex items-center gap-4">
-                <Link href={isAuthenticated ? "/mi-cuenta" : "/signin"} aria-label="Mi Cuenta">
-                  <div className="flex items-center justify-center p-1 active:scale-90 transition-transform">
-                    <User className="w-6.5 h-6.5 text-blue stroke-[1.8]" />
-                  </div>
-                </Link>
+              <div className="flex items-center justify-end gap-1 text-dark">
+                <button
+                  type="button"
+                  onClick={() => setMobileSearchOpen((open) => !open)}
+                  aria-label="Buscar"
+                  aria-expanded={mobileSearchOpen}
+                  className="flex h-9 w-9 items-center justify-center active:scale-95 transition-transform"
+                >
+                  <Search className="h-5.5 w-5.5 text-dark stroke-[1.9]" />
+                </button>
 
-                <button onClick={handleOpenCartModal} className="relative" aria-label="Carrito">
+                <button onClick={handleOpenCartModal} className={`relative flex h-9 w-9 items-center justify-center active:scale-95 transition-transform ${cartAttention ? "animate-cart-pop" : ""}`} aria-label="Carrito">
                   <svg
                     width="24"
                     height="24"
@@ -153,25 +168,25 @@ const Header = () => {
                   >
                     <path
                       d="M15.5433 9.5172C15.829 9.21725 15.8174 8.74252 15.5174 8.45686C15.2175 8.17119 14.7428 8.18277 14.4571 8.48272L12.1431 10.9125L11.5433 10.2827C11.2576 9.98277 10.7829 9.97119 10.483 10.2569C10.183 10.5425 10.1714 11.0173 10.4571 11.3172L11.6 12.5172C11.7415 12.6658 11.9378 12.75 12.1431 12.75C12.3483 12.75 12.5446 12.6658 12.6862 12.5172L15.5433 9.5172Z"
-                      fill="#3C50E0"
+                      fill="currentColor"
                     />
                     <path
                       fillRule="evenodd"
                       clipRule="evenodd"
                       d="M1.29266 2.7512C1.43005 2.36044 1.8582 2.15503 2.24896 2.29242L2.55036 2.39838C3.16689 2.61511 3.69052 2.79919 4.10261 3.00139C4.54324 3.21759 4.92109 3.48393 5.20527 3.89979C5.48725 4.31243 5.60367 4.76515 5.6574 5.26153C5.66124 5.29706 5.6648 5.33321 5.66809 5.36996L17.1203 5.36996C17.9389 5.36995 18.7735 5.36993 19.4606 5.44674C19.8103 5.48584 20.1569 5.54814 20.4634 5.65583C20.7639 5.76141 21.0942 5.93432 21.3292 6.23974C21.711 6.73613 21.7777 7.31414 21.7416 7.90034C21.7071 8.45845 21.5686 9.15234 21.4039 9.97723L21.3935 10.0295L21.3925 10.0341L20.8836 12.5033C20.7339 13.2298 20.6079 13.841 20.4455 14.3231C20.2731 14.8346 20.0341 15.2842 19.6076 15.6318C19.1811 15.9793 18.6925 16.1226 18.1568 16.1882C17.6518 16.25 17.0278 16.25 16.2862 16.25L10.8804 16.25C9.53464 16.25 8.44479 16.25 7.58656 16.1283C6.69032 16.0012 5.93752 15.7285 5.34366 15.1022C4.79742 14.526 4.50529 13.9144 4.35897 13.0601C4.22191 12.2598 4.20828 11.2125 4.20828 9.75996V7.03832C4.20828 6.29837 4.20726 5.80316 4.16611 5.42295C4.12678 5.0596 4.05708 4.87818 3.96682 4.74609C3.87876 4.61723 3.74509 4.4968 3.44186 4.34802C3.11902 4.18961 2.68026 4.03406 2.01266 3.79934L1.75145 3.7075C1.36068 3.57012 1.15527 3.14197 1.29266 2.7512ZM5.70828 6.86996L5.70828 9.75996C5.70828 11.249 5.72628 12.1578 5.83744 12.8068C5.93933 13.4018 6.11202 13.7324 6.43219 14.0701C6.70473 14.3576 7.08235 14.5418 7.79716 14.6432C8.53783 14.7482 9.5209 14.75 10.9377 14.75H16.2406C17.0399 14.75 17.5714 14.7487 17.9746 14.6993C18.3573 14.6525 18.5348 14.571 18.66 14.469C18.7853 14.3669 18.9009 14.2095 19.024 13.8441C19.1537 13.4592 19.2623 12.9389 19.4237 12.156L19.9225 9.73591L19.9229 9.73369C20.1005 8.84376 20.217 8.2515 20.2444 7.80793C20.2704 7.38648 20.2043 7.23927 20.1429 7.15786C20.1367 7.15259 20.0931 7.11565 19.9661 7.07101C19.8107 7.01639 19.5895 6.97049 19.2939 6.93745C18.6991 6.87096 17.9454 6.86996 17.089 6.86996H5.70828Z"
-                      fill="#3C50E0"
+                      fill="currentColor"
                     />
                     <path
                       fillRule="evenodd"
                       clipRule="evenodd"
                       d="M5.2502 19.5C5.2502 20.7426 6.25756 21.75 7.5002 21.75C8.74285 21.75 9.7502 20.7426 9.7502 19.5C9.7502 18.2573 8.74285 17.25 7.5002 17.25C6.25756 17.25 5.2502 18.2573 5.2502 19.5ZM7.5002 20.25C7.08599 20.25 6.7502 19.9142 6.7502 19.5C6.7502 19.0857 7.08599 18.75 7.5002 18.75C7.91442 18.75 8.2502 19.0857 8.2502 19.5C8.2502 19.9142 7.91442 20.25 7.5002 20.25Z"
-                      fill="#3C50E0"
+                      fill="currentColor"
                     />
                     <path
                       fillRule="evenodd"
                       clipRule="evenodd"
                       d="M14.25 19.5001C14.25 20.7427 15.2574 21.7501 16.5 21.7501C17.7426 21.7501 18.75 20.7427 18.75 19.5001C18.75 18.2574 17.7426 17.2501 16.5 17.2501C15.2574 17.2501 14.25 18.2574 14.25 19.5001ZM16.5 20.2501C16.0858 20.2501 15.75 19.9143 15.75 19.5001C15.75 19.0859 16.0858 18.7501 16.5 18.7501C16.9142 18.7501 17.25 19.0859 17.25 19.5001C17.25 19.9143 16.9142 20.2501 16.5 20.2501Z"
-                      fill="#3C50E0"
+                      fill="currentColor"
                     />
                   </svg>
                   {totalItems > 0 && (
@@ -184,7 +199,13 @@ const Header = () => {
             </div>
 
             {/* Row 2: Search Bar */}
-            <div className="w-full">
+            <div
+              className={`absolute left-0 top-full z-[9998] w-full border-t border-gray-3 bg-white px-4 py-3 shadow-md transition-[opacity,transform] duration-300 ease-out ${
+                mobileSearchOpen
+                  ? "translate-y-0 opacity-100"
+                  : "-translate-y-3 pointer-events-none opacity-0"
+              }`}
+            >
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
@@ -192,9 +213,10 @@ const Header = () => {
                   if (searchQuery.trim()) params.set("q", searchQuery.trim());
                   if (selectedCategory !== "0") params.set("categoryId", selectedCategory);
                   router.push(`/productos?${params.toString()}`);
+                  setMobileSearchOpen(false);
                 }}
               >
-                <div className="flex items-center w-full h-10 rounded-full border border-gray-3 bg-white shadow-sm px-3 gap-1 text-sm text-dark relative">
+                <div className="relative flex h-11 w-full items-center gap-1 rounded-full border border-gray-3 bg-white px-3 text-sm text-dark shadow-sm">
                   {/* Dropdown de categorías móvile */}
                   <div className="relative flex items-center shrink-0">
                     <button
@@ -202,7 +224,7 @@ const Header = () => {
                       onClick={() => setIsSearchCatOpen(!isSearchCatOpen)}
                       className="flex items-center gap-1 font-medium whitespace-nowrap pr-2 hover:text-blue transition-colors"
                     >
-                      <span className="max-w-[70px] truncate">
+                      <span className="max-w-[86px] truncate text-sm">
                         {catOptions.find(c => c.value === selectedCategory)?.label || "Categorías"}
                       </span>
                       <ChevronDown
@@ -237,13 +259,13 @@ const Header = () => {
                     value={searchQuery}
                     type="search"
                     placeholder="Buscar productos..."
-                    className="flex-1 bg-transparent outline-none placeholder:text-gray-400 text-dark min-w-0 px-2"
+                    className="flex-1 bg-transparent outline-none placeholder:text-gray-400 text-dark min-w-0 px-2 text-sm"
                   />
 
                   <button
                     type="submit"
                     aria-label="Buscar"
-                    className="shrink-0 text-gray-400 hover:text-blue transition-colors"
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-dark hover:text-blue transition-colors"
                   >
                     <Search className="w-4 h-4" />
                   </button>
@@ -322,7 +344,7 @@ const Header = () => {
                       type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder={catsLoading ? "Cargando..." : "Buscar productos..."}
+                      placeholder="Buscar productos..."
                       className="flex-1 bg-transparent outline-none placeholder:text-gray-400 text-dark min-w-0 px-2"
                     />
 
@@ -342,29 +364,17 @@ const Header = () => {
             {/* <!-- header top right --> */}
             <div className={`flex w-auto flex-shrink-0 items-center ${isAuthenticated ? "gap-4.5" : "gap-4"} transition-all duration-200`}
             >
-              <div className="hidden xl:flex items-center gap-3.5 flex-shrink-0">
-                {/* soporte */}
-                <svg
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"
-                    fill="#25D366"
-                  />
-                </svg>
+              <a href="https://www.instagram.com/hornero_tech/" target="_blank" rel="noopener noreferrer" className="hidden xl:flex items-center gap-3.5 flex-shrink-0 group cursor-pointer">
+                <Instagram className="w-7 h-7 text-[#E1306C] group-hover:scale-110 transition-transform" />
                 <div>
-                  <span className="block text-2xs text-dark-4 uppercase">
-                    ESCRIBINOS
+                  <span className="block text-2xs text-dark-4 uppercase group-hover:text-[#E1306C] transition-colors">
+                    SEGUINOS EN
                   </span>
-                  <p className="font-medium text-custom-sm text-dark">
-                    (+54) 261 4689151
+                  <p className="font-medium text-custom-sm text-dark group-hover:text-[#E1306C] transition-colors">
+                    Instagram
                   </p>
                 </div>
-              </div>
+              </a>
 
               {/* divider */}
               <span className="hidden xl:block w-px h-7.5 bg-gray-4"></span>
@@ -400,7 +410,7 @@ const Header = () => {
 
                   <button
                     onClick={handleOpenCartModal}
-                    className="flex items-center gap-2.5"
+                    className={`flex items-center gap-2.5 transition-transform ${cartAttention ? "animate-cart-pop" : ""}`}
                   >
                     <span className="inline-block relative">
                       {/* icono carrito */}

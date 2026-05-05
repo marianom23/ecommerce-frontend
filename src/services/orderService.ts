@@ -93,6 +93,7 @@ export type OrderItemResponse = {
   productName: string;
   sku: string;
   attributesJson?: string | null;
+  fulfillmentType?: "PHYSICAL" | "DIGITAL_ON_DEMAND" | "DIGITAL_INSTANT" | null;
   unitPrice: number;
   quantity: number;
   discountAmount: number;
@@ -138,6 +139,7 @@ export type OrderResponse = {
 
   // Flag calculado por el backend
   requiresShipping: boolean;
+  deliveryMode?: "PHYSICAL" | "DIGITAL" | "MIXED" | string | null;
 
   // Shipping snapshot
   shippingStreet?: string | null;

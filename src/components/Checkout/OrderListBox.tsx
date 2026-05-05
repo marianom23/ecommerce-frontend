@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { cartService } from "@/services/cartService";
+import { OrderListSkeleton } from "@/components/Common/Skeletons";
 
 type CartItem = {
   id: number;
@@ -102,7 +103,7 @@ const OrderListBox: React.FC<{
         </div>
 
         {/* Loading / Error / Empty */}
-        {loading && <p className="py-5 text-sm text-dark-5">Cargando carrito…</p>}
+        {loading && <OrderListSkeleton rows={2} />}
         {err && <p className="py-5 text-sm text-red-600">{err}</p>}
         {!loading && !err && items.length === 0 && (
           <p className="py-5 text-sm text-dark-5">Tu carrito está vacío.</p>

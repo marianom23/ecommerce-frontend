@@ -3,8 +3,9 @@ import HeroCarousel from "./HeroCarousel";
 import HeroFeature from "./HeroFeature";
 import Image from "next/image";
 import CloudinaryImage from "@/components/Common/CloudinaryImage";
+import { CheckoutPanelSkeleton } from "@/components/Common/Skeletons";
 
-const Hero = ({ banners }: { banners: import("@/types/banner").Banner[] }) => {
+const Hero = ({ banners, loading = false }: { banners: import("@/types/banner").Banner[]; loading?: boolean }) => {
   const mainBanners = banners.filter((b) => b.placement === "HOME_HERO_MAIN");
   const sideTop = banners.find((b) => b.placement === "HOME_HERO_SIDE_TOP");
   const sideBottom = banners.find((b) => b.placement === "HOME_HERO_SIDE_BOTTOM");
@@ -24,12 +25,18 @@ const Hero = ({ banners }: { banners: import("@/types/banner").Banner[] }) => {
                 height={520}
               />
 
-              <HeroCarousel banners={mainBanners} />
+              {loading ? <div className="h-[420px] bg-gray-2 animate-pulse" /> : <HeroCarousel banners={mainBanners} />}
             </div>
           </div>
 
           <div className="xl:max-w-[393px] w-full">
             <div className="flex flex-col lg:flex-row xl:flex-col gap-5 h-full">
+              {loading && (
+                <>
+                  <CheckoutPanelSkeleton rows={3} />
+                  <CheckoutPanelSkeleton rows={3} />
+                </>
+              )}
               {sideTop && (
                 <div className="w-full relative rounded-[10px] bg-white p-4 sm:p-7.5 flex-1 overflow-hidden min-h-[200px]">
                   <div className="flex items-start justify-between h-full">

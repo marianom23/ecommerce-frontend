@@ -6,6 +6,7 @@ import GuestShippingForm from "./GuestShippingForm";
 import { orderService, type OrderResponse } from "@/services/orderService";
 import toast from "react-hot-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { CheckoutPanelSkeleton } from "@/components/Common/Skeletons";
 
 type Props = {
   order?: OrderResponse | null;
@@ -97,7 +98,7 @@ const ShippingContainer: React.FC<Props> = ({ order, onSelected }) => {
         <h2 className="font-medium text-dark text-xl sm:text-2xl mb-5.5">
           Detalles de envío
         </h2>
-        <p className="text-dark">Cargando direcciones de envío...</p>
+        <CheckoutPanelSkeleton rows={3} />
       </div>
     );
   }
@@ -122,7 +123,10 @@ const ShippingContainer: React.FC<Props> = ({ order, onSelected }) => {
             setSelectedId(a?.id ?? null);
             if (a) await applyToOrder(a);
           }}
-          onAddNew={() => setMode("form")}
+          onAddNew={() => {
+            setMode("form");
+            onSelected?.(null);
+          }}
         />
       )}
 

@@ -1,11 +1,26 @@
 import React from "react";
 import Image from "next/image";
 import CloudinaryImage from "@/components/Common/CloudinaryImage";
+import { CheckoutPanelSkeleton } from "@/components/Common/Skeletons";
 
-const PromoBanner = ({ banners }: { banners: import("@/types/banner").Banner[] }) => {
+const PromoBanner = ({ banners, loading = false }: { banners: import("@/types/banner").Banner[]; loading?: boolean }) => {
   const bigBanner = banners.find((b) => b.placement === "HOME_PROMO_TOP");
   const smallBanner1 = banners.find((b) => b.placement === "HOME_PROMO_BOTTOM_LEFT");
   const smallBanner2 = banners.find((b) => b.placement === "HOME_PROMO_BOTTOM_RIGHT");
+
+  if (loading) {
+    return (
+      <section className="overflow-hidden py-20">
+        <div className="max-w-[1170px] w-full mx-auto px-4 sm:px-8 xl:px-0">
+          <CheckoutPanelSkeleton rows={5} />
+          <div className="mt-7.5 grid gap-7.5 lg:grid-cols-2">
+            <CheckoutPanelSkeleton rows={3} />
+            <CheckoutPanelSkeleton rows={3} />
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   if (!bigBanner && !smallBanner1 && !smallBanner2) return null;
 

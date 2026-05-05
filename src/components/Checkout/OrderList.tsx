@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { cartService } from "@/services/cartService";
 import { orderService } from "@/services/orderService";
+import { OrderListSkeleton } from "@/components/Common/Skeletons";
 
 type CartItem = {
   id: number;
@@ -46,7 +47,9 @@ const OrderList: React.FC<{
   onLoaded?: (cart: Cart) => void;
   orderId?: number | null;
   orderNumber?: string | null;
-}> = ({ className, reloadKey, onLoaded, orderId, orderNumber }) => {
+  bare?: boolean;
+  showShippingInBare?: boolean;
+}> = ({ className, reloadKey, onLoaded, orderId, orderNumber, bare = false, showShippingInBare = false }) => {
   const [loading, setLoading] = useState(false);
   const [cart, setCart] = useState<Cart | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -138,13 +141,8 @@ const OrderList: React.FC<{
   const total =
     typeof cart?.total === "number" ? cart!.total : Math.max(0, subtotal - discount + shipping + tax);
 
-  return (
-    <div className={`bg-white shadow-1 rounded-[10px] ${className ?? ""}`}>
-      <div className="border-b border-gray-3 py-5 px-4 sm:px-8.5">
-        <h3 className="font-medium text-xl text-dark">Tu Orden</h3>
-      </div>
-
-      <div className="pt-2.5 pb-8.5 px-4 sm:px-8.5">
+  const content = (
+    <div className={bare ? "" : "pt-2.5 pb-8.5 px-4 sm:px-8.5"}>
         {/* Header */}
         <div className="flex items-center justify-between py-5 border-b border-gray-3">
           <h4 className="font-medium text-dark">Producto</h4>
@@ -152,7 +150,7 @@ const OrderList: React.FC<{
         </div>
 
         {/* Loading / Error / Empty */}
-        {loading && <p className="py-5 text-sm text-dark-5">Cargando carrito…</p>}
+        {loading && <OrderListSkeleton rows={2} />}
         {err && <p className="py-5 text-sm text-red-600">{err}</p>}
         {!loading && !err && items.length === 0 && (
           <p className="py-5 text-sm text-dark-5">Tu carrito está vacío.</p>
@@ -165,7 +163,7 @@ const OrderList: React.FC<{
               <div key={it.id} className="flex items-center justify-between py-5 border-b border-gray-3">
                 <div className="min-w-0 pr-4">
                   <p className="text-dark truncate">
-                    {it.name}{it.sku ? ` — ${it.sku}` : ""}
+                    {it.name}
                   </p>
                   <p className="text-dark-5 text-xs">
                     x{it.quantity} · {formatMoney(it.unitPrice, currency)}
@@ -197,10 +195,12 @@ const OrderList: React.FC<{
             )}
 
             {/* Shipping */}
-            <div className="flex items-center justify-between py-5 border-b border-gray-3">
-              <p className="text-dark">Costo de Envío</p>
-              <p className="text-dark text-right">{formatMoney(shipping, currency)}</p>
-            </div>
+            {(!bare || showShippingInBare) && (
+              <div className="flex items-center justify-between py-5 border-b border-gray-3">
+                <p className="text-dark">{bare ? "Envío estándar (5-7 días hábiles aprox)" : "Costo de Envío"}</p>
+                <p className="text-dark text-right">{formatMoney(shipping, currency)}</p>
+              </div>
+            )}
 
             {/* Taxes */}
             {tax > 0 && (
@@ -219,7 +219,20 @@ const OrderList: React.FC<{
             </div>
           </>
         )}
+    </div>
+  );
+
+  if (bare) {
+    return content;
+  }
+
+  return (
+    <div className={`bg-white shadow-1 rounded-[10px] ${className ?? ""}`}>
+      <div className="border-b border-gray-3 py-5 px-4 sm:px-8.5">
+        <h3 className="font-medium text-xl text-dark">Tu Orden</h3>
       </div>
+
+      {content}
     </div>
   );
 };

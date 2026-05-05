@@ -11,6 +11,11 @@ type Props = {
 
 const Breadcrumb: React.FC<Props> = ({ title, pages = [] }) => {
   const siteUrl = process.env.NEXTAUTH_URL || "https://hornerotech.com.ar";
+  const visiblePages = pages.filter((page) => {
+    if (typeof page !== "string") return true;
+    const trimmedPage = page.trim();
+    return trimmedPage !== "" && trimmedPage !== "/";
+  });
 
   // Prepare JSON-LD for breadcrumbs
   const breadcrumbList = {
@@ -23,7 +28,7 @@ const Breadcrumb: React.FC<Props> = ({ title, pages = [] }) => {
         "name": "Home",
         "item": siteUrl
       },
-      ...pages.map((page, index) => ({
+      ...visiblePages.map((page, index) => ({
         "@type": "ListItem",
         "position": index + 2,
         "name": typeof page === "string" ? page : (typeof page.label === "string" ? page.label : title),
@@ -45,23 +50,23 @@ const Breadcrumb: React.FC<Props> = ({ title, pages = [] }) => {
               {title}
             </h1>
 
-            <ul className="flex items-center gap-2">
+            <ul className="flex flex-wrap items-center gap-x-2 gap-y-1">
               {/* Home */}
               <li className="text-custom-sm hover:text-blue">
                 <Link href="/">Home</Link>
               </li>
 
               {/* Separador */}
-              {pages.length > 0 && <li className="text-custom-sm">/</li>}
+              {visiblePages.length > 0 && <li className="text-custom-sm">/</li>}
 
               {/* Resto de migas */}
-              {pages.map((page, i) => {
+              {visiblePages.map((page, i) => {
                 // Si es string, renderizo directamente el texto
                 if (typeof page === "string") {
                   return (
                     <React.Fragment key={`${page}-${i}`}>
                       <li className="text-custom-sm capitalize">{page}</li>
-                      {i < pages.length - 1 && (
+                      {i < visiblePages.length - 1 && (
                         <li className="text-custom-sm">/</li>
                       )}
                     </React.Fragment>
@@ -74,7 +79,7 @@ const Breadcrumb: React.FC<Props> = ({ title, pages = [] }) => {
                     <li className="text-custom-sm hover:text-blue capitalize">
                       <Link href={page.href}>{page.label}</Link>
                     </li>
-                    {i < pages.length - 1 && (
+                    {i < visiblePages.length - 1 && (
                       <li className="text-custom-sm">/</li>
                     )}
                   </React.Fragment>

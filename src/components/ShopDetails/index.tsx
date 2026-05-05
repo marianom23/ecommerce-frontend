@@ -6,6 +6,7 @@ import Breadcrumb from "../Common/Breadcrumb";
 import Newsletter from "../Common/Newsletter";
 import RecentlyViewdItems from "./RecentlyViewd";
 import CloudinaryImage from "@/components/Common/CloudinaryImage";
+import { ProductDetailsSkeleton } from "@/components/Common/Skeletons";
 import { usePreviewSlider } from "@/app/context/PreviewSliderContext";
 import { useAppSelector } from "@/redux/store";
 import { useCart } from "@/hooks/useCart";
@@ -13,6 +14,7 @@ import {
   productDetailsPublicService,
   type NormalizedProduct,
   type NormalizedVariant,
+  type RelatedProduct,
 } from "@/services/productDetailsService";
 import { updateproductDetails } from "@/redux/features/product-details";
 import { toggleWishlist } from "@/redux/features/wishlist-slice";
@@ -111,6 +113,9 @@ const formatDisplayValue = (value?: string) => {
     .replace(/_/g, " ")
     .replace(/\b\w/g, (char) => char.toUpperCase());
 };
+
+const getRelatedProductDisplayTitle = (product: RelatedProduct) =>
+  product.consoleName ? `${product.title} (${product.consoleName})` : product.title;
 
 const ShopDetails = ({ productId }: ShopDetailsProps) => {
   const dispatch = useDispatch<AppDispatch>();
@@ -452,14 +457,7 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-24">
-        <div className="text-center">
-          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-primary" />
-          <p className="text-sm text-muted-foreground">Cargando detalles del producto...</p>
-        </div>
-      </div>
-    );
+    return <ProductDetailsSkeleton />;
   }
 
   if (error) {
@@ -481,15 +479,13 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
 
   return (
     <>
-      <div className="hidden sm:block">
-        <Breadcrumb
-          title={productDetails?.title || "Detalle del Producto"}
-          pages={[
-            { label: "Productos", href: "/productos" },
-            breadcrumbCategory,
-          ]}
-        />
-      </div>
+      <Breadcrumb
+        title={productDetails?.title || "Detalle del Producto"}
+        pages={[
+          { label: "Productos", href: "/productos" },
+          breadcrumbCategory,
+        ]}
+      />
 
       <div className="mx-auto max-w-7xl px-3 pb-4 pt-3 sm:px-6 sm:py-6 lg:px-8">
         <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm sm:rounded-2xl">
@@ -870,45 +866,45 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
                   <p className="italic text-muted-foreground">No hay descripcion disponible para este producto.</p>
                 )}
 
-                {productDetails?.productType === "DLC" && productDetails.parentGameId && productDetails.parentGameName && (
+                {productDetails?.parentProducts.length > 0 && (
                   <div className="mt-6 rounded-xl border border-blue-light-4 bg-blue-light-5 p-4">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-blue">Juego base requerido</p>
-                    <p className="mt-2 text-sm text-dark">
-                      Este DLC corresponde a{" "}
-                      <Link
-                        href={generateProductUrl(productDetails.parentGameId, productDetails.parentGameName)}
-                        className="font-semibold text-blue hover:underline"
-                      >
-                        {productDetails.parentGameName}
-                      </Link>
-                      .
-                    </p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-blue">Productos base</p>
+                    <div className="mt-3 flex flex-col items-start gap-2">
+                      {productDetails.parentProducts.map((parentProduct) => (
+                        <Link
+                          key={parentProduct.id}
+                          href={generateProductUrl(parentProduct.id, parentProduct.title || "producto")}
+                          className="rounded-full bg-white px-3 py-1.5 text-sm font-semibold text-blue transition hover:underline"
+                        >
+                          {getRelatedProductDisplayTitle(parentProduct)}
+                        </Link>
+                      ))}
+                    </div>
                   </div>
                 )}
-
-                {productDetails?.productType === "GAME" && productDetails.dlcs.length > 0 && (
+                {productDetails?.childProducts.length > 0 && (
                   <div className="mt-6 rounded-xl border border-border bg-background p-4">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">DLCs disponibles</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Productos relacionados</p>
                     <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                      {productDetails.dlcs.map((dlc) => (
+                      {productDetails.childProducts.map((childProduct) => (
                         <Link
-                          key={dlc.id}
-                          href={generateProductUrl(dlc.id, dlc.title || "producto")}
+                          key={childProduct.id}
+                          href={generateProductUrl(childProduct.id, childProduct.title || "producto")}
                           className="flex items-center gap-3 rounded-xl border border-border p-3 transition-colors hover:border-primary/40 hover:bg-muted/40"
                         >
                           <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-gray-1">
                             <CloudinaryImage
-                              src={dlc.image || "/placeholder.png"}
-                              alt={dlc.title}
+                              src={childProduct.image || "/placeholder.png"}
+                              alt={childProduct.title}
                               width={64}
                               height={64}
                               className="h-full w-full object-contain p-1"
                             />
                           </div>
                           <div className="min-w-0">
-                            <p className="line-clamp-2 text-sm font-medium text-foreground">{dlc.title}</p>
+                            <p className="line-clamp-2 text-sm font-medium text-foreground">{childProduct.title}</p>
                             <p className="mt-1 text-sm font-semibold text-primary">
-                              {formatCurrency(dlc.discountedPrice ?? dlc.price)}
+                              {formatCurrency(childProduct.discountedPrice ?? childProduct.price)}
                             </p>
                           </div>
                         </Link>
@@ -977,11 +973,11 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
                     : `${productDetails?.stockTotal || 0} unidades`,
                 ],
                 ["Tipo de entrega", getFulfillmentLabel(productDetails?.fulfillmentType)],
-                ...(productDetails?.productType === "DLC" && productDetails.parentGameName
-                  ? [["Juego base", productDetails.parentGameName]]
+                ...(productDetails?.parentProducts.length > 0
+                  ? [["Productos base", productDetails.parentProducts.map(getRelatedProductDisplayTitle).join(", ")]]
                   : []),
-                ...(productDetails?.productType === "GAME" && productDetails.dlcs.length > 0
-                  ? [["DLCs", `${productDetails.dlcs.length} disponibles`]]
+                ...(productDetails?.childProducts.length > 0
+                  ? [["Productos relacionados", `${productDetails.childProducts.length} disponibles`]]
                   : []),
                 ...(productDetails?.hasVariants ? [["Variantes disponibles", `${productDetails.variants.length} variantes`]] : []),
                 ...(productDetails?.priceRange
@@ -1030,7 +1026,10 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
         </section>
       </div>
 
-      <RecentlyViewdItems />
+      <RecentlyViewdItems
+        currentProductId={productDetails?.id}
+        productType={productDetails?.productType}
+      />
       <Newsletter />
     </>
   );

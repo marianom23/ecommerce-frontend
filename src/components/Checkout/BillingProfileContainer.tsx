@@ -6,6 +6,16 @@ import { type AddressResponse } from "@/services/addressService";
 import { billingProfileService, type BillingProfileResponse } from "@/services/billingProfileService";
 import { useAuth } from "@/hooks/useAuth";
 import toast from "react-hot-toast";
+import { CheckoutPanelSkeleton } from "@/components/Common/Skeletons";
+
+const getBillingProfileSummary = (profile: BillingProfileResponse) => {
+  const taxLabel = profile.taxCondition === "CONSUMIDOR_FINAL" ? "Predeterminado" : profile.taxCondition;
+  const documentLabel = profile.documentNumber
+    ? `${profile.documentType || "Doc."} ${profile.documentNumber}`
+    : "Documento no informado";
+
+  return `${documentLabel} • ${taxLabel}`;
+};
 
 const BillingProfileContainer: React.FC<{
   order: OrderResponse | null;
@@ -77,7 +87,7 @@ const BillingProfileContainer: React.FC<{
         <h2 className="font-medium text-dark text-xl sm:text-2xl mb-5.5">
           Información de Facturación
         </h2>
-        <p className="text-dark">Cargando...</p>
+        <CheckoutPanelSkeleton rows={3} />
       </div>
     );
   }
@@ -110,6 +120,7 @@ const BillingProfileContainer: React.FC<{
                     onClick={() => {
                         setEditingProfile(null);
                         setMode("form");
+                        onSelected?.(null);
                     }}
                     className="text-xs font-medium bg-blue/10 text-blue px-3 py-1.5 rounded-full hover:bg-blue hover:text-white transition-colors"
                 >
@@ -138,12 +149,12 @@ const BillingProfileContainer: React.FC<{
                                 type="radio"
                                 checked={selectedId === profile.id}
                                 readOnly
-                                className="peer appearance-none w-5 h-5 border-2 border-gray-400 rounded-full checked:border-blue checked:border-4 transition-all"
+                                className="peer appearance-none w-5 h-5 border-2 border-gray-300 rounded-full checked:border-blue checked:border-4 transition-all"
                             />
                         </div>
                         <div className="flex-1 text-sm">
-                            <div className="font-medium text-dark mb-1">
-                                {profile.documentType} {profile.documentNumber} • {profile.taxCondition === "CONSUMIDOR_FINAL" ? "Predeterminado" : profile.taxCondition}
+                            <div className="font-medium text-dark mb-2 font-semibold">
+                                {getBillingProfileSummary(profile)}
                             </div>
                             <div className="text-dark-5">
                                 {profile.fullName}

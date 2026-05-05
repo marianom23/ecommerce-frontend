@@ -16,7 +16,7 @@ import { updateproductDetails } from "@/redux/features/product-details";
 import { generateProductUrl } from "@/utils/slug";
 import { useAuth } from "@/hooks/useAuth";
 import * as pixel from "@/utils/pixel";
-import { Heart, Eye, Star, ShoppingCart } from "lucide-react";
+import { Heart, Eye, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
@@ -166,19 +166,6 @@ const SingleListItem = ({ item }: { item: Product }) => {
             className="hidden sm:flex h-11 w-11 shrink-0 rounded-full bg-white shadow-md hover:bg-neutral-50"
           >
             <Eye className="h-5 w-5 text-gray-800" />
-          </Button>
-
-          <Button
-            size="icon"
-            variant="secondary"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              handleAddToCart();
-            }}
-            className="h-11 w-11 shrink-0 rounded-full bg-dark text-white shadow-md hover:bg-dark-2"
-          >
-            <ShoppingCart className="h-5 w-5" />
           </Button>
 
           <Button
