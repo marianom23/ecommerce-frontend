@@ -29,6 +29,7 @@ const BillingProfileContainer: React.FC<{
   const [profiles, setProfiles] = useState<BillingProfileResponse[]>([]);
   const [mode, setMode] = useState<"list" | "form">("list");
   const [editingProfile, setEditingProfile] = useState<BillingProfileResponse | null>(null);
+  const [expandedProfileId, setExpandedProfileId] = useState<number | null>(null);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [hasLoaded, setHasLoaded] = useState(false);
@@ -165,18 +166,46 @@ const BillingProfileContainer: React.FC<{
                                     {profile.street} {profile.streetNumber}, {profile.city}
                                 </div>
                             )}
+                            {expandedProfileId === profile.id && (
+                                <div className="mt-2 pt-2 border-t border-gray-2 text-xs text-dark-5 grid grid-cols-1 sm:grid-cols-2 gap-2 cursor-default" onClick={(e) => e.stopPropagation()}>
+                                    <div><span className="font-medium">Nombre:</span> {profile.fullName}</div>
+                                    {profile.businessName && <div><span className="font-medium">Raz&oacute;n Social:</span> {profile.businessName}</div>}
+                                    <div><span className="font-medium">Condici&oacute;n:</span> {profile.taxCondition}</div>
+                                    {profile.documentNumber && <div><span className="font-medium">Doc:</span> {profile.documentType || "Doc."} {profile.documentNumber}</div>}
+                                    {profile.emailForInvoices && <div className="sm:col-span-2"><span className="font-medium">Email facturas:</span> {profile.emailForInvoices}</div>}
+                                    {profile.phone && <div><span className="font-medium">Tel&eacute;fono:</span> {profile.phone}</div>}
+                                    {profile.city && (
+                                        <div className="sm:col-span-2 mt-1 pt-1 border-t border-gray-2">
+                                            <span className="font-medium">Direcci&oacute;n:</span> {profile.street} {profile.streetNumber}, {profile.city} ({profile.postalCode}) - {profile.state}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
-                        <button
-                            type="button"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setEditingProfile(profile);
-                                setMode("form");
-                            }}
-                            className="text-blue text-xs hover:underline mt-0.5"
-                        >
-                            Ver / Editar
-                        </button>
+                        <div className="flex items-center gap-3 mt-0.5 whitespace-nowrap">
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setExpandedProfileId(expandedProfileId === profile.id ? null : profile.id);
+                                }}
+                                className="text-blue text-xs font-medium hover:underline flex items-center gap-1"
+                            >
+                                {expandedProfileId === profile.id ? "Ocultar" : "Ver detalle"}
+                                <svg className={`w-3 h-3 transition-transform ${expandedProfileId === profile.id ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setEditingProfile(profile);
+                                    setMode("form");
+                                }}
+                                className="text-blue text-xs hover:underline"
+                            >
+                                Editar
+                            </button>
+                        </div>
                     </div>
                 ))}
             </div>

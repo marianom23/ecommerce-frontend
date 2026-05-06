@@ -34,7 +34,7 @@ const TabLink = ({
 }) => (
   <Link
     href={href}
-    className={`flex items-center rounded-md gap-2.5 py-3 px-4.5 ease-out duration-200 hover:bg-blue hover:text-white ${active ? "text-white bg-blue" : "text-dark-2 bg-gray-1"
+    className={`shrink-0 flex items-center rounded-full md:rounded-md gap-2 py-2.5 px-4 text-sm font-medium ease-out duration-200 hover:bg-blue hover:text-white ${active ? "text-white bg-blue" : "text-dark-2 bg-gray-1"
       }`}
   >
     {children}
@@ -67,7 +67,7 @@ export default function MyAccount({ current }: MyAccountProps) {
     <>
       <Breadcrumb title={"Mi Cuenta"} pages={["mi cuenta"]} />
 
-      <section className="overflow-hidden py-20 bg-gray-2">
+      <section className="overflow-hidden py-8 sm:py-14 lg:py-20 bg-gray-2">
         <div className="max-w-[1170px] w-full mx-auto px-4 sm:px-8 xl:px-0">
           {loading ? (
             <div className="flex flex-col gap-7.5">
@@ -75,23 +75,23 @@ export default function MyAccount({ current }: MyAccountProps) {
               <AccountPanelSkeleton />
             </div>
           ) : (
-          <div className="flex flex-col gap-7.5">
+          <div className="flex flex-col gap-5 sm:gap-7.5">
             {/* <!--== user dashboard menu start ==--> */}
-            <div className="w-full bg-white rounded-xl shadow-1 p-4">
-              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-blue/10 flex items-center justify-center text-blue font-bold text-xl">
+            <div className="w-full bg-white rounded-xl shadow-1 p-4 sm:p-5">
+              <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-12 h-12 rounded-full bg-blue/10 flex items-center justify-center text-blue font-bold text-xl shrink-0">
                     {user?.firstName ? user.firstName[0] : (user?.name?.[0] || "U")}
                   </div>
-                  <div>
-                    <p className="font-medium text-dark text-lg">
+                  <div className="min-w-0">
+                    <p className="font-medium text-dark text-lg truncate">
                       {user?.firstName ? `${user.firstName} ${user.lastName ?? ""}`.trim() : user?.name || user?.email || "Usuario"}
                     </p>
                     <p className="text-sm text-body">Miembro desde {new Date().getFullYear()}</p>
                   </div>
                 </div>
 
-                <div className="flex flex-wrap gap-2 justify-center md:justify-end">
+                <div className="-mx-4 px-4 md:mx-0 md:px-0 flex gap-2 overflow-x-auto md:overflow-visible md:flex-wrap md:justify-end pb-1 md:pb-0">
                   <TabLink href="/mi-cuenta" active={current === "dashboard"}>
                     Panel
                   </TabLink>
@@ -114,7 +114,7 @@ export default function MyAccount({ current }: MyAccountProps) {
 
                   <button
                     onClick={handleLogout}
-                    className="flex items-center rounded-md gap-2.5 py-3 px-4.5 ease-out duration-200 hover:bg-red hover:text-white text-red bg-red/5"
+                    className="shrink-0 flex items-center rounded-full md:rounded-md gap-2 py-2.5 px-4 text-sm font-medium ease-out duration-200 hover:bg-red hover:text-white text-red bg-red/5"
                   >
                     Salir
                   </button>
@@ -127,7 +127,7 @@ export default function MyAccount({ current }: MyAccountProps) {
             <!--== user dashboard content start ==--> */}
             {/* <!-- dashboard tab content start --> */}
 
-            <div className={`w-full bg-white rounded-xl shadow-1 py-9.5 px-4 sm:px-7.5 xl:px-10 ${current === "dashboard" ? "block" : "hidden"}`}>
+            <div className={`w-full bg-white rounded-xl shadow-1 py-6 sm:py-9.5 px-4 sm:px-7.5 xl:px-10 ${current === "dashboard" ? "block" : "hidden"}`}>
               <p className="text-dark">
                 Hola {user?.firstName ? user.firstName : user?.name || "Usuario"} (¿no eres {user?.firstName ? user.firstName : user?.name || "Usuario"}?
                 <button
@@ -155,7 +155,7 @@ export default function MyAccount({ current }: MyAccountProps) {
             {/* <!-- orders tab content end -->
 
             <!-- downloads tab content start --> */}
-            <div className={`w-full bg-white rounded-xl shadow-1 py-9.5 px-4 sm:px-7.5 xl:px-10 ${current === "downloads" ? "block" : "hidden"}`}>
+            <div className={`w-full bg-white rounded-xl shadow-1 py-6 sm:py-9.5 px-4 sm:px-7.5 xl:px-10 ${current === "downloads" ? "block" : "hidden"}`}>
               <p>No tienes ninguna descarga</p>
             </div>
             {/* <!-- downloads tab content end -->

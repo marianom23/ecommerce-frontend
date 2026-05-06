@@ -10,7 +10,8 @@ const ShippingList: React.FC<{
   selectedId: number | null;
   onSelect: (addr: AddressResponse | null) => void;
   onAddNew: () => void;
-}> = ({ title, loading, addresses, selectedId, onSelect, onAddNew }) => {
+  onEdit?: (addr: AddressResponse) => void;
+}> = ({ title, loading, addresses, selectedId, onSelect, onAddNew, onEdit }) => {
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
   const toggleDetails = (e: React.MouseEvent, id: number) => {
@@ -68,13 +69,28 @@ const ShippingList: React.FC<{
                     <div className="font-medium">
                       {a.street} {a.streetNumber} {a.floor && `• Piso ${a.floor}`} {a.apartmentNumber && `• Depto ${a.apartmentNumber}`}
                     </div>
-                    <button
-                      onClick={(e) => toggleDetails(e, a.id)}
-                      className="text-xs text-blue font-medium hover:underline ml-2 whitespace-nowrap flex items-center gap-1"
-                    >
-                      {expandedId === a.id ? "Ocultar" : "Ver detalle"}
-                      <svg className={`w-3 h-3 transition-transform ${expandedId === a.id ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                    </button>
+                    <div className="flex items-center gap-3 ml-2 whitespace-nowrap">
+                      <button
+                        onClick={(e) => toggleDetails(e, a.id)}
+                        className="text-xs text-blue font-medium hover:underline flex items-center gap-1"
+                      >
+                        {expandedId === a.id ? "Ocultar" : "Ver detalle"}
+                        <svg className={`w-3 h-3 transition-transform ${expandedId === a.id ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                      </button>
+                      {onEdit && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            onEdit(a);
+                          }}
+                          className="text-xs text-blue hover:underline"
+                        >
+                          Editar
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <div className="text-dark-5">
                     {a.city}{a.state ? `, ${a.state}` : ""} {a.postalCode ? `(${a.postalCode})` : ""} • {a.country}

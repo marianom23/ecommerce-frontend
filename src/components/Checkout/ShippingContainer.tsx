@@ -20,6 +20,7 @@ const ShippingContainer: React.FC<Props> = ({ order, onSelected }) => {
   const [saving, setSaving] = useState(false); // mientras parcheamos en la orden
   const [list, setList] = useState<AddressResponse[]>([]);
   const [mode, setMode] = useState<"list" | "form">("list");
+  const [editingAddress, setEditingAddress] = useState<AddressResponse | undefined>(undefined);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [hasLoaded, setHasLoaded] = useState(false);
@@ -124,21 +125,32 @@ const ShippingContainer: React.FC<Props> = ({ order, onSelected }) => {
             if (a) await applyToOrder(a);
           }}
           onAddNew={() => {
+            setEditingAddress(undefined);
             setMode("form");
             onSelected?.(null);
+          }}
+          onEdit={(addr) => {
+            setEditingAddress(addr);
+            setMode("form");
           }}
         />
       )}
 
       {mode === "form" && (
         <ShippingForm
-          onSaved={async (created) => {
+          initialData={editingAddress}
+          type="SHIPPING"
+          onSaved={async (saved) => {
             await load();
-            setSelectedId(created.id);
-            await applyToOrder(created);
+            setSelectedId(saved.id);
+            await applyToOrder(saved);
+            setEditingAddress(undefined);
             setMode("list");
           }}
-          onCancel={() => setMode(list.length ? "list" : "form")}
+          onCancel={() => {
+            setEditingAddress(undefined);
+            setMode(list.length ? "list" : "form");
+          }}
         />
       )}
     </div>

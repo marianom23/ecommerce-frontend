@@ -48,8 +48,7 @@ export default function BillingProfileForm({ order, shippingAddress, onSelected,
     handleSubmit,
     setValue,
     reset,
-    watch,
-    formState: { errors, isDirty, isValid: isFormValid },
+    formState: { errors, isSubmitting },
   } = useForm<BillingSchema>({
     resolver: zodResolver(billingSchema),
     mode: "onChange",
@@ -95,23 +94,11 @@ export default function BillingProfileForm({ order, shippingAddress, onSelected,
     }
   }, [initialData, reset]);
 
-  const formValues = watch();
-
-  useEffect(() => {
-    // If invalid, clear parent selection immediately
-    if (!isFormValid) {
-        onSelected?.(null);
-        setSyncStatus("incomplete");
-        return;
-    }
-
-    // If valid, auto-save to order
-    setSyncStatus("idle");
-    const timeoutId = setTimeout(() => {
-        handleSubmit(onSubmit)();
-    }, 1200);
-    return () => clearTimeout(timeoutId);
-  }, [formValues, isDirty, isFormValid, handleSubmit, onSelected]);
+  const submitLabel = initialData
+    ? "Guardar cambios"
+    : isAuthenticated
+      ? "Guardar perfil"
+      : "Guardar datos";
 
   const onSubmit = async (data: BillingSchema) => {
     setSyncStatus("saving");
@@ -156,20 +143,21 @@ export default function BillingProfileForm({ order, shippingAddress, onSelected,
               isDefault: true
           };
           if (profileId) {
-              savedProfile = await billingProfileService.update(profileId, profileData).catch(() => null);
+              savedProfile = await billingProfileService.update(profileId, profileData);
           } else {
-              savedProfile = await billingProfileService.create(profileData).catch(() => null);
+              savedProfile = await billingProfileService.create(profileData);
               if (savedProfile) setProfileId(savedProfile.id);
           }
       }
 
       setSyncStatus("saved");
       reset(data, { keepValues: true });
-      onSelected?.(data);
+      onSelected?.(savedProfile || data);
       if (onSaved && savedProfile) onSaved(savedProfile);
     } catch (e: any) {
       console.error("Error en onSubmit:", e);
       setSyncStatus("error");
+      toast.error(e?.response?.data?.message || "No se pudo guardar la facturacion.");
     }
   };
 
@@ -325,6 +313,27 @@ export default function BillingProfileForm({ order, shippingAddress, onSelected,
           )}
         </div>
 
+        <div className="flex items-center justify-end gap-3 pt-2">
+          {syncStatus === "error" && (
+            <p className="text-xs text-red-500 mr-auto">No se pudo guardar. Revisá los datos e intentá de nuevo.</p>
+          )}
+          {onCancel && (
+            <button
+              type="button"
+              onClick={onCancel}
+              className="px-4 py-2 text-sm font-medium text-dark hover:text-black"
+            >
+              Cancelar
+            </button>
+          )}
+          <button
+            type="submit"
+            disabled={isSubmitting || syncStatus === "saving"}
+            className="px-6 py-2.5 bg-blue text-white text-sm font-medium rounded hover:bg-blue-dark disabled:opacity-60"
+          >
+            {isSubmitting || syncStatus === "saving" ? "Guardando..." : submitLabel}
+          </button>
+        </div>
       </form>
     </div>
   );

@@ -21,7 +21,6 @@ const SingleOrder = ({ summary, smallView }: Props) => {
   const badge = statusToBadge(summary.status);
   const totalShown = fmtMoney(summary.totalAmount);
 
-  // 👇 Traducción de estados
   const statusMap: Record<string, string> = {
     paid: "Pagado",
     pending: "Pendiente",
@@ -37,8 +36,8 @@ const SingleOrder = ({ summary, smallView }: Props) => {
 
   const itemsLabel =
     summary.itemCount === 1
-      ? "1 artículo"
-      : `${summary.itemCount ?? 0} artículos`;
+      ? "1 articulo"
+      : `${summary.itemCount ?? 0} articulos`;
 
   return (
     <>
@@ -71,32 +70,39 @@ const SingleOrder = ({ summary, smallView }: Props) => {
 
       {smallView && (
         <div className="block md:hidden">
-          <div className="py-4.5 px-7.5">
-            <p className="text-custom-sm text-dark">
-              <span className="font-bold pr-2">Pedido:</span> #
-              {orderIdShown.slice(-8)}
-            </p>
-            <p className="text-custom-sm text-dark">
-              <span className="font-bold pr-2">Fecha:</span> {dateShown}
-            </p>
-            <p className="text-custom-sm text-dark">
-              <span className="font-bold pr-2">Estado:</span>{" "}
+          <div className="mx-4 my-3 rounded-lg border border-gray-3 p-4">
+            <div className="flex items-start justify-between gap-3 mb-3">
+              <div>
+                <p className="text-xs text-dark-5">Pedido</p>
+                <p className="text-sm font-semibold text-red">
+                  #{orderIdShown.slice(-8)}
+                </p>
+              </div>
               <span
-                className={`inline-block text-custom-sm py-0.5 px-2.5 rounded-[30px] capitalize ${badge}`}
+                className={`inline-block text-xs py-1 px-2.5 rounded-[30px] capitalize ${badge}`}
               >
                 {statusShown}
               </span>
-            </p>
-            <p className="text-custom-sm text-dark">
-              <span className="font-bold pr-2">Artículos:</span> {itemsLabel}
-            </p>
-            <p className="text-custom-sm text-dark">
-              <span className="font-bold pr-2">Total:</span> {totalShown}
-            </p>
-            <p className="text-custom-sm text-dark flex items-center">
-              <span className="font-bold pr-2">Acciones:</span>{" "}
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 text-sm text-dark">
+              <div>
+                <p className="text-xs text-dark-5">Fecha</p>
+                <p>{dateShown}</p>
+              </div>
+              <div>
+                <p className="text-xs text-dark-5">Articulos</p>
+                <p>{itemsLabel}</p>
+              </div>
+              <div className="col-span-2">
+                <p className="text-xs text-dark-5">Total</p>
+                <p className="font-semibold">{totalShown}</p>
+              </div>
+            </div>
+
+            <div className="mt-4 flex items-center justify-end">
               <OrderActions toggleDetails={goToDetails} toggleEdit={() => {}} />
-            </p>
+            </div>
           </div>
         </div>
       )}

@@ -73,7 +73,7 @@ export default function AccountDetails() {
             {/* Profile Form */}
             <form onSubmit={handleSubmitProfile(onSubmitProfile)}>
                 <div className="bg-white shadow-1 rounded-xl p-4 sm:p-8.5">
-                    <h3 className="font-medium text-xl text-dark mb-7">Detalles de la Cuenta</h3>
+                    <h3 className="font-medium text-lg sm:text-xl text-dark mb-5 sm:mb-7">Detalles de la Cuenta</h3>
 
                     <div className="flex flex-col lg:flex-row gap-5 sm:gap-8 mb-5">
                         <div className="w-full">
@@ -112,7 +112,7 @@ export default function AccountDetails() {
                     <button
                         type="submit"
                         disabled={loadingProfile}
-                        className="inline-flex font-medium text-white bg-blue py-3 px-7 rounded-md ease-out duration-200 hover:bg-blue-dark disabled:opacity-70"
+                        className="w-full sm:w-auto inline-flex justify-center font-medium text-white bg-blue py-3 px-7 rounded-md ease-out duration-200 hover:bg-blue-dark disabled:opacity-70"
                     >
                         {loadingProfile ? "Guardando..." : "Guardar Cambios"}
                     </button>
@@ -179,7 +179,7 @@ export default function AccountDetails() {
                     <button
                         type="submit"
                         disabled={loadingPassword}
-                        className="inline-flex font-medium text-white bg-blue py-3 px-7 rounded-md ease-out duration-200 hover:bg-blue-dark disabled:opacity-70"
+                        className="w-full sm:w-auto inline-flex justify-center font-medium text-white bg-blue py-3 px-7 rounded-md ease-out duration-200 hover:bg-blue-dark disabled:opacity-70"
                     >
                         {loadingPassword ? "Cambiando..." : "Cambiar Contraseña"}
                     </button>

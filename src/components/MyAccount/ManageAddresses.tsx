@@ -118,10 +118,10 @@ export default function ManageAddresses() {
     }
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-5 sm:space-y-8">
             {/* Sección de direcciones de envío */}
             <div className="bg-white shadow-1 rounded-[10px]">
-                <div className="flex items-center justify-between py-5 px-4 sm:px-8.5 border-b border-gray-3">
+                <div className="flex items-center justify-between py-4 sm:py-5 px-4 sm:px-8.5 border-b border-gray-3">
                     <h2 className="font-medium text-lg text-dark">
                         Direcciones de Envío
                     </h2>
@@ -148,7 +148,7 @@ export default function ManageAddresses() {
                     </div>
                 ) : (
                     <div className="p-4 sm:p-8.5">
-                        <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center justify-between gap-3 mb-3">
                             <h3 className="font-medium text-dark">Mis direcciones de envío</h3>
                             <button
                                 onClick={() => {
@@ -169,14 +169,14 @@ export default function ManageAddresses() {
                                     {shippingList.map((addr) => (
                                         <div
                                             key={addr.id}
-                                            className="flex items-start gap-3 p-4 border rounded-lg transition-all duration-200 border-gray-3 hover:border-blue/40"
+                                            className="flex items-start gap-3 p-3 sm:p-4 border rounded-lg transition-all duration-200 border-gray-3 hover:border-blue/40"
                                         >
                                             <div className="flex-1">
-                                                <div className="flex justify-between items-start">
-                                                    <div className="font-medium text-dark">
+                                                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+                                                    <div className="font-medium text-dark break-words">
                                                         {addr.street} {addr.streetNumber} {addr.floor && `• Piso ${addr.floor}`} {addr.apartmentNumber && `• Depto ${addr.apartmentNumber}`}
                                                     </div>
-                                                    <div className="flex items-center gap-3">
+                                                    <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
                                                         <button
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
@@ -214,7 +214,7 @@ export default function ManageAddresses() {
                                                 </div>
 
                                                 {expandedShippingId === addr.id && (
-                                                    <div className="mt-2 pt-2 border-t border-gray-2 text-xs text-dark-5 grid grid-cols-2 gap-2 cursor-default" onClick={(e) => e.stopPropagation()}>
+                                                    <div className="mt-2 pt-2 border-t border-gray-2 text-xs text-dark-5 grid grid-cols-1 sm:grid-cols-2 gap-2 cursor-default" onClick={(e) => e.stopPropagation()}>
                                                         <div><span className="font-medium">Calle:</span> {addr.street}</div>
                                                         <div><span className="font-medium">Altura:</span> {addr.streetNumber}</div>
                                                         {addr.floor && <div><span className="font-medium">Piso:</span> {addr.floor}</div>}
@@ -237,7 +237,7 @@ export default function ManageAddresses() {
 
             {/* Sección de perfiles de facturación */}
             <div className="bg-white shadow-1 rounded-[10px]">
-                <div className="flex items-center justify-between py-5 px-4 sm:px-8.5 border-b border-gray-3">
+                <div className="flex items-center justify-between py-4 sm:py-5 px-4 sm:px-8.5 border-b border-gray-3">
                     <h2 className="font-medium text-lg text-dark">
                         Perfiles de Facturación
                     </h2>
@@ -262,7 +262,7 @@ export default function ManageAddresses() {
                     </div>
                 ) : (
                     <div className="p-4 sm:p-8.5">
-                        <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center justify-between gap-3 mb-3">
                             <h3 className="font-medium text-dark">Mis perfiles de facturación</h3>
                             <button
                                 onClick={() => {
@@ -283,14 +283,14 @@ export default function ManageAddresses() {
                                     {profilesList.map((profile) => (
                                         <div
                                             key={profile.id}
-                                            className="flex items-start gap-3 p-4 border rounded-lg transition-all duration-200 border-gray-3 hover:border-blue/40"
+                                            className="flex items-start gap-3 p-3 sm:p-4 border rounded-lg transition-all duration-200 border-gray-3 hover:border-blue/40"
                                         >
                                             <div className="flex-1">
-                                                <div className="flex justify-between items-start">
-                                                    <div className="font-medium text-dark">
+                                                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+                                                    <div className="font-medium text-dark break-words">
                                                         {getBillingProfileSummary(profile)}
                                                     </div>
-                                                    <div className="flex items-center gap-3">
+                                                    <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
                                                         <button
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
@@ -311,20 +311,16 @@ export default function ManageAddresses() {
                                                         >
                                                             Editar
                                                         </button>
-                                                        {!profile.defaultProfile && (
-                                                            <>
-                                                                <span className="text-gray-3 text-xs">|</span>
-                                                                <button
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        deleteProfile(profile.id);
-                                                                    }}
-                                                                    className="text-red-500 text-xs hover:underline"
-                                                                >
-                                                                    Eliminar
-                                                                </button>
-                                                            </>
-                                                        )}
+                                                        <span className="text-gray-3 text-xs">|</span>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                deleteProfile(profile.id);
+                                                            }}
+                                                            className="text-red-500 text-xs hover:underline"
+                                                        >
+                                                            Eliminar
+                                                        </button>
                                                     </div>
                                                 </div>
                                                 <div className="text-sm text-dark-5">
@@ -370,10 +366,10 @@ export default function ManageAddresses() {
                         <br />
                         Esta acción no se puede deshacer.
                     </p>
-                    <div className="flex justify-center gap-4">
+                    <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
                         <button
                             onClick={() => setDeletingItem(null)}
-                            className="px-6 py-2.5 border border-gray-3 text-dark font-medium rounded hover:bg-gray-1 transition-colors"
+                            className="w-full sm:w-auto px-6 py-2.5 border border-gray-3 text-dark font-medium rounded hover:bg-gray-1 transition-colors"
                         >
                             Cancelar
                         </button>
@@ -385,7 +381,7 @@ export default function ManageAddresses() {
                                     confirmDeleteAddress();
                                 }
                             }}
-                            className="px-6 py-2.5 bg-red text-white font-medium rounded hover:bg-red-dark transition-colors"
+                            className="w-full sm:w-auto px-6 py-2.5 bg-red text-white font-medium rounded hover:bg-red-dark transition-colors"
                         >
                             Eliminar
                         </button>
