@@ -20,8 +20,17 @@ import * as analytics from "@/utils/analytics";
 import { Heart, Eye, Star, ShoppingCart } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const SingleGridItem = ({ item, variant = "default" }: { item: Product; variant?: "default" | "cover" }) => {
+const SingleGridItem = ({
+  item,
+  variant = "default",
+  showRating = false,
+}: {
+  item: Product;
+  variant?: "default" | "cover";
+  showRating?: boolean;
+}) => {
   const router = useRouter();
+  const [cartTapAnimating, setCartTapAnimating] = React.useState(false);
   const { isAuthenticated } = useAuth();
   const { openModal } = useModalContext();
   const dispatch = useDispatch<AppDispatch>();
@@ -97,7 +106,8 @@ const SingleGridItem = ({ item, variant = "default" }: { item: Product; variant?
 
   return (
     <div
-      className="group font-sans flex cursor-pointer flex-col overflow-hidden rounded-xl border border-gray-3 bg-white transition-shadow duration-200 hover:shadow-3"
+      className="group font-sans flex cursor-pointer select-none flex-col overflow-hidden rounded-xl border border-gray-3 bg-white transition-shadow duration-200 hover:shadow-3"
+      style={{ WebkitTapHighlightColor: "transparent" }}
       onClick={goToProductDetails}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
@@ -161,7 +171,7 @@ const SingleGridItem = ({ item, variant = "default" }: { item: Product; variant?
         </div>
 
         {/* Botones de accion — Siempre visibles en mobile, hover en desktop */}
-        <div className="absolute bottom-4 left-0 right-0 z-20 flex items-center justify-center gap-3 px-5 transition-all duration-300 sm:translate-y-full sm:opacity-0 sm:group-hover:translate-y-0 sm:group-hover:opacity-100">
+        <div className="absolute bottom-4 left-0 right-0 z-20 hidden items-center justify-center gap-3 px-5 transition-all duration-300 sm:flex sm:translate-y-full sm:opacity-0 sm:group-hover:translate-y-0 sm:group-hover:opacity-100">
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -176,10 +186,15 @@ const SingleGridItem = ({ item, variant = "default" }: { item: Product; variant?
           <button
             onClick={(e) => {
               e.stopPropagation();
+              setCartTapAnimating(true);
+              window.setTimeout(() => setCartTapAnimating(false), 260);
               handleAddToCart();
             }}
             aria-label="Agregar al carrito"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-dark text-white shadow-1 transition-colors duration-200 hover:bg-dark-2 sm:h-11 sm:w-auto sm:px-6 sm:gap-2 sm:text-sm sm:font-medium"
+            className={cn(
+              "flex h-10 w-14 shrink-0 items-center justify-center rounded-xl bg-dark text-white shadow-1 transition-all duration-200 hover:bg-dark-2 active:scale-90 active:bg-blue sm:h-11 sm:w-auto sm:gap-2 sm:rounded-full sm:px-6 sm:text-sm sm:font-medium",
+              cartTapAnimating && "scale-95 bg-blue shadow-[0_8px_18px_rgba(0,74,173,0.35)]"
+            )}
           >
             <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
             <span className="hidden sm:inline">Agregar</span>
@@ -205,7 +220,7 @@ const SingleGridItem = ({ item, variant = "default" }: { item: Product; variant?
       <div className="flex flex-1 flex-col gap-2 p-4 bg-white">
 
         {/* Rating */}
-        <div className="flex items-center gap-1.5">
+        {showRating && <div className="flex items-center gap-1.5">
           <div className="flex">
             {[...Array(5)].map((_, i) => (
               <Star
@@ -218,7 +233,33 @@ const SingleGridItem = ({ item, variant = "default" }: { item: Product; variant?
             ))}
           </div>
           <span className="text-xs text-gray-5">({item.totalReviews})</span>
-        </div>
+        </div>}
+
+        <button
+          onPointerDown={(e) => {
+            e.stopPropagation();
+          }}
+          onMouseDown={(e) => {
+            e.stopPropagation();
+          }}
+          onTouchStart={(e) => {
+            e.stopPropagation();
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            setCartTapAnimating(true);
+            window.setTimeout(() => setCartTapAnimating(false), 260);
+            handleAddToCart();
+          }}
+          aria-label="Agregar al carrito"
+          className={cn(
+            "mb-1 flex h-9 w-full select-none items-center justify-center gap-2 rounded-md bg-dark px-3 text-xs font-semibold text-white shadow-1 transition-all duration-200 active:scale-[0.97] active:bg-blue sm:hidden",
+            cartTapAnimating && "scale-[0.98] bg-blue shadow-[0_8px_18px_rgba(0,74,173,0.28)]"
+          )}
+        >
+          <ShoppingCart className="h-4 w-4" />
+          Agregar
+        </button>
 
         {/* Nombre */}
         <h3 className="line-clamp-2 text-sm font-semibold leading-tight text-dark ease-out duration-200 hover:text-blue">

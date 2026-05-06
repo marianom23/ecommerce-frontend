@@ -21,7 +21,13 @@ import { Heart, Eye, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
-const SingleListItem = ({ item }: { item: Product }) => {
+const SingleListItem = ({
+  item,
+  showRating = false,
+}: {
+  item: Product;
+  showRating?: boolean;
+}) => {
   const router = useRouter();
   const { isAuthenticated } = useAuth();
   const { openModal } = useModalContext();
@@ -204,7 +210,7 @@ const SingleListItem = ({ item }: { item: Product }) => {
       <div className="flex flex-1 flex-col gap-3 p-6 lg:p-8 bg-white z-10">
         
         {/* Rating & Review */}
-        <div className="flex items-center gap-1.5">
+        {showRating && <div className="flex items-center gap-1.5">
           <div className="flex gap-0.5">
             {[...Array(5)].map((_, i) => (
               <Star
@@ -219,7 +225,7 @@ const SingleListItem = ({ item }: { item: Product }) => {
             ))}
           </div>
           <span className="text-[14px] font-medium text-gray-500">({item.totalReviews} reseñas)</span>
-        </div>
+        </div>}
 
         {/* Nombre del producto */}
         <h3 className="line-clamp-2 text-[20px] font-semibold leading-tight text-gray-900 ease-out duration-200 hover:text-blue">

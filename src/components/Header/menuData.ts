@@ -6,6 +6,8 @@ export const menuData: Menu[] = [
   { id: 2, title: "Productos", newTab: false, path: "/productos" },
   { id: 4, title: "Switch", newTab: false, path: "/productos?consoleId=1" },
   { id: 5, title: "Switch 2", newTab: false, path: "/productos?consoleId=2" },
+  { id: 6, title: "Consolas Retro", newTab: false, path: "/productos?categoryId=6&page=1&sort=0" },
+  { id: 7, title: "Preguntas frecuentes", newTab: false, path: "/faq" },
   { id: 3, title: "Cómo Funciona", newTab: false, path: "/como-funciona" },
   // {
   //   id: 6, title: "Páginas", newTab: false, path: "/",

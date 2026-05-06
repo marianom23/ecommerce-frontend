@@ -9,7 +9,6 @@ import {
   Minus,
   Plus,
   Heart,
-  Star,
   Check,
   ChevronLeft,
   ChevronRight,
@@ -270,8 +269,6 @@ const QuickViewModal = () => {
   const hasDiscount = originalPrice > currentPrice;
   const discountPercent = hasDiscount ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100) : 0;
   const title = details?.title || product?.title || "";
-  const rating = details?.averageRating ?? product?.averageRating ?? 0;
-  const reviewCount = details?.totalReviews ?? product?.totalReviews ?? 0;
   const description = details?.description ?? "";
   const isWishlisted = product ? wishlistItems.some((item) => item.id === product.id) : false;
 
@@ -520,27 +517,6 @@ const QuickViewModal = () => {
               <h2 className="mt-3 text-lg font-bold leading-snug text-dark sm:text-xl">{title}</h2>
 
               <div className="mt-2 flex flex-wrap items-center gap-4">
-                <div className="flex items-center gap-1.5">
-                  <div className="flex">
-                    {Array.from({ length: 5 }).map((_, index) => {
-                      const filled = rating >= index + 1;
-                      const partial = !filled && rating > index && rating < index + 1;
-
-                      return (
-                        <Star
-                          key={index}
-                          className={cn(
-                            "h-4 w-4",
-                            filled || partial ? "fill-yellow text-yellow" : "fill-gray-3 text-gray-3"
-                          )}
-                          style={partial ? { fillOpacity: rating - index } : undefined}
-                        />
-                      );
-                    })}
-                  </div>
-                  <span className="text-sm text-dark-4">({reviewCount})</span>
-                </div>
-
                 {inStock && (
                   <div className="flex items-center gap-1.5 text-green">
                     <Check className="h-4 w-4" />
