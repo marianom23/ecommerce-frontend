@@ -7,6 +7,7 @@ import { AuthProvider } from "@/app/context/AuthContext";
 import CookieNotice from "@/components/Common/CookieNotice";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 import MetaPixel from "@/components/MetaPixel";
+import MicrosoftClarity from "@/components/MicrosoftClarity";
 import { ReduxProvider } from "@/redux/provider";
 
 import { Inter } from "next/font/google";
@@ -35,6 +36,7 @@ export default function RootLayout({
           <ReduxProvider>
             <AuthProvider>
               <GoogleAnalytics />
+              <MicrosoftClarity />
               <MetaPixel />
               {children}
               <CookieNotice />
