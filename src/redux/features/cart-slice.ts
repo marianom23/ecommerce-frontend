@@ -5,6 +5,7 @@ import type { RootState } from "../store";
 import type { Cart } from "@/types/cart";
 import toast from "react-hot-toast";
 import * as pixel from "@/utils/pixel";
+import * as analytics from "@/utils/analytics";
 
 type CartState = {
   cart: Cart | null;
@@ -38,6 +39,15 @@ export const addCartItemGuest = createAsyncThunk<Cart,
           value: body.price ? body.price * body.quantity : undefined,
           currency: "ARS"
         }, { eventID: eventId });
+        analytics.trackAddToCart(
+          analytics.toAnalyticsItem({
+            id: body.productId,
+            variantId: body.variantId,
+            price: body.price,
+            quantity: body.quantity,
+          }),
+          body.price ? body.price * body.quantity : undefined
+        );
 
         // 3. Llamar al Backend pasando el eventId
         return pickCart(await cartService.addGuest({ ...body, eventId }));
@@ -97,6 +107,15 @@ export const addCartItemLogged = createAsyncThunk<Cart,
           value: body.price ? body.price * body.quantity : undefined,
           currency: "ARS"
         }, { eventID: eventId });
+        analytics.trackAddToCart(
+          analytics.toAnalyticsItem({
+            id: body.productId,
+            variantId: body.variantId,
+            price: body.price,
+            quantity: body.quantity,
+          }),
+          body.price ? body.price * body.quantity : undefined
+        );
 
         // 3. Llamar al Backend pasando el eventId
         return pickCart(await cartService.addLogged({ ...body, eventId }));

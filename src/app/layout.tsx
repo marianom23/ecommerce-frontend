@@ -4,6 +4,8 @@ import React from "react";
 import { GoogleOAuthProvider } from '@react-oauth/google';
 
 import { AuthProvider } from "@/app/context/AuthContext";
+import CookieNotice from "@/components/Common/CookieNotice";
+import GoogleAnalytics from "@/components/GoogleAnalytics";
 import MetaPixel from "@/components/MetaPixel";
 import { ReduxProvider } from "@/redux/provider";
 
@@ -32,8 +34,10 @@ export default function RootLayout({
         <GoogleOAuthProvider clientId={googleClientId}>
           <ReduxProvider>
             <AuthProvider>
+              <GoogleAnalytics />
               <MetaPixel />
               {children}
+              <CookieNotice />
             </AuthProvider>
           </ReduxProvider>
         </GoogleOAuthProvider>

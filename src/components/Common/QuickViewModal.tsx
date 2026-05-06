@@ -33,6 +33,7 @@ import { updateproductDetails } from "@/redux/features/product-details";
 import { toggleWishlist } from "@/redux/features/wishlist-slice";
 import { generateProductUrl } from "@/utils/slug";
 import * as pixel from "@/utils/pixel";
+import * as analytics from "@/utils/analytics";
 
 type QuickViewProductLight = {
   id: number;
@@ -192,6 +193,20 @@ const QuickViewModal = () => {
             fetchedDetails.priceRange.minDiscounted,
           currency: "ARS",
         });
+        analytics.trackViewItem(
+          analytics.toAnalyticsItem({
+            id: fetchedDetails.id,
+            name: fetchedDetails.title,
+            price:
+              fetchedDetails.discountedPrice ||
+              fetchedDetails.price ||
+              fetchedDetails.priceRange.minDiscounted,
+            category: fetchedDetails.category,
+          }),
+          fetchedDetails.discountedPrice ||
+            fetchedDetails.price ||
+            fetchedDetails.priceRange.minDiscounted
+        );
       } catch (error) {
         console.error(error);
         if (!cancelled) setErr("No se pudo cargar el producto.");
@@ -367,6 +382,14 @@ const QuickViewModal = () => {
           value: currentPrice,
           currency: "ARS",
         });
+        analytics.trackAddToWishlist(
+          analytics.toAnalyticsItem({
+            id: product.id,
+            name: title,
+            price: currentPrice,
+          }),
+          currentPrice
+        );
       }
     }
   };

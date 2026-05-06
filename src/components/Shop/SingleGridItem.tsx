@@ -16,6 +16,7 @@ import { updateproductDetails } from "@/redux/features/product-details";
 import { generateProductUrl } from "@/utils/slug";
 import { useAuth } from "@/hooks/useAuth";
 import * as pixel from "@/utils/pixel";
+import * as analytics from "@/utils/analytics";
 import { Heart, Eye, Star, ShoppingCart } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -67,6 +68,14 @@ const SingleGridItem = ({ item, variant = "default" }: { item: Product; variant?
           value: item.discountedPrice || item.price,
           currency: "ARS",
         });
+        analytics.trackAddToWishlist(
+          analytics.toAnalyticsItem({
+            id: item.id,
+            name: item.title,
+            price: item.discountedPrice || item.price,
+          }),
+          item.discountedPrice || item.price
+        );
       }
     }
   };

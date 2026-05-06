@@ -13,6 +13,7 @@ import { orderService, type PaymentMethod as PM, type OrderResponse } from "@/se
 import toast from "react-hot-toast";
 import { useAuth } from "@/hooks/useAuth";
 import * as pixel from "@/utils/pixel";
+import * as analytics from "@/utils/analytics";
 import { Box, CheckCircle, Clock, CreditCard, Gift, Globe, Lock, Mail, MessageSquare, Package, RefreshCw, Shield, ShieldCheck, ShoppingBag, Star, Truck, Users, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -485,6 +486,18 @@ const Checkout = () => {
         currency: "ARS", // Adjust if needed, maybe cart.currency
         num_items: cart.items.reduce((acc: number, item: any) => acc + item.quantity, 0),
       });
+      analytics.trackBeginCheckout(
+        cart.items.map((item: any) =>
+          analytics.toAnalyticsItem({
+            id: item.productId || item.id,
+            variantId: item.variantId,
+            name: item.name,
+            price: item.unitDiscountedPrice || item.unitPrice || item.priceAtAddition,
+            quantity: item.quantity,
+          })
+        ),
+        cart.total
+      );
       setHasTrackedInitiateCheckout(true);
     }
   };
@@ -555,6 +568,7 @@ const Checkout = () => {
         pendingUrl: `${window.location.origin}/checkout/pending`,
         // Si tu webhook en el back es /api/payments/webhook/mercadopago:
         callbackUrl: `${window.location.origin}/api/payments/webhook/mercadopago`,
+        gaClientId: analytics.getGaClientId() || null,
       });
 
       const redirect =

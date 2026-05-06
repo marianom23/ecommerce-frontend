@@ -12,6 +12,7 @@ import { paymentService } from "@/services/paymentService";
 import Modal from "@/components/Common/Modal";
 import toast from "react-hot-toast";
 import { CheckoutPanelSkeleton } from "@/components/Common/Skeletons";
+import * as analytics from "@/utils/analytics";
 
 type Mode = "success" | "failure" | "pending";
 
@@ -129,6 +130,31 @@ export default function CheckoutResult({ mode }: Props) {
     if (ps === "REJECTED" || ps === "CANCELED" || ps === "EXPIRED") return "failure";
     return "pending";
   }, [order, mode]);
+
+  useEffect(() => {
+    if (!order || resolvedMode !== "success") return;
+
+    const storageKey = `ga4_purchase_${order.orderNumber}`;
+    if (localStorage.getItem(storageKey) === "true") return;
+
+    analytics.trackPurchase({
+      transactionId: order.orderNumber,
+      value: order.totalAmount,
+      tax: order.taxAmount,
+      shipping: order.shippingCost,
+      items: order.items.map((item) =>
+        analytics.toAnalyticsItem({
+          id: item.productId,
+          variantId: item.variantId,
+          name: item.productName,
+          price: item.unitPrice,
+          quantity: item.quantity,
+        })
+      ),
+    });
+
+    localStorage.setItem(storageKey, "true");
+  }, [order, resolvedMode]);
 
   const handleConfirmTransfer = async () => {
     if (!order?.id) return;

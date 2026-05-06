@@ -63,6 +63,7 @@ export type ConfirmOrderRequest = {
   failureUrl?: string | null;
   pendingUrl?: string | null;
   callbackUrl?: string | null;
+  gaClientId?: string | null;
 };
 
 /** ===== Responses: LISTA (summary) ===== */

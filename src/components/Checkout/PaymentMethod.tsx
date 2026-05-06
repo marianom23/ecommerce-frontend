@@ -8,6 +8,7 @@ import {
   type PaymentMethod as PM,
 } from "@/services/orderService";
 import toast from "react-hot-toast";
+import * as analytics from "@/utils/analytics";
 
 type Props = {
   order?: OrderResponse | null;
@@ -71,6 +72,20 @@ const PaymentMethod: React.FC<Props> = ({ order, onApplied }) => {
       if (!silent) {
         toast.success("Metodo de pago aplicado a la orden");
       }
+
+      analytics.trackAddPaymentInfo(
+        option.method,
+        order.items.map((item) =>
+          analytics.toAnalyticsItem({
+            id: item.productId,
+            variantId: item.variantId,
+            name: item.productName,
+            price: item.unitPrice,
+            quantity: item.quantity,
+          })
+        ),
+        order.totalAmount
+      );
 
       onApplied?.(option.method);
     } catch (e: any) {

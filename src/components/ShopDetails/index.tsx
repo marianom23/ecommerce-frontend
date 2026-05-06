@@ -27,6 +27,7 @@ import { ReviewsList } from "./ReviewsList";
 import { ReviewForm } from "./ReviewForm";
 import { useAuth } from "@/hooks/useAuth";
 import * as pixel from "@/utils/pixel";
+import * as analytics from "@/utils/analytics";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { generateProductUrl } from "@/utils/slug";
@@ -185,6 +186,15 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
           value: details.discountedPrice || details.price || details.priceRange.minDiscounted,
           currency: "ARS",
         });
+        analytics.trackViewItem(
+          analytics.toAnalyticsItem({
+            id: details.id,
+            name: details.title,
+            price: details.discountedPrice || details.price || details.priceRange.minDiscounted,
+            category: details.category,
+          }),
+          details.discountedPrice || details.price || details.priceRange.minDiscounted
+        );
       } catch (err) {
         console.error("Error fetching product details:", err);
         setError("No pudimos cargar este producto.");
@@ -419,6 +429,14 @@ const ShopDetails = ({ productId }: ShopDetailsProps) => {
           value: productDetails.discountedPrice || productDetails.price || productDetails.priceRange.minDiscounted,
           currency: "ARS",
         });
+        analytics.trackAddToWishlist(
+          analytics.toAnalyticsItem({
+            id: productDetails.id,
+            name: productDetails.title,
+            price: productDetails.discountedPrice || productDetails.price || productDetails.priceRange.minDiscounted,
+          }),
+          productDetails.discountedPrice || productDetails.price || productDetails.priceRange.minDiscounted
+        );
       }
     }
   };
