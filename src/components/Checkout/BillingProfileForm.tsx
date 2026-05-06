@@ -48,7 +48,8 @@ export default function BillingProfileForm({ order, shippingAddress, onSelected,
     handleSubmit,
     setValue,
     reset,
-    formState: { errors, isSubmitting },
+    watch,
+    formState: { errors, isSubmitting, isValid },
   } = useForm<BillingSchema>({
     resolver: zodResolver(billingSchema),
     mode: "onChange",
@@ -93,6 +94,9 @@ export default function BillingProfileForm({ order, shippingAddress, onSelected,
         if (initialData.street || initialData.city) setShowAddress(true);
     }
   }, [initialData, reset]);
+
+  const formValues = watch();
+  const shouldAutoSave = !isAuthenticated && !initialData;
 
   const submitLabel = initialData
     ? "Guardar cambios"
@@ -160,6 +164,23 @@ export default function BillingProfileForm({ order, shippingAddress, onSelected,
       toast.error(e?.response?.data?.message || "No se pudo guardar la facturacion.");
     }
   };
+
+  useEffect(() => {
+    if (!shouldAutoSave) return;
+
+    if (!isValid || !order?.orderNumber) {
+      setSyncStatus("incomplete");
+      onSelected?.(null);
+      return;
+    }
+
+    setSyncStatus("idle");
+    const timeoutId = window.setTimeout(() => {
+      handleSubmit(onSubmit)();
+    }, 900);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [formValues, handleSubmit, isValid, onSelected, order?.orderNumber, shouldAutoSave]);
 
   const copyShippingAddress = () => {
     if (!shippingAddress) return;
@@ -317,6 +338,15 @@ export default function BillingProfileForm({ order, shippingAddress, onSelected,
           {syncStatus === "error" && (
             <p className="text-xs text-red-500 mr-auto">No se pudo guardar. Revisá los datos e intentá de nuevo.</p>
           )}
+          {shouldAutoSave && syncStatus !== "error" && (
+            <p className="text-xs text-dark-5 mr-auto">
+              {syncStatus === "saving"
+                ? "Guardando datos..."
+                : syncStatus === "saved"
+                  ? "Datos guardados"
+                  : "Se guarda automaticamente"}
+            </p>
+          )}
           {onCancel && (
             <button
               type="button"
@@ -326,13 +356,15 @@ export default function BillingProfileForm({ order, shippingAddress, onSelected,
               Cancelar
             </button>
           )}
-          <button
-            type="submit"
-            disabled={isSubmitting || syncStatus === "saving"}
-            className="px-6 py-2.5 bg-blue text-white text-sm font-medium rounded hover:bg-blue-dark disabled:opacity-60"
-          >
-            {isSubmitting || syncStatus === "saving" ? "Guardando..." : submitLabel}
-          </button>
+          {!shouldAutoSave && (
+            <button
+              type="submit"
+              disabled={isSubmitting || syncStatus === "saving"}
+              className="px-6 py-2.5 bg-blue text-white text-sm font-medium rounded hover:bg-blue-dark disabled:opacity-60"
+            >
+              {isSubmitting || syncStatus === "saving" ? "Guardando..." : submitLabel}
+            </button>
+          )}
         </div>
       </form>
     </div>
